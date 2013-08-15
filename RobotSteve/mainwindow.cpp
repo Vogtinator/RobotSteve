@@ -16,14 +16,17 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->horizontalLayout->addWidget(new GLView(&world, this));
 
     SteveInterpreter interpreter;
-    try {
-    interpreter.setCode(QStringList{"WENN asdf DANN", "SCHRITT", "SONST", "RECHTSDREHEN", "*WENN"});
-    }
-    catch (QString s)
-    {
-        std::cout << interpreter.getLine();
-        throw s;
-    }
+
+    interpreter.setCode(QStringList{
+                            "SOLANGE",
+                            "*solange",
+                            "WEnn",
+                            "WENN asdf DANN",
+                            "SONST",
+                            "*wenn",
+                            "RECHTSDREHEN",
+                            "*WENN"});
+    interpreter.dumpCode();
 }
 
 MainWindow::~MainWindow()

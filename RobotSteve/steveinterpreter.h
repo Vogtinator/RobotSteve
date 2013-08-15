@@ -1,6 +1,7 @@
 #ifndef STEVEINTERPRETER_H
 #define STEVEINTERPRETER_H
 
+#include <exception>
 #include <QString>
 #include <QStringList>
 #include <QMap>
@@ -9,6 +10,34 @@
 #include "world.h"
 
 class SteveInterpreter;
+
+class SteveInterpreterException : public std::exception {
+public:
+    SteveInterpreterException(QString error, int line) : SteveInterpreterException(error, line, -1, "") {}
+    SteveInterpreterException(QString error, int line, QString affected) : SteveInterpreterException(error, line, -1, affected) {}
+    SteveInterpreterException(QString error, int line_start, int line_end) : SteveInterpreterException(error, line_start, line_end, "") {}
+    ~SteveInterpreterException() throw() {}
+
+    const char* what()
+    {
+        if(line_end > 0)
+            return QObject::trUtf8("Fehler in Zeilen %1-%2:\n%3").arg(line_start).arg(line_end).arg(error).toUtf8().data();
+
+        return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line_start).arg(error).toUtf8().data();
+    }
+    QString getAffected()
+    {
+        return affected;
+    }
+
+private:
+    SteveInterpreterException(QString error, int line_start, int line_end, QString affected) : error(error), line_start(line_start), line_end(line_end), affected(affected) {}
+
+    QString error;
+    int line_start;
+    int line_end;
+    QString affected;
+};
 
 typedef void (SteveInterpreter::*InstructionFunction)(World *world, bool param_given, int param);
 typedef bool (SteveInterpreter::*ConditionFunction)(World *world, bool param_given, int param);
@@ -63,24 +92,29 @@ enum CONDITION {
 };
 
 enum BLOCK {
-    BLOCK_IF,
+    BLOCK_IF, BLOCK_ELSE,
     BLOCK_REPEAT,
     BLOCK_WHILE,
-    BLOCK_INSTR,
-    BLOCK_COND
+    BLOCK_NEW_INSTR,
+    BLOCK_NEW_COND
+};
+
+struct BlockKeywords {
+    KEYWORD begin;
+    KEYWORD end;
+    BLOCK type;
 };
 
 class SteveInterpreter
 {
-    friend class InterpreterBlock;
-
 public:
     SteveInterpreter();
-    void setCode(QStringList code) throw (QString);
+    void setCode(QStringList code) throw (SteveInterpreterException);
     void reset();
     void executeLine() throw (QString);
     QString getError();
     int getLine();
+    void dumpCode();
 
 private:
     int start_line, current_line; // Starts at 0!

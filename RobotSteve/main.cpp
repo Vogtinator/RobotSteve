@@ -2,6 +2,7 @@
 #include <QApplication>
 
 #include "mainwindow.h"
+#include "steveinterpreter.h"
 
 int main(int argc, char *argv[])
 {
@@ -11,6 +12,9 @@ int main(int argc, char *argv[])
     w.show();
 
     return a.exec();
+    }
+    catch (SteveInterpreterException e) {
+        std::cerr << e.what() << std::endl;
     }
     catch (QString s) {
         std::cerr << s.toStdString() << std::endl
