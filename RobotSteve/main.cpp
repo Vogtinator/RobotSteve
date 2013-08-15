@@ -12,9 +12,13 @@ int main(int argc, char *argv[])
 
     return a.exec();
     }
+    catch (QString s) {
+        std::cerr << s.toStdString() << std::endl
+                  << "Bye :-/" << std::endl;
+    }
     catch (const char *e) {
         std::cerr << e << std::endl
-                << "Bye :-/" << std::endl;
+                  << "Bye :-/" << std::endl;
     }
     catch (...) {
         std::cerr << "Umm, not good. Bye :-/" << std::endl;
