@@ -117,6 +117,8 @@ public:
     void dumpCode();
 
 private:
+    void findAndThrowMissingBegin(int line, BLOCK block) throw (SteveInterpreterException);
+
     int start_line, current_line; // Starts at 0!
     QString error;
     QMap<KEYWORD, QString> keywords;

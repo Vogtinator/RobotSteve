@@ -36,63 +36,73 @@ SteveInterpreter::SteveInterpreter()
     keywords[KEYWORD_NEW_COND_END] = "*" + keywords[KEYWORD_NEW_COND];
 }
 
+void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block) throw (SteveInterpreterException)
+{
+    for(auto block_keywords : blocks)
+    {
+        if(block_keywords.type == block || (block == BLOCK_ELSE && block_keywords.type == BLOCK_IF))
+            throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[block_keywords.begin]), line);
+    }
+}
+
 void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterException)
 {
     this->code = code;
+    branches.clear();
     QStack<int> branch_entrys;
     QStack<BLOCK> block_types;
     current_line = code.size() - 1;
 
     while(current_line >= 0)
     {
-        QString line = code[current_line].simplified().toLower();
+        QStringList line = code[current_line].simplified().toLower().split(" ", QString::SkipEmptyParts);
+        if(line.size() == 0)
+            goto end;
 
-        //Both special cases, BLOCK_ELSE has to be trated seperately
-        if(line.startsWith(keywords[KEYWORD_IF]))
+        //Special case, KEYWORD_ELSE has to be trated seperately
+        if(line[0] == keywords[KEYWORD_ELSE])
         {
-            BLOCK last_block = block_types.pop();
-            if(branch_entrys.size() && (last_block == BLOCK_IF || last_block == BLOCK_ELSE))
-                branches[current_line] = branch_entrys.pop();
-            else //TODO: Basierend auf block_types.pop sagen, was fehlt. Zeile: branches[branch_entrys.pop()]!
-                throw QObject::trUtf8("Es fehlt ein %1.").arg(keywords[KEYWORD_IF_END]);
-        }
-        else if(line.startsWith(keywords[KEYWORD_ELSE]))
-        {
-            if(branch_entrys.size() && block_types.pop() == BLOCK_IF)
-                branches[current_line] = branch_entrys.pop();
-            else
-                throw QObject::trUtf8("Es fehlt ein %1.").arg(keywords[KEYWORD_IF_END]);
-
-            branch_entrys.push(current_line);
-            block_types.push(BLOCK_ELSE);
+            if(branch_entrys.size())
+            {
+                BLOCK last_block = block_types.pop();
+                if(last_block == BLOCK_IF)
+                {
+                    branches[current_line] = branch_entrys.pop();
+                    branch_entrys.push(current_line);
+                    block_types.push(BLOCK_ELSE);
+                    goto end;
+                }
+                else
+                {
+                    findAndThrowMissingBegin(current_line, last_block);
+                    throw SteveInterpreterException("WTF #1", current_line);
+                }
+            }
+            throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[KEYWORD_IF_END]), current_line);
         }
         else
         {
             for(auto i : blocks)
             {
-                if(line.startsWith(keywords[i.end]))
+                if(line[0] == keywords[i.end])
                 {
                     block_types.push(i.type);
                     branch_entrys.push(current_line);
                     break;
                 }
-                if(line.startsWith(keywords[i.begin]))
+                if(line[0] == keywords[i.begin])
                 {
                     if(branch_entrys.size())
                     {
                         BLOCK last_block = block_types.pop();
-                        if(last_block == i.type)
+                        if(last_block == i.type || (last_block == BLOCK_ELSE && i.type == BLOCK_IF))
                         {
                             branches[current_line] = branch_entrys.pop();
                             break;
                         }
                         else
                         {
-                            for(auto block_keywords : blocks)
-                            {
-                                if(block_keywords.type == last_block)
-                                    throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[block_keywords.begin]), current_line);
-                            }
+                            findAndThrowMissingBegin(current_line, last_block);
                             throw SteveInterpreterException("WTF #1", current_line);
                         }
                     }
@@ -101,17 +111,13 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
             }
         }
 
+        end:
         current_line--;
     }
 
     if(branch_entrys.size())
     {
-        BLOCK i = block_types.pop();
-        for(BlockKeywords block_keywords : blocks)
-        {
-            if(block_keywords.type == i)
-                throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[block_keywords.begin]), 0);
-        }
+        findAndThrowMissingBegin(0, block_types.pop());
         throw SteveInterpreterException("WTF #2", current_line);
     }
 

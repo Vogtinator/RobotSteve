@@ -1,5 +1,4 @@
 #include <iostream>
-#include <QDebug>
 
 #include "glview.h"
 #include "mainwindow.h"
@@ -15,21 +14,21 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->horizontalLayout->addWidget(new GLView(&world, this));
 
-    SteveInterpreter interpreter;
-
-    interpreter.setCode(QStringList{
-                            "SOLANGE",
-                            "*solange",
-                            "WEnn",
-                            "WENN asdf DANN",
-                            "SONST",
-                            "*wenn",
-                            "RECHTSDREHEN",
-                            "*WENN"});
-    interpreter.dumpCode();
+    connect(ui->actionStarten, SIGNAL(triggered()), this, SLOT(runCode()));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::runCode()
+{
+    try {
+    interpreter.setCode(ui->codeEdit->toPlainText().split("\n"));
+    interpreter.dumpCode();
+    }
+    catch (SteveInterpreterException e) {
+        std::cerr << e.what() << std::endl;
+    }
 }

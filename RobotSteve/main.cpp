@@ -14,7 +14,8 @@ int main(int argc, char *argv[])
     return a.exec();
     }
     catch (SteveInterpreterException e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << std::endl
+                  << "Bye :-/" << std::endl;
     }
     catch (QString s) {
         std::cerr << s.toStdString() << std::endl
