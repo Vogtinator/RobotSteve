@@ -13,8 +13,8 @@ class SteveInterpreter;
 
 class SteveInterpreterException : public std::exception {
 public:
-    SteveInterpreterException(QString error, int line) : SteveInterpreterException(error, line, -1, "") {}
-    SteveInterpreterException(QString error, int line, QString affected) : SteveInterpreterException(error, line, -1, affected) {}
+    SteveInterpreterException(QString error, int line) : SteveInterpreterException(error, line, line, "") {}
+    SteveInterpreterException(QString error, int line, QString affected) : SteveInterpreterException(error, line, line, affected) {}
     SteveInterpreterException(QString error, int line_start, int line_end) : SteveInterpreterException(error, line_start, line_end, "") {}
     ~SteveInterpreterException() throw() {}
 
@@ -25,10 +25,10 @@ public:
 
         return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line_start).arg(error).toUtf8().data();
     }
-    QString getAffected()
-    {
-        return affected;
-    }
+
+    QString getAffected() { return affected; }
+    int getLineStart() { return line_start; }
+    int getLineEnd() { return line_end; }
 
 private:
     SteveInterpreterException(QString error, int line_start, int line_end, QString affected) : error(error), line_start(line_start), line_end(line_end), affected(affected) {}
@@ -117,7 +117,7 @@ public:
     void dumpCode();
 
 private:
-    void findAndThrowMissingBegin(int line, BLOCK block) throw (SteveInterpreterException);
+    void findAndThrowMissingBegin(int line, BLOCK block, QString affected = "") throw (SteveInterpreterException);
 
     int start_line, current_line; // Starts at 0!
     QString error;

@@ -36,12 +36,12 @@ SteveInterpreter::SteveInterpreter()
     keywords[KEYWORD_NEW_COND_END] = "*" + keywords[KEYWORD_NEW_COND];
 }
 
-void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block) throw (SteveInterpreterException)
+void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, QString affected) throw (SteveInterpreterException)
 {
     for(auto block_keywords : blocks)
     {
         if(block_keywords.type == block || (block == BLOCK_ELSE && block_keywords.type == BLOCK_IF))
-            throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[block_keywords.begin]), line);
+            throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[block_keywords.begin]), line, affected);
     }
 }
 
@@ -74,11 +74,11 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                 }
                 else
                 {
-                    findAndThrowMissingBegin(current_line, last_block);
+                    findAndThrowMissingBegin(current_line, last_block, keywords[KEYWORD_ELSE]);
                     throw SteveInterpreterException("WTF #1", current_line);
                 }
             }
-            throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[KEYWORD_IF_END]), current_line);
+            throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[KEYWORD_IF_END]), current_line, keywords[KEYWORD_ELSE]);
         }
         else
         {
@@ -102,11 +102,11 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                         }
                         else
                         {
-                            findAndThrowMissingBegin(current_line, last_block);
+                            findAndThrowMissingBegin(current_line, last_block, keywords[i.begin]);
                             throw SteveInterpreterException("WTF #1", current_line);
                         }
                     }
-                    throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[i.end]), current_line);
+                    throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[i.end]), current_line, keywords[i.begin]);
                 }
             }
         }
