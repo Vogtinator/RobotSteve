@@ -49,6 +49,8 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
 {
     this->code = code;
     branches.clear();
+    customConditions.clear();
+    customInstructions.clear();
     QStack<int> branch_entrys;
     QStack<BLOCK> block_types;
     current_line = code.size() - 1;
@@ -118,9 +120,73 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
     if(branch_entrys.size())
     {
         findAndThrowMissingBegin(0, block_types.pop());
-        throw SteveInterpreterException("WTF #2", current_line);
+        throw SteveInterpreterException("WTF #2", 0);
     }
 
+    //Now parse a second time
+    current_line = 0;
+    while(current_line < code.size())
+    {
+        QStringList line = code[current_line].simplified().toLower().split(" ", QString::SkipEmptyParts);
+        if(line.size() == 0)
+            goto end2;
+
+        for(auto i : blocks)
+        {
+            if(line[0] == keywords[i.begin])
+            {
+                if(i.type == BLOCK_NEW_COND || i.type == BLOCK_NEW_INSTR)
+                {
+                    if(block_types.size() > 0)
+                    {
+                        BLOCK in = block_types.pop();
+                        for(auto bk : blocks)
+                            if(bk.type == in)
+                                throw SteveInterpreterException(QObject::trUtf8("%1 ist nicht in einem %2-Block erlaubt.").arg(keywords[i.begin]).arg(keywords[bk.begin]), current_line);
+
+                        throw SteveInterpreterException(QObject::trUtf8("WTF #5"), current_line);
+                    }
+
+                    if(line.size() == 1)
+                        throw SteveInterpreterException(QObject::trUtf8("Bezeichnung fehlt."), current_line);
+                    else if(line.size() > 2)
+                    {
+                        //TODO: affected
+                        throw SteveInterpreterException(QObject::trUtf8("Zu viele Bezeichnungen."), current_line);
+                    }
+
+                    QMap<QString, int> *customSymbols = i.type == BLOCK_NEW_COND ? &customConditions : &customInstructions;
+                    if(customSymbols->contains(line[1]))
+                        throw SteveInterpreterException(QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(keywords[i.begin]).arg(line[1]).arg((*customSymbols)[line[1]]), current_line, line[1]);
+
+                    (*customSymbols)[line[1]] = current_line;
+                }
+                block_types.push(i.type);
+                branch_entrys.push(current_line);
+                break;
+            }
+
+            if(line[0] == keywords[i.end])
+            {
+                if(branch_entrys.size())
+                {
+                    BLOCK last_block = block_types.pop();
+                    if(last_block == i.type)
+                    {
+                        branches[current_line] = branch_entrys.pop();
+                        break;
+                    }
+                }
+                throw SteveInterpreterException(QObject::trUtf8("WTF #3"), current_line);
+            }
+        }
+
+        end2:
+        current_line++;
+    }
+
+    if(branch_entrys.size())
+        throw SteveInterpreterException("WTF #4", code.size() - 1);
 }
 
 void SteveInterpreter::reset()
@@ -151,4 +217,15 @@ void SteveInterpreter::dumpCode()
         std::cout << std::endl;
         line++;
     }
+    std::cout << std::endl;
+
+    std::cout << QObject::trUtf8("Bedingungen: ").toStdString() << std::endl;
+    for(auto i : customConditions.keys())
+        std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(customConditions[i]).toStdString() << std::endl;
+
+    std::cout << std::endl;
+
+    std::cout << QObject::trUtf8("Anweisungen: ").toStdString() << std::endl;
+    for(auto i : customInstructions.keys())
+        std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(customInstructions[i]).toStdString() << std::endl;
 }

@@ -20,7 +20,7 @@ public:
 
     const char* what()
     {
-        if(line_end > 0)
+        if(line_end != line_start)
             return QObject::trUtf8("Fehler in Zeilen %1-%2:\n%3").arg(line_start).arg(line_end).arg(error).toUtf8().data();
 
         return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line_start).arg(error).toUtf8().data();
