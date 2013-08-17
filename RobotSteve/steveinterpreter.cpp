@@ -57,12 +57,12 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
 
     while(current_line >= 0)
     {
-        QStringList line = code[current_line].simplified().toLower().split(" ", QString::SkipEmptyParts);
+        QStringList line = code[current_line].simplified().split(" ", QString::SkipEmptyParts);
         if(line.size() == 0)
             goto end;
 
         //Special case, KEYWORD_ELSE has to be trated seperately
-        if(line[0] == keywords[KEYWORD_ELSE])
+        if(line[0].compare(keywords[KEYWORD_ELSE], Qt::CaseInsensitive) == 0)
         {
             if(branch_entrys.size())
             {
@@ -86,13 +86,13 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
         {
             for(auto i : blocks)
             {
-                if(line[0] == keywords[i.end])
+                if(line[0].compare(keywords[i.end], Qt::CaseInsensitive) == 0)
                 {
                     block_types.push(i.type);
                     branch_entrys.push(current_line);
                     break;
                 }
-                if(line[0] == keywords[i.begin])
+                if(line[0].compare(keywords[i.begin], Qt::CaseInsensitive) == 0)
                 {
                     if(branch_entrys.size())
                     {
@@ -127,13 +127,13 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
     current_line = 0;
     while(current_line < code.size())
     {
-        QStringList line = code[current_line].simplified().toLower().split(" ", QString::SkipEmptyParts);
+        QStringList line = code[current_line].simplified().split(" ", QString::SkipEmptyParts);
         if(line.size() == 0)
             goto end2;
 
         for(auto i : blocks)
         {
-            if(line[0] == keywords[i.begin])
+            if(line[0].compare(keywords[i.begin], Qt::CaseInsensitive) == 0)
             {
                 if(i.type == BLOCK_NEW_COND || i.type == BLOCK_NEW_INSTR)
                 {
@@ -150,23 +150,22 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                     if(line.size() == 1)
                         throw SteveInterpreterException(QObject::trUtf8("Bezeichnung fehlt."), current_line);
                     else if(line.size() > 2)
-                    {
-                        //TODO: affected
                         throw SteveInterpreterException(QObject::trUtf8("Zu viele Bezeichnungen."), current_line);
-                    }
+
+                    QString name = line[1].toLower();
 
                     QMap<QString, int> *customSymbols = i.type == BLOCK_NEW_COND ? &customConditions : &customInstructions;
-                    if(customSymbols->contains(line[1]))
-                        throw SteveInterpreterException(QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(keywords[i.begin]).arg(line[1]).arg((*customSymbols)[line[1]]), current_line, line[1]);
+                    if(customSymbols->contains(name))
+                        throw SteveInterpreterException(QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(keywords[i.begin]).arg(line[1]).arg((*customSymbols)[name]), current_line, line[1]);
 
-                    (*customSymbols)[line[1]] = current_line;
+                    (*customSymbols)[name] = current_line;
                 }
                 block_types.push(i.type);
                 branch_entrys.push(current_line);
                 break;
             }
 
-            if(line[0] == keywords[i.end])
+            if(line[0].compare(keywords[i.end], Qt::CaseInsensitive) == 0)
             {
                 if(branch_entrys.size())
                 {

@@ -45,7 +45,7 @@ void MainWindow::runCode()
                 code[line].append("</i>");
             }
         }
-        ui->codeEdit->clear();
-        ui->codeEdit->appendHtml(code.join("<br>"));
     }
+    ui->codeEdit->clear();
+    ui->codeEdit->appendHtml(code.join("<br>"));
 }
