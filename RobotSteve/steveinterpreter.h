@@ -1,3 +1,13 @@
+/*
+ * Author: Fabian Vogt
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
+ * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+ *
+ * Use in public and private schools for educational purposes strongly permitted!
+ */
+
 #ifndef STEVEINTERPRETER_H
 #define STEVEINTERPRETER_H
 
@@ -82,7 +92,7 @@ enum CONDITION {
     COND_NOTMARKED,
     COND_ISNORTH,
     COND_ISEAST,
-    COND_SOUTH,
+    COND_ISSOUTH,
     COND_ISWEST,
     COND_ISFULL,
     COND_NOTISFULL,
@@ -119,7 +129,7 @@ public:
 private:
     void findAndThrowMissingBegin(int line, BLOCK block, QString affected = "") throw (SteveInterpreterException);
 
-    int start_line, current_line; // Starts at 0!
+    int current_line; // Starts at 0!
     QString error;
     QMap<KEYWORD, QString> keywords;
     QMap<INSTRUCTION, QString> instructions;

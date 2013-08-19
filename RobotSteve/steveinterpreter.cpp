@@ -1,3 +1,13 @@
+/*
+ * Author: Fabian Vogt
+ *
+ * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
+ * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
+ *
+ * Use in public and private schools for educational purposes strongly permitted!
+ */
+
 #include <iostream>
 #include <QObject>
 #include <QDebug>
@@ -34,6 +44,33 @@ SteveInterpreter::SteveInterpreter()
     keywords[KEYWORD_WHILE_END] = "*" + keywords[KEYWORD_WHILE];
     keywords[KEYWORD_NEW_INSTR_END] = "*" + keywords[KEYWORD_NEW_INSTR];
     keywords[KEYWORD_NEW_COND_END] = "*" + keywords[KEYWORD_NEW_COND];
+
+    instructions[INSTR_STEP] = QObject::trUtf8("schritt");
+    instructions[INSTR_TURNLEFT] = QObject::trUtf8("linksdrehen");
+    instructions[INSTR_TURNRIGHT] = QObject::trUtf8("rechtsdrehen");
+    instructions[INSTR_PUTDOWN] = QObject::trUtf8("hinlegen");
+    instructions[INSTR_PICKUP] = QObject::trUtf8("aufheben");
+    instructions[INSTR_MARK] = QObject::trUtf8("markesetzen");
+    instructions[INSTR_UNMARK] = QObject::trUtf8("markelöschen");
+    instructions[INSTR_WAIT] = QObject::trUtf8("warten");
+    instructions[INSTR_TONE] = QObject::trUtf8("ton");
+    instructions[INSTR_QUIT] = QObject::trUtf8("beenden");
+
+    conditions[COND_ISWALL] = QObject::trUtf8("istwand");
+    conditions[COND_NOTISWALL] = QObject::trUtf8("nichtistwand");
+    conditions[COND_ISBRICK] = QObject::trUtf8("istziegel");
+    conditions[COND_NOTISBRICK] = QObject::trUtf8("nichtistziegel");
+    conditions[COND_MARKED] = QObject::trUtf8("istmarke");
+    conditions[COND_NOTMARKED] = QObject::trUtf8("nichtistmarke");
+    conditions[COND_ISNORTH] = QObject::trUtf8("istnorden");
+    conditions[COND_ISSOUTH] = QObject::trUtf8("istsüden");
+    conditions[COND_ISEAST] = QObject::trUtf8("istosten");
+    conditions[COND_ISWEST] = QObject::trUtf8("istwesten");
+    conditions[COND_ISFULL] = QObject::trUtf8("istvoll");
+    conditions[COND_NOTISFULL] = QObject::trUtf8("nichtistvoll");
+    conditions[COND_ISEMPTY] = QObject::trUtf8("istleer");
+    conditions[COND_NOTISEMPTY] = QObject::trUtf8("nichtistleer");
+    conditions[COND_HASBRICK] = QObject::trUtf8("hatziegel");
 }
 
 void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, QString affected) throw (SteveInterpreterException)
@@ -47,19 +84,20 @@ void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, QString a
 
 void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterException)
 {
+    QStack<int> branch_entrys;
+    QStack<BLOCK> block_types;
+
     this->code = code;
     branches.clear();
     customConditions.clear();
     customInstructions.clear();
-    QStack<int> branch_entrys;
-    QStack<BLOCK> block_types;
-    current_line = code.size() - 1;
 
-    while(current_line >= 0)
+    current_line = code.size() - 1;
+    for(current_line = code.size() - 1; current_line >= 0; current_line--)
     {
         QStringList line = code[current_line].simplified().split(" ", QString::SkipEmptyParts);
         if(line.size() == 0)
-            goto end;
+            continue;
 
         //Special case, KEYWORD_ELSE has to be trated seperately
         if(line[0].compare(keywords[KEYWORD_ELSE], Qt::CaseInsensitive) == 0)
@@ -72,7 +110,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                     branches[current_line] = branch_entrys.pop();
                     branch_entrys.push(current_line);
                     block_types.push(BLOCK_ELSE);
-                    goto end;
+                    continue;
                 }
                 else
                 {
@@ -112,9 +150,6 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                 }
             }
         }
-
-        end:
-        current_line--;
     }
 
     if(branch_entrys.size())
@@ -124,12 +159,11 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
     }
 
     //Now parse a second time
-    current_line = 0;
-    while(current_line < code.size())
+    for(current_line = 0; current_line < code.size(); current_line++)
     {
         QStringList line = code[current_line].simplified().split(" ", QString::SkipEmptyParts);
         if(line.size() == 0)
-            goto end2;
+            continue;
 
         for(auto i : blocks)
         {
@@ -179,18 +213,17 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                 throw SteveInterpreterException(QObject::trUtf8("WTF #3"), current_line);
             }
         }
-
-        end2:
-        current_line++;
     }
 
     if(branch_entrys.size())
         throw SteveInterpreterException("WTF #4", code.size() - 1);
+
+    reset();
 }
 
 void SteveInterpreter::reset()
 {
-    current_line = start_line;
+    current_line = 0;
     stack.clear();
 }
 
@@ -206,25 +239,34 @@ int SteveInterpreter::getLine()
 
 void SteveInterpreter::dumpCode()
 {
-    int line = 0;
-    while(line < code.size())
+    for(int line = 0; line < code.size(); line++)
     {
+        if(line == current_line)
+            std::cout << '>';
+        else
+            std::cout << ' ';
+
         std::cout << line << ": " << code[line].toStdString();
         if(branches.contains(line))
             std::cout << " (" << branches[line] << ")";
 
         std::cout << std::endl;
-        line++;
     }
     std::cout << std::endl;
 
     std::cout << QObject::trUtf8("Bedingungen: ").toStdString() << std::endl;
-    for(auto i : customConditions.keys())
-        std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(customConditions[i]).toStdString() << std::endl;
+    if(customConditions.size() == 0)
+        std::cout << QObject::trUtf8("(keine)").toStdString() << std::endl;
+    else
+        for(auto i : customConditions.keys())
+            std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(customConditions[i]).toStdString() << std::endl;
 
     std::cout << std::endl;
 
     std::cout << QObject::trUtf8("Anweisungen: ").toStdString() << std::endl;
-    for(auto i : customInstructions.keys())
-        std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(customInstructions[i]).toStdString() << std::endl;
+    if(customInstructions.size() == 0)
+        std::cout << QObject::trUtf8("(keine)").toStdString() << std::endl;
+    else
+        for(auto i : customInstructions.keys())
+            std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(customInstructions[i]).toStdString() << std::endl;
 }
