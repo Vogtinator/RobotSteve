@@ -51,21 +51,29 @@ public:
     //Needed for QHash
     SteveFunction() : SteveFunction(0, 0, false) {}
 
-    SteveFunction(SteveInterpreter *parent, SteveFunctionPtr function, bool has_param) : parent(parent), function(function), has_param(has_param) {}
+    SteveFunction(SteveInterpreter *parent, SteveFunctionPtr function, bool has_param) : SteveFunction(parent, function, has_param, false) {}
+    SteveFunction(SteveInterpreter *parent, SteveFunctionPtr function, bool has_param, bool negate_return) : parent(parent), function(function), has_param(has_param), negate_return(negate_return) {}
     bool hasParam() { return has_param; }
     bool operator() (World *world, int param)
     {
-        return (parent->*function)(world, true, param);
+        if(negate_return)
+            return !(parent->*function)(world, true, param);
+        else
+            return (parent->*function)(world, true, param);
     }
     bool operator() (World *world)
     {
-        return (parent->*function)(world, false, 1);
+        if(negate_return)
+            return !(parent->*function)(world, false, 1);
+        else
+            return (parent->*function)(world, false, 1);
     }
 
 private:
     SteveInterpreter *parent;
     SteveFunctionPtr function;
     bool has_param;
+    bool negate_return;
 };
 
 enum KEYWORD {
@@ -149,13 +157,15 @@ public:
 private:
     void findAndThrowMissingBegin(int line, BLOCK block, QString affected = "") throw (SteveInterpreterException);
     bool handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException);
+    bool handleInstruction(QString instruction_str) throw (SteveInterpreterException);
     KEYWORD getKeyword(QString string);
     INSTRUCTION getInstruction(QString string);
     CONDITION getCondition(QString string);
 
     //Conditions:
     bool cond_always(World *world, bool has_param, int param);
-    bool cond_never(World *world, bool has_param, int param);
+
+    //Instructions:
 
     //Independant
     World *world;

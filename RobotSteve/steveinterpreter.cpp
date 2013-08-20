@@ -77,8 +77,10 @@ SteveInterpreter::SteveInterpreter(World *world) : world(world)
     conditions[COND_HASBRICK] = QObject::trUtf8("hatziegel");
 
     condition_functions[COND_ALWAYS] = SteveFunction(this, &SteveInterpreter::cond_always, false);
-    condition_functions[COND_NEVER] = SteveFunction(this, &SteveInterpreter::cond_never, false);
+    condition_functions[COND_NEVER] = SteveFunction(this, &SteveInterpreter::cond_always, false, true);
     //TODO: More conditions
+
+    //TODO: More instructions
 }
 
 void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, QString affected) throw (SteveInterpreterException)
@@ -211,6 +213,9 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
 
                     QString name = line[1].toLower();
 
+                    if(getKeyword(name) != -1 || getInstruction(name) != -1 || getCondition(name) != -1)
+                        throw SteveInterpreterException(QObject::trUtf8("Die Bezeichnung %1 ist ein reserviertes Wort.").arg(name), current_line, name);
+
                     QMap<QString, int> *customSymbols = i.type == BLOCK_NEW_COND ? &custom_conditions : &custom_instructions;
                     if(customSymbols->contains(name))
                         throw SteveInterpreterException(QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(keywords[i.begin]).arg(line[1]).arg((*customSymbols)[name]), current_line, line[1]);
@@ -291,6 +296,56 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
         throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Bedingung %1 nicht.").arg(condition_regexp.cap(1)), current_line);
 }
 
+bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveInterpreterException)
+{
+    QRegExp instruction_regexp("^(([A-Z]|[a-z])+)(\\((\\d+)\\))?$");
+    if(instruction_regexp.indexIn(instruction_str) == -1)
+        throw SteveInterpreterException(QObject::trUtf8("Ungültige Anweisung."), current_line, instruction_str);
+
+    INSTRUCTION instruction = getInstruction(instruction_regexp.cap(1));
+    if(instruction != -1)
+    {
+        if(instruction == INSTR_TRUE)
+        {
+            condition_exit = true;
+            current_line = branches[current_line];
+            return false;
+        }
+        else if(instruction == INSTR_FALSE)
+        {
+            condition_exit = false;
+            current_line = branches[current_line];
+            return false;
+        }
+
+        if(!instruction_functions.contains(instruction))
+            throw SteveInterpreterException(QObject::trUtf8("WTF #7"), current_line);
+
+        SteveFunction &func = instruction_functions[instruction];
+        //Argument given
+        if(!instruction_regexp.cap(4).isEmpty())
+        {
+            if(!func.hasParam())
+                throw SteveInterpreterException(QObject::trUtf8("Anweisung %1 kann mit einem Argument nichts anfangen!").arg(instruction_regexp.cap(1)), current_line);
+
+            func(world, instruction_regexp.cap(4).toInt());
+        }
+        else
+            func(world);
+
+        return true;
+    }
+    else if(custom_instructions.contains(instruction_regexp.cap(1).toLower()))
+    {
+        stack.push(current_line);
+        enter_sub = true;
+        current_line = custom_instructions[instruction_regexp.cap(1).toLower()];
+        return false;
+    }
+    else
+        throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Anweisung %1 nicht.").arg(instruction_regexp.cap(1)), current_line);
+}
+
 void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 {
     if(!code_valid)
@@ -303,14 +358,13 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
     }
 
     QStringList &line = token[current_line];
-    if(line.size() == 0 || (line.size() == 1 && line[0] == ""))
+    if(line.size() == 0 || code[current_line].isEmpty())
     {
         current_line++;
         return;
     }
 
     KEYWORD keyword = getKeyword(line[0]);
-
     if(keyword != -1)
     {
         switch(keyword)
@@ -537,7 +591,10 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             condition_exit = true;
 
             if(enter_sub)
+            {
+                enter_sub = false;
                 current_line++;
+            }
             else
                 current_line = branches[current_line] + 1;
 
@@ -554,7 +611,15 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             throw SteveInterpreterException(QObject::trUtf8("%1 macht hier keinen Sinn.").arg(line[0]), current_line);
         }
     }
-    //TODO: Parse instructions
+
+    if(line.size() != 1)
+        throw SteveInterpreterException(QObject::trUtf8("Ungültige Anweisung."), current_line);
+
+    if(handleInstruction(line[0]))
+        current_line++;
+    else
+        return;
+
     throw SteveInterpreterException(QObject::trUtf8("Ich hab` keine Ahnung, was %1 bedeutet :-(").arg(code[current_line]), current_line);
 }
 
@@ -609,6 +674,7 @@ void SteveInterpreter::dumpCode()
         std::cout << QObject::trUtf8("Das Programm ist zuende.").toStdString() << std::endl;
 }
 
+//Conditions
 bool SteveInterpreter::cond_always(World *world, bool has_param, int param)
 {
     Q_UNUSED(world);
@@ -618,15 +684,7 @@ bool SteveInterpreter::cond_always(World *world, bool has_param, int param)
     return true;
 }
 
-bool SteveInterpreter::cond_never(World *world, bool has_param, int param)
-{
-    Q_UNUSED(world);
-    Q_UNUSED(has_param);
-    Q_UNUSED(param);
-
-    return false;
-}
-
+//Other private functions
 KEYWORD SteveInterpreter::getKeyword(QString string)
 {
     for(auto i : keywords.keys())
@@ -660,6 +718,7 @@ CONDITION SteveInterpreter::getCondition(QString string)
     return static_cast<CONDITION>(-1);
 }
 
+//SteveInterpreterException
 const char* SteveInterpreterException::what()
 {
     if(line_end != line_start)
