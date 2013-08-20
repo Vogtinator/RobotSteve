@@ -19,8 +19,8 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    interpreter(&world),
-    world(5, 5)
+    world(5, 5),
+    interpreter(&world)
 {
     ui->setupUi(this);
     ui->horizontalLayout->addWidget(new GLView(&world, this));
@@ -40,9 +40,12 @@ void MainWindow::runCode()
     try {
         startExecution();
         interpreter.dumpCode();
+        world.dumpWorld();
 
         while(!interpreter.executionFinished())
             interpreter.executeLine();
+
+        world.dumpWorld();
     }
     catch (SteveInterpreterException &e) {
         handleError(e);
@@ -57,6 +60,7 @@ void MainWindow::step()
         startExecution();
         interpreter.executeLine();
         interpreter.dumpCode();
+        world.dumpWorld();
     }
     catch (SteveInterpreterException &e) {
         handleError(e);
@@ -78,6 +82,7 @@ void MainWindow::startExecution() throw (SteveInterpreterException)
     ui->codeEdit->clear();
     ui->codeEdit->appendHtml(code.join("<br>"));
 
+    world.reset();
     interpreter.reset();
     interpreter.setCode(code);
 }

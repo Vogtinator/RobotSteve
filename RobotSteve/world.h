@@ -13,28 +13,48 @@
 
 #include <vector>
 
+typedef std::pair<int,int> Coords;
+
 struct WorldObject {
     bool has_mark = false;
     bool has_cube = false;
-    bool stone_count = 0;
+    int stack_size = 0;
 };
 
+enum ORIENTATION {
+    ORIENT_NORTH,
+    ORIENT_EAST,
+    ORIENT_SOUTH,
+    ORIENT_WEST
+};
+
+//Called World although it also contains Steve..
 class World
 {
     friend class GLView;
 public:
     World(int width, int length);
+    void reset();
     bool resize(int width, int length);
     bool stepForward();
     void turnRight();
     void turnLeft();
     bool isWall();
-    void setMark();
-    bool setCube();
+    void setMark(bool b);
+    bool setCube(bool b);
+    int getStackSize();
+    bool isMarked();
+    ORIENTATION getOrientation() { return orientation; }
+    int getX() { return steve.first; }
+    int getY() { return steve.second; }
+    void dumpWorld();
 
 private:
-    int width, length;
-    int x, y;
+    Coords getForward();
+
+    Coords size;
+    Coords steve;
+    ORIENTATION orientation;
     std::vector<std::vector<WorldObject> > map;
 };
 

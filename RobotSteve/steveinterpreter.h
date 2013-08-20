@@ -164,8 +164,27 @@ private:
 
     //Conditions:
     bool cond_always(World *world, bool has_param, int param);
+    bool is_wall(World *world, bool has_param, int param);
+    bool is_brick(World *world, bool has_param, int param);
+    bool is_marked(World *world, bool has_param, int param);
+    bool is_north(World *world, bool has_param, int param);
+    bool is_east(World *world, bool has_param, int param);
+    bool is_south(World *world, bool has_param, int param);
+    bool is_west(World *world, bool has_param, int param);
+    bool is_full(World *world, bool has_param, int param);
+    bool is_empty(World *world, bool has_param, int param);
+    bool has_bricks(World *world, bool has_param, int param);
 
     //Instructions:
+    bool step(World *world, bool has_param, int param);
+    bool turnLeft(World *world, bool has_param, int param);
+    bool turnRight(World *world, bool has_param, int param);
+    bool putdown(World *world, bool has_param, int param);
+    bool pickup(World *world, bool has_param, int param);
+    bool mark(World *world, bool has_param, int param);
+    bool unmark(World *world, bool has_param, int param);
+    bool wait(World *world, bool has_param, int param);
+    bool tone(World *world, bool has_param, int param);
 
     //Independant
     World *world;

@@ -39,8 +39,8 @@ private:
 
     bool execution_started = false;
     Ui::MainWindow *ui;
-    SteveInterpreter interpreter;
     World world;
+    SteveInterpreter interpreter;
     QStringList code;
 };
 

@@ -78,9 +78,31 @@ SteveInterpreter::SteveInterpreter(World *world) : world(world)
 
     condition_functions[COND_ALWAYS] = SteveFunction(this, &SteveInterpreter::cond_always, false);
     condition_functions[COND_NEVER] = SteveFunction(this, &SteveInterpreter::cond_always, false, true);
-    //TODO: More conditions
+    condition_functions[COND_ISWALL] = SteveFunction(this, &SteveInterpreter::is_wall, false);
+    condition_functions[COND_NOTISWALL] = SteveFunction(this, &SteveInterpreter::is_wall, false, true);
+    condition_functions[COND_ISBRICK] = SteveFunction(this, &SteveInterpreter::is_brick, true);
+    condition_functions[COND_NOTISBRICK] = SteveFunction(this, &SteveInterpreter::is_brick, true, true);
+    condition_functions[COND_MARKED] = SteveFunction(this, &SteveInterpreter::is_marked, false);
+    condition_functions[COND_NOTMARKED] = SteveFunction(this, &SteveInterpreter::is_marked, false, true);
+    condition_functions[COND_ISNORTH] = SteveFunction(this, &SteveInterpreter::is_north, false);
+    condition_functions[COND_ISEAST] = SteveFunction(this, &SteveInterpreter::is_east, false);
+    condition_functions[COND_ISSOUTH] = SteveFunction(this, &SteveInterpreter::is_south, false);
+    condition_functions[COND_ISWEST] = SteveFunction(this, &SteveInterpreter::is_west, false);
+    condition_functions[COND_ISFULL] = SteveFunction(this, &SteveInterpreter::is_full, false);
+    condition_functions[COND_NOTISFULL] = SteveFunction(this, &SteveInterpreter::is_full, false, true);
+    condition_functions[COND_ISEMPTY] = SteveFunction(this, &SteveInterpreter::is_empty, false);
+    condition_functions[COND_NOTISEMPTY] = SteveFunction(this, &SteveInterpreter::is_empty, false, true);
+    condition_functions[COND_HASBRICK] = SteveFunction(this, &SteveInterpreter::has_bricks, true);
 
-    //TODO: More instructions
+    instruction_functions[INSTR_STEP] = SteveFunction(this, &SteveInterpreter::step, true);
+    instruction_functions[INSTR_TURNLEFT] = SteveFunction(this, &SteveInterpreter::turnLeft, false);
+    instruction_functions[INSTR_TURNRIGHT] = SteveFunction(this, &SteveInterpreter::turnRight, false);
+    instruction_functions[INSTR_PUTDOWN] = SteveFunction(this, &SteveInterpreter::putdown, true);
+    instruction_functions[INSTR_PICKUP] = SteveFunction(this, &SteveInterpreter::pickup, true);
+    instruction_functions[INSTR_MARK] = SteveFunction(this, &SteveInterpreter::mark, false);
+    instruction_functions[INSTR_UNMARK] = SteveFunction(this, &SteveInterpreter::unmark, false);
+    instruction_functions[INSTR_WAIT] = SteveFunction(this, &SteveInterpreter::wait, true);
+    instruction_functions[INSTR_TONE] = SteveFunction(this, &SteveInterpreter::tone, false);
 }
 
 void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, QString affected) throw (SteveInterpreterException)
@@ -276,7 +298,7 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
         if(!condition_regexp.cap(4).isEmpty())
         {
             if(!func.hasParam())
-                throw SteveInterpreterException(QObject::trUtf8("Bedingung %1 kann mit einem Argument nichts anfangen!").arg(condition_regexp.cap(1)), current_line);
+                throw SteveInterpreterException(QObject::trUtf8("Bedingung %1 kann mit einem Argument nichts anfangen.").arg(condition_regexp.cap(1)), current_line, condition_regexp.cap(3));
 
             result = func(world, condition_regexp.cap(4).toInt());
         }
@@ -293,7 +315,7 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
         return false;
     }
     else
-        throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Bedingung %1 nicht.").arg(condition_regexp.cap(1)), current_line);
+        throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Bedingung %1 nicht.").arg(condition_regexp.cap(1)), current_line, condition_regexp.cap(1));
 }
 
 bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveInterpreterException)
@@ -331,7 +353,7 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
         if(!instruction_regexp.cap(4).isEmpty())
         {
             if(!func.hasParam())
-                throw SteveInterpreterException(QObject::trUtf8("Anweisung %1 kann mit einem Argument nichts anfangen!").arg(instruction_regexp.cap(1)), current_line);
+                throw SteveInterpreterException(QObject::trUtf8("Anweisung %1 kann mit einem Argument nichts anfangen!").arg(instruction_regexp.cap(1)), current_line, instruction_regexp.cap(3));
 
             func(world, instruction_regexp.cap(4).toInt());
         }
@@ -348,7 +370,7 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
         return false;
     }
     else
-        throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Anweisung %1 nicht.").arg(instruction_regexp.cap(1)), current_line);
+        throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Anweisung %1 nicht.").arg(instruction_regexp.cap(1)), current_line, instruction_regexp.cap(1));
 }
 
 void SteveInterpreter::executeLine() throw (SteveInterpreterException)
@@ -567,8 +589,8 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
         case KEYWORD_WHILE:
         {
-            if(line.size() != 2)
-                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1 [bedingung]").arg(keywords[KEYWORD_WHILE]), current_line);
+            if(line.size() != 3 || line[2].compare(keywords[KEYWORD_DO], Qt::CaseInsensitive) != 0)
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1 [bedingung] %2").arg(keywords[KEYWORD_WHILE]).arg(keywords[KEYWORD_DO]), current_line);
 
             bool result;
             if(coming_from_condition)
@@ -628,8 +650,8 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
     if(handleInstruction(line[0]))
         current_line++;
-    else
-        return;
+
+    return;
 
     throw SteveInterpreterException(QObject::trUtf8("Ich hab` keine Ahnung, was %1 bedeutet :-(").arg(code[current_line]), current_line);
 }
@@ -691,6 +713,191 @@ bool SteveInterpreter::cond_always(World *world, bool has_param, int param)
     Q_UNUSED(world);
     Q_UNUSED(has_param);
     Q_UNUSED(param);
+
+    return true;
+}
+
+bool SteveInterpreter::is_wall(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return world->isWall();
+}
+
+bool SteveInterpreter::is_brick(World *world, bool has_param, int param)
+{
+    if(!has_param)
+        param = 1;
+
+    return world->getStackSize() == param;
+}
+
+bool SteveInterpreter::is_marked(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return world->isMarked();
+}
+
+bool SteveInterpreter::is_north(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return world->getOrientation() == ORIENT_NORTH;
+}
+
+bool SteveInterpreter::is_east(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return world->getOrientation() == ORIENT_EAST;
+}
+
+bool SteveInterpreter::is_south(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return world->getOrientation() == ORIENT_SOUTH;
+}
+
+bool SteveInterpreter::is_west(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return world->getOrientation() == ORIENT_WEST;
+}
+
+bool SteveInterpreter::is_full(World *world, bool has_param, int param)
+{
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    //TODO
+    return false;
+}
+
+bool SteveInterpreter::is_empty(World *world, bool has_param, int param)
+{
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    //TODO
+    return false;
+}
+
+bool SteveInterpreter::has_bricks(World *world, bool has_param, int param)
+{
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    //TODO
+    return false;
+}
+
+//Instructions
+bool SteveInterpreter::tone(World *world, bool has_param, int param)
+{
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    //Nope!
+    return true;
+}
+
+bool SteveInterpreter::wait(World *world, bool has_param, int param)
+{
+    if(!has_param)
+        param = 1000;
+
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    //TODO
+    return true;
+}
+
+bool SteveInterpreter::unmark(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    world->setMark(false);
+    return true;
+}
+
+bool SteveInterpreter::mark(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    world->setMark(true);
+    return true;
+}
+
+bool SteveInterpreter::pickup(World *world, bool has_param, int param)
+{
+    if(!has_param)
+        param = 1;
+
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    //TODO
+
+    return true;
+}
+
+bool SteveInterpreter::putdown(World *world, bool has_param, int param)
+{
+    if(!has_param)
+        param = 1;
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    //TODO
+
+    return true;
+}
+
+bool SteveInterpreter::turnRight(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    world->turnRight();
+    return true;
+}
+
+bool SteveInterpreter::turnLeft(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    world->turnLeft();
+    return true;
+}
+
+bool SteveInterpreter::step(World *world, bool has_param, int param)
+{
+    if(!has_param)
+        param = 1;
+
+    while(param--)
+        if(!world->stepForward())
+            throw SteveInterpreterException(QObject::trUtf8("Steve war so dumm und wäre beinahe gegen die Wand gelaufen!"), current_line);
 
     return true;
 }
