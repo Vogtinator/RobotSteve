@@ -179,6 +179,7 @@ private:
     QStringList code;
     QMap<int, QStringList> token;
     QMap<int, int> branches;
+    bool code_valid;
     /* 1: WENN NICHTISTWAND TUE (3)
      * 2: SCHRITT
      * 3: SONST (5)

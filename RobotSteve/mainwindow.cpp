@@ -37,10 +37,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::runCode()
 {
-    startExecution();
-    interpreter.dumpCode();
-
     try {
+        startExecution();
+        interpreter.dumpCode();
+
         while(!interpreter.executionFinished())
             interpreter.executeLine();
     }
@@ -53,20 +53,20 @@ void MainWindow::runCode()
 
 void MainWindow::step()
 {
-    startExecution();
     try {
+        startExecution();
         interpreter.executeLine();
+        interpreter.dumpCode();
     }
     catch (SteveInterpreterException e) {
         handleError(e);
     }
 
-    interpreter.dumpCode();
     if(interpreter.executionFinished())
         stopExecution();
 }
 
-void MainWindow::startExecution()
+void MainWindow::startExecution() throw (SteveInterpreterException)
 {
     if(execution_started)
         return;
@@ -74,14 +74,12 @@ void MainWindow::startExecution()
     execution_started = true;
     ui->codeEdit->setReadOnly(true);
     code = ui->codeEdit->toPlainText().split("\n");
-    interpreter.reset();
 
-    try {
+    ui->codeEdit->clear();
+    ui->codeEdit->appendHtml(code.join("<br>"));
+
+    interpreter.reset();
     interpreter.setCode(code);
-    } catch (SteveInterpreterException e)
-    {
-        handleError(e);
-    }
 }
 
 void MainWindow::stopExecution()

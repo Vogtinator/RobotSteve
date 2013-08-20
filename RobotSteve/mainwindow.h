@@ -32,10 +32,10 @@ public slots:
     void runCode();
     void step();
     void stopExecution();
-    void startExecution();
     
 private:
     void handleError(SteveInterpreterException &e);
+    void startExecution() throw (SteveInterpreterException);
 
     bool execution_started = false;
     Ui::MainWindow *ui;
