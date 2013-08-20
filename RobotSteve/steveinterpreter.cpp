@@ -348,9 +348,20 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             repeat_needs_condition.push(false);
 
             KEYWORD kwhile, ktimes;
-            if(line.size() != 3 || ((kwhile=getKeyword(line[1])) != KEYWORD_WHILE && (ktimes=getKeyword(line[2])) != KEYWORD_TIMES))
-                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1\n%1 [zahl] %2\n%1 %3 [bedingung]"), current_line);
+            if((line.size() != 3 || ((kwhile=getKeyword(line[1])) != KEYWORD_WHILE && (ktimes=getKeyword(line[2])) != KEYWORD_TIMES))
+                    && (line.size() != 2 || getCondition(line[1]) != COND_ALWAYS))
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1\n%1 [zahl] %2\n%1 %3 [bedingung]\n%1 %4").arg(keywords[KEYWORD_REPEAT]).arg(keywords[KEYWORD_TIMES]).arg(keywords[KEYWORD_WHILE]).arg(conditions[COND_ALWAYS]), current_line);
 
+            //REPEAT ALWAYS
+            if(line.size() == 2)
+            {
+                if(coming_from_repeat_end)
+                    loop_count.pop();
+
+                loop_count.push(-1);
+                current_line++;
+                return;
+            }
             if(ktimes == KEYWORD_TIMES)
             {
                 if(coming_from_repeat_end)
