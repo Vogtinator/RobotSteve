@@ -44,7 +44,7 @@ void MainWindow::runCode()
         while(!interpreter.executionFinished())
             interpreter.executeLine();
     }
-    catch (SteveInterpreterException e) {
+    catch (SteveInterpreterException &e) {
         handleError(e);
     }
 
@@ -58,7 +58,7 @@ void MainWindow::step()
         interpreter.executeLine();
         interpreter.dumpCode();
     }
-    catch (SteveInterpreterException e) {
+    catch (SteveInterpreterException &e) {
         handleError(e);
     }
 

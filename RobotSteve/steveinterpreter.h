@@ -29,7 +29,7 @@ public:
     SteveInterpreterException(QString error, int line_start, int line_end) : SteveInterpreterException(error, line_start, line_end, "") {}
     ~SteveInterpreterException() throw() {}
 
-    QString getAffected() { return affected; }
+    const QString getAffected() { return affected; }
     int getLineStart() { return line_start; }
     int getLineEnd() { return line_end; }
 
@@ -38,10 +38,10 @@ public:
 private:
     SteveInterpreterException(QString error, int line_start, int line_end, QString affected) : error(error), line_start(line_start), line_end(line_end), affected(affected) {}
 
-    QString error;
-    int line_start;
-    int line_end;
-    QString affected;
+    const QString error;
+    const int line_start;
+    const int line_end;
+    const QString affected;
 };
 
 typedef bool (SteveInterpreter::*SteveFunctionPtr)(World *world, bool param_given, int param);
@@ -187,9 +187,9 @@ private:
     //After parse
     QMap<QString, int> custom_instructions, custom_conditions;
     QStringList code;
+    bool code_valid;
     QMap<int, QStringList> token;
     QMap<int, int> branches;
-    bool code_valid;
     /* 1: WENN NICHTISTWAND TUE (3)
      * 2: SCHRITT
      * 3: SONST (5)

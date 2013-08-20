@@ -261,7 +261,7 @@ void SteveInterpreter::reset()
 
 bool SteveInterpreter::handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException)
 {
-    QRegExp condition_regexp("^(([A-Z]|[a-z])+)(\\((\\d+)\\))?$");
+    QRegExp condition_regexp("^(([A-Z]|[a-z]|\\d)+)(\\((\\d+)\\))?$");
     if(condition_regexp.indexIn(condition_str) == -1)
         throw SteveInterpreterException(QObject::trUtf8("Ungültige Bedingung."), current_line, condition_str);
 
@@ -298,7 +298,7 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
 
 bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveInterpreterException)
 {
-    QRegExp instruction_regexp("^(([A-Z]|[a-z])+)(\\((\\d+)\\))?$");
+    QRegExp instruction_regexp("^(([A-Z]|[a-z]|\\d)+)(\\((\\d+)\\))?$");
     if(instruction_regexp.indexIn(instruction_str) == -1)
         throw SteveInterpreterException(QObject::trUtf8("Ungültige Anweisung."), current_line, instruction_str);
 
@@ -315,6 +315,11 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
         {
             condition_exit = false;
             current_line = branches[current_line];
+            return false;
+        }
+        else if(instruction == INSTR_QUIT)
+        {
+            execution_finished = true;
             return false;
         }
 
@@ -363,6 +368,12 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
         current_line++;
         return;
     }
+
+#define MAX_STACK_SIZE 500000
+    if(repeat_needs_condition.size() > MAX_STACK_SIZE ||
+            loop_count.size() > MAX_STACK_SIZE ||
+            stack.size() > MAX_STACK_SIZE)
+        throw SteveInterpreterException(QObject::trUtf8("Der Stack wird langsam ein bisschen zu groß.."), current_line);
 
     KEYWORD keyword = getKeyword(line[0]);
     if(keyword != -1)
