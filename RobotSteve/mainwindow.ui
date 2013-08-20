@@ -85,6 +85,7 @@
    </attribute>
    <addaction name="actionStarten"/>
    <addaction name="actionSchritt"/>
+   <addaction name="actionStop"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionLaden">
@@ -139,6 +140,11 @@
   <action name="actionSchritt">
    <property name="text">
     <string>Schritt</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="text">
+    <string>Stop</string>
    </property>
   </action>
  </widget>

@@ -27,7 +27,7 @@ static struct BlockKeywords blocks[] = {
     DEFAULT_BLOCK_KEYWORDS(NEW_COND)
 };
 
-SteveInterpreter::SteveInterpreter()
+SteveInterpreter::SteveInterpreter(World *world) : world(world)
 {
     keywords[KEYWORD_IF] = QObject::trUtf8("wenn");
     keywords[KEYWORD_THEN] = QObject::trUtf8("dann");
@@ -55,7 +55,11 @@ SteveInterpreter::SteveInterpreter()
     instructions[INSTR_WAIT] = QObject::trUtf8("warten");
     instructions[INSTR_TONE] = QObject::trUtf8("ton");
     instructions[INSTR_QUIT] = QObject::trUtf8("beenden");
+    instructions[INSTR_TRUE] = QObject::trUtf8("wahr");
+    instructions[INSTR_FALSE] = QObject::trUtf8("falsch");
 
+    conditions[COND_ALWAYS] = QObject::trUtf8("immer");
+    conditions[COND_NEVER] = QObject::trUtf8("nie");
     conditions[COND_ISWALL] = QObject::trUtf8("istwand");
     conditions[COND_NOTISWALL] = QObject::trUtf8("nichtistwand");
     conditions[COND_ISBRICK] = QObject::trUtf8("istziegel");
@@ -71,6 +75,10 @@ SteveInterpreter::SteveInterpreter()
     conditions[COND_ISEMPTY] = QObject::trUtf8("istleer");
     conditions[COND_NOTISEMPTY] = QObject::trUtf8("nichtistleer");
     conditions[COND_HASBRICK] = QObject::trUtf8("hatziegel");
+
+    condition_functions[COND_ALWAYS] = SteveFunction(this, &SteveInterpreter::cond_always, false);
+    condition_functions[COND_NEVER] = SteveFunction(this, &SteveInterpreter::cond_never, false);
+    //TODO: More conditions
 }
 
 void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, QString affected) throw (SteveInterpreterException)
@@ -88,14 +96,16 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
     QStack<BLOCK> block_types;
 
     this->code = code;
+    token.clear();
     branches.clear();
-    customConditions.clear();
-    customInstructions.clear();
+    custom_conditions.clear();
+    custom_instructions.clear();
 
     current_line = code.size() - 1;
     for(current_line = code.size() - 1; current_line >= 0; current_line--)
     {
-        QStringList line = code[current_line].simplified().split(" ", QString::SkipEmptyParts);
+        token[current_line] = code[current_line].simplified().split(" ", QString::SkipEmptyParts);
+        QStringList &line = token[current_line];
         if(line.size() == 0)
             continue;
 
@@ -161,7 +171,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
     //Now parse a second time
     for(current_line = 0; current_line < code.size(); current_line++)
     {
-        QStringList line = code[current_line].simplified().split(" ", QString::SkipEmptyParts);
+        QStringList &line = token[current_line];
         if(line.size() == 0)
             continue;
 
@@ -188,7 +198,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
 
                     QString name = line[1].toLower();
 
-                    QMap<QString, int> *customSymbols = i.type == BLOCK_NEW_COND ? &customConditions : &customInstructions;
+                    QMap<QString, int> *customSymbols = i.type == BLOCK_NEW_COND ? &custom_conditions : &custom_instructions;
                     if(customSymbols->contains(name))
                         throw SteveInterpreterException(QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(keywords[i.begin]).arg(line[1]).arg((*customSymbols)[name]), current_line, line[1]);
 
@@ -225,11 +235,260 @@ void SteveInterpreter::reset()
 {
     current_line = 0;
     stack.clear();
+    coming_from_condition = coming_from_repeat_end = enter_sub = enter_else = execution_finished = false;
+    condition_exit = true;
 }
 
-void SteveInterpreter::executeLine() throw (QString)
+bool SteveInterpreter::handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException)
 {
-    throw "Not implemented!";
+    QRegExp condition_regexp("^(([A-Z]|[a-z])+)(\\((\\d+)\\))?$");
+    if(condition_regexp.indexIn(condition_str) == -1)
+        throw SteveInterpreterException(QObject::trUtf8("Ungültige Bedingung."), current_line, condition_str);
+
+    CONDITION condition = getCondition(condition_regexp.cap(1));
+    if(condition != -1)
+    {
+        if(!condition_functions.contains(condition))
+            throw SteveInterpreterException(QObject::trUtf8("WTF #6"), current_line);
+
+        SteveFunction &func = condition_functions[condition];
+        //Argument given
+        if(!condition_regexp.cap(4).isEmpty())
+        {
+            if(!func.hasParam())
+                throw SteveInterpreterException(QObject::trUtf8("Bedingung %1 kann mit einem Argument nichts anfangen!").arg(condition_regexp.cap(1)), current_line);
+
+            result = func(world, condition_regexp.cap(4).toInt());
+        }
+        else
+            result = func(world);
+
+        return true;
+    }
+    else if(custom_conditions.contains(condition_regexp.cap(1)))
+    {
+        stack.push(current_line);
+        current_line = custom_conditions[condition_regexp.cap(1)];
+        return false;
+    }
+    else
+        throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Bedingung %1 nicht.").arg(condition_regexp.cap(1)), current_line);
+}
+
+void SteveInterpreter::executeLine() throw (SteveInterpreterException)
+{
+    if(current_line >= code.size())
+    {
+        execution_finished = true;
+        return;
+    }
+
+    QStringList &line = token[current_line];
+    if(line.size() == 0 || (line.size() == 1 && line[0] == ""))
+    {
+        current_line++;
+        return;
+    }
+
+    KEYWORD keyword = getKeyword(line[0]);
+
+    if(keyword != -1)
+    {
+        switch(keyword)
+        {
+        case KEYWORD_IF:
+        {
+            if(line.size() != 3 || getKeyword(line[2]) != KEYWORD_THEN)
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1 [bedingung] %2").arg(keywords[KEYWORD_IF]).arg(keywords[KEYWORD_THEN]), current_line);
+
+            bool result;
+            if(coming_from_condition)
+            {
+                result = condition_exit;
+                coming_from_condition = false;
+            }
+            else
+            {
+                //If not handled, it means current_line is set to the beginning of a custom condition
+                if(!handleCondition(line[1], result))
+                    return;
+            }
+
+            enter_else = !result;
+            if(result)
+                current_line++;
+            else //Go to ELSE or IF_END
+                current_line = branches[current_line];
+
+            return;
+        }
+        case KEYWORD_ELSE:
+            if(enter_else)
+            {
+                enter_else = false;
+                current_line++;
+            }
+            else
+            {
+                //Go to IF_END
+                current_line = branches[current_line];
+            }
+            return;
+        case KEYWORD_IF_END:
+            current_line++;
+            return;
+
+        case KEYWORD_REPEAT:
+            if(line.size() == 1)
+            {
+                repeat_needs_condition.push(true);
+                current_line++;
+                return;
+            }
+            repeat_needs_condition.push(false);
+
+            KEYWORD kwhile, ktimes;
+            if(line.size() != 3 || ((kwhile=getKeyword(line[1])) != KEYWORD_WHILE && (ktimes=getKeyword(line[2])) != KEYWORD_TIMES))
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1\n%1 [zahl] %2\n%1 %3 [bedingung]"), current_line);
+
+            if(ktimes == KEYWORD_TIMES)
+            {
+                if(coming_from_repeat_end)
+                {
+                    coming_from_repeat_end = false;
+                    int count = loop_count.pop();
+                    if(count <= 0)
+                        current_line = branches[current_line] + 1;
+                    else
+                    {
+                        loop_count.push(count);
+                        current_line++;
+                    }
+                    return;
+                }
+
+                bool is_numeric;
+                int count = line[1].toInt(&is_numeric);
+                if(!is_numeric)
+                    throw SteveInterpreterException(QObject::trUtf8("%1 ist keine Zahl.").arg(line[1]), current_line, line[1]);
+                if(count < 0)
+                    throw SteveInterpreterException(QObject::trUtf8("Die Zahl muss >= 0 sein."), current_line, line[1]);
+                else if(count == 0)
+                {
+                    current_line = branches[current_line] + 1;
+                    return;
+                }
+
+                loop_count.push(count);
+                current_line++;
+                return;
+            }
+            else
+            {
+                if(coming_from_repeat_end)
+                    loop_count.pop();
+
+                bool result;
+                if(coming_from_condition)
+                {
+                    result = condition_exit;
+                    coming_from_condition = false;
+                }
+                else
+                {
+                    //If not handled, it means current_line is set to the beginning of a custom condition
+                    if(!handleCondition(line[2], result))
+                        return;
+                }
+
+                if(result)
+                {
+                    current_line++;
+                    //Condition, no count
+                    loop_count.push(-1);
+                    return;
+                }
+                else
+                {
+                    current_line = branches[current_line] + 1;
+                    return;
+                }
+            }
+
+            return;
+
+        case KEYWORD_REPEAT_END:
+        {
+            bool needs_condition = repeat_needs_condition.pop();
+            if(line.size() == 3 && !needs_condition)
+                throw SteveInterpreterException(QObject::trUtf8("Hier darf keine Bedingung sein, da in Zeile %1 eine angegeben wurde.").arg(branches[current_line]), current_line);
+
+            if(line.size() == 1 && needs_condition)
+                throw SteveInterpreterException(QObject::trUtf8("Hier wird eine Bedingung benötigt, da in Zeile %1 keine angegeben wurde.").arg(branches[current_line]), current_line);
+
+            if(line.size() == 3)
+            {
+                if(getKeyword(line[1]) != KEYWORD_WHILE)
+                    throw SteveInterpreterException(QObject::trUtf8("Syntax: %1 %2 [bedingung]").arg(keywords[KEYWORD_REPEAT_END]).arg(keywords[KEYWORD_WHILE]), current_line);
+
+                bool result;
+                if(coming_from_condition)
+                    result = condition_exit;
+                else
+                {
+                    //If not handled, it means current_line is set to the beginning of a custom condition
+                    if(!handleCondition(line[2], result))
+                        return;
+                }
+
+                if(result)
+                    current_line = branches[current_line];
+                else
+                    current_line++;
+
+                return;
+            }
+            else if(line.size() == 1)
+            {
+                int count = loop_count.pop();
+                //Count, no condition
+                if(count != -1)
+                    count--;
+
+                loop_count.push(count);
+                current_line = branches[current_line];
+                coming_from_repeat_end = true;
+                return;
+            }
+            else
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1 oder %1 %2 [bedingung].").arg(keywords[KEYWORD_REPEAT_END]).arg(keywords[KEYWORD_WHILE]), current_line);
+
+            return;
+        }
+        case KEYWORD_NEW_INSTR:
+        case KEYWORD_NEW_COND:
+            if(enter_sub)
+                current_line++;
+            else
+                current_line = branches[current_line] + 1;
+
+            return;
+
+        case KEYWORD_NEW_INSTR_END:
+            current_line = stack.pop() + 1;
+            return;
+
+        case KEYWORD_NEW_COND_END:
+            coming_from_condition = true;
+            current_line = stack.pop();
+            return;
+
+        default:
+            throw SteveInterpreterException(QObject::trUtf8("%1 macht hier keinen Sinn.").arg(line[0]), current_line);
+        }
+    }
+    //TODO: Parse instructions
+    throw SteveInterpreterException(QObject::trUtf8("Ich hab` keine Ahnung, was %1 bedeutet :-(").arg(code[current_line]), current_line);
 }
 
 int SteveInterpreter::getLine()
@@ -255,18 +514,77 @@ void SteveInterpreter::dumpCode()
     std::cout << std::endl;
 
     std::cout << QObject::trUtf8("Bedingungen: ").toStdString() << std::endl;
-    if(customConditions.size() == 0)
+    if(custom_conditions.size() == 0)
         std::cout << QObject::trUtf8("(keine)").toStdString() << std::endl;
     else
-        for(auto i : customConditions.keys())
-            std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(customConditions[i]).toStdString() << std::endl;
+        for(auto i : custom_conditions.keys())
+            std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(custom_conditions[i]).toStdString() << std::endl;
 
     std::cout << std::endl;
 
     std::cout << QObject::trUtf8("Anweisungen: ").toStdString() << std::endl;
-    if(customInstructions.size() == 0)
+    if(custom_instructions.size() == 0)
         std::cout << QObject::trUtf8("(keine)").toStdString() << std::endl;
     else
-        for(auto i : customInstructions.keys())
-            std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(customInstructions[i]).toStdString() << std::endl;
+        for(auto i : custom_instructions.keys())
+            std::cout << QObject::trUtf8("%1 in Zeile %2").arg(i).arg(custom_instructions[i]).toStdString() << std::endl;
+}
+
+bool SteveInterpreter::cond_always(World *world, bool has_param, int param)
+{
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return true;
+}
+
+bool SteveInterpreter::cond_never(World *world, bool has_param, int param)
+{
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return false;
+}
+
+KEYWORD SteveInterpreter::getKeyword(QString string)
+{
+    for(auto i : keywords.keys())
+    {
+        if(keywords[i].compare(string, Qt::CaseInsensitive) == 0)
+            return i;
+    }
+
+    return static_cast<KEYWORD>(-1);
+}
+
+INSTRUCTION SteveInterpreter::getInstruction(QString string)
+{
+    for(auto i : instructions.keys())
+    {
+        if(instructions[i].compare(string, Qt::CaseInsensitive) == 0)
+            return i;
+    }
+
+    return static_cast<INSTRUCTION>(-1);
+}
+
+CONDITION SteveInterpreter::getCondition(QString string)
+{
+    for(auto i : conditions.keys())
+    {
+        if(conditions[i].compare(string, Qt::CaseInsensitive) == 0)
+            return i;
+    }
+
+    return static_cast<CONDITION>(-1);
+}
+
+const char* SteveInterpreterException::what()
+{
+    if(line_end != line_start)
+        return QObject::trUtf8("Fehler in Zeilen %1-%2:\n%3").arg(line_start).arg(line_end).arg(error).toUtf8().data();
+
+    return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line_start).arg(error).toUtf8().data();
 }

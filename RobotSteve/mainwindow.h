@@ -12,7 +12,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QStack>
 
 #include "world.h"
 #include "steveinterpreter.h"
@@ -31,12 +30,18 @@ public:
 
 public slots:
     void runCode();
+    void step();
+    void stopExecution();
+    void startExecution();
     
 private:
-    SteveInterpreter interpreter;
+    void handleError(SteveInterpreterException &e);
+
+    bool execution_started = false;
     Ui::MainWindow *ui;
-    int line = 0;
+    SteveInterpreter interpreter;
     World world;
+    QStringList code;
 };
 
 #endif // MAINWINDOW_H

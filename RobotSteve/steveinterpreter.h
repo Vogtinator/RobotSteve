@@ -15,6 +15,7 @@
 #include <QString>
 #include <QStringList>
 #include <QMap>
+#include <QHash>
 #include <QStack>
 
 #include "world.h"
@@ -28,17 +29,11 @@ public:
     SteveInterpreterException(QString error, int line_start, int line_end) : SteveInterpreterException(error, line_start, line_end, "") {}
     ~SteveInterpreterException() throw() {}
 
-    const char* what()
-    {
-        if(line_end != line_start)
-            return QObject::trUtf8("Fehler in Zeilen %1-%2:\n%3").arg(line_start).arg(line_end).arg(error).toUtf8().data();
-
-        return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line_start).arg(error).toUtf8().data();
-    }
-
     QString getAffected() { return affected; }
     int getLineStart() { return line_start; }
     int getLineEnd() { return line_end; }
+
+    const char* what();
 
 private:
     SteveInterpreterException(QString error, int line_start, int line_end, QString affected) : error(error), line_start(line_start), line_end(line_end), affected(affected) {}
@@ -49,8 +44,29 @@ private:
     QString affected;
 };
 
-typedef void (SteveInterpreter::*InstructionFunction)(World *world, bool param_given, int param);
-typedef bool (SteveInterpreter::*ConditionFunction)(World *world, bool param_given, int param);
+typedef bool (SteveInterpreter::*SteveFunctionPtr)(World *world, bool param_given, int param);
+
+class SteveFunction {
+public:
+    //Needed for QHash
+    SteveFunction() : SteveFunction(0, 0, false) {}
+
+    SteveFunction(SteveInterpreter *parent, SteveFunctionPtr function, bool has_param) : parent(parent), function(function), has_param(has_param) {}
+    bool hasParam() { return has_param; }
+    bool operator() (World *world, int param)
+    {
+        return (parent->*function)(world, true, param);
+    }
+    bool operator() (World *world)
+    {
+        return (parent->*function)(world, false, 1);
+    }
+
+private:
+    SteveInterpreter *parent;
+    SteveFunctionPtr function;
+    bool has_param;
+};
 
 enum KEYWORD {
     KEYWORD_IF,
@@ -79,11 +95,14 @@ enum INSTRUCTION {
     INSTR_UNMARK,
     INSTR_WAIT,
     INSTR_TONE,
-    INSTR_QUIT
+    INSTR_QUIT,
+    INSTR_TRUE,
+    INSTR_FALSE
 };
 
 enum CONDITION {
     COND_ALWAYS,
+    COND_NEVER,
     COND_ISWALL,
     COND_NOTISWALL,
     COND_ISBRICK,
@@ -118,25 +137,47 @@ struct BlockKeywords {
 class SteveInterpreter
 {
 public:
-    SteveInterpreter();
+    SteveInterpreter(World *world);
     void setCode(QStringList code) throw (SteveInterpreterException);
     void reset();
-    void executeLine() throw (QString);
-    QString getError();
+    void executeLine() throw (SteveInterpreterException);
     int getLine();
     void dumpCode();
+    void setWorld(World *world) { this->world = world; }
+    bool executionFinished() { return execution_finished; }
 
 private:
     void findAndThrowMissingBegin(int line, BLOCK block, QString affected = "") throw (SteveInterpreterException);
+    bool handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException);
+    KEYWORD getKeyword(QString string);
+    INSTRUCTION getInstruction(QString string);
+    CONDITION getCondition(QString string);
 
+    //Conditions:
+    bool cond_always(World *world, bool has_param, int param);
+    bool cond_never(World *world, bool has_param, int param);
+
+    //Independant
+    World *world;
+
+    //Const after construction
+    QHash<KEYWORD, QString> keywords;
+    QHash<INSTRUCTION, QString> instructions;
+    QHash<CONDITION, QString> conditions;
+    QHash<INSTRUCTION, SteveFunction> instruction_functions;
+    QHash<CONDITION, SteveFunction> condition_functions;
+
+    //Execution state
     int current_line; // Starts at 0!
-    QString error;
-    QMap<KEYWORD, QString> keywords;
-    QMap<INSTRUCTION, QString> instructions;
-    QMap<CONDITION, QString> conditions;
-    QMap<QString, int> customInstructions, customConditions;
-    QStringList code;
+    bool coming_from_condition, coming_from_repeat_end, condition_exit, enter_sub, enter_else, execution_finished;
     QStack<int> stack;
+    QStack<bool> repeat_needs_condition;
+    QStack<int> loop_count;
+
+    //After parse
+    QMap<QString, int> custom_instructions, custom_conditions;
+    QStringList code;
+    QMap<int, QStringList> token;
     QMap<int, int> branches;
     /* 1: WENN NICHTISTWAND TUE (3)
      * 2: SCHRITT

@@ -10,12 +10,18 @@
 
 #include <iostream>
 #include <QApplication>
+#include <QTextCodec>
 
 #include "mainwindow.h"
 #include "steveinterpreter.h"
 
 int main(int argc, char *argv[])
 {
+#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
+        QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
+        QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
+#endif
+
     try {
     QApplication a(argc, argv);
     MainWindow w;
