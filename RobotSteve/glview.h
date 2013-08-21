@@ -13,18 +13,29 @@
 
 #include <memory>
 #include <QGLWidget>
+#include <QTimer>
+
 #include "world.h"
+#include "glbox.h"
 
 class GLView : public QGLWidget
 {
     Q_OBJECT
 public:
     explicit GLView(World *world, QWidget *parent = 0);
+    ~GLView();
     void paintGL();
     void initializeGL();
+    void resizeGL(int w, int h);
+
+public slots:
+    void tick();
     
 private:
+    QTimer tick_timer;
     World *world;
+    TextureAtlas *atlas;
+    GLBox *player_body, *player_head, *player_leg_left, *player_leg_right, *player_arm_left, *player_arm_right;
 };
 
 #endif // GLVIEW_H

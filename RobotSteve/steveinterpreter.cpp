@@ -451,6 +451,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             return;
 
         case KEYWORD_REPEAT:
+        {
             if(line.size() == 1)
             {
                 repeat_needs_condition.push(true);
@@ -459,7 +460,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             }
             repeat_needs_condition.push(false);
 
-            KEYWORD kwhile, ktimes;
+            KEYWORD kwhile = static_cast<KEYWORD>(-1), ktimes = static_cast<KEYWORD>(-1);
             if((line.size() != 3 || ((kwhile=getKeyword(line[1])) != KEYWORD_WHILE && (ktimes=getKeyword(line[2])) != KEYWORD_TIMES))
                     && (line.size() != 2 || getCondition(line[1]) != COND_ALWAYS))
                 throw SteveInterpreterException(QObject::trUtf8("Syntax: %1\n%1 [zahl] %2\n%1 %3 [bedingung]\n%1 %4").arg(keywords[KEYWORD_REPEAT]).arg(keywords[KEYWORD_TIMES]).arg(keywords[KEYWORD_WHILE]).arg(conditions[COND_ALWAYS]), current_line);
@@ -538,6 +539,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
                 }
             }
             return;
+        }
         case KEYWORD_REPEAT_END:
         {
             bool needs_condition = repeat_needs_condition.pop();

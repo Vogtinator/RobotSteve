@@ -13,6 +13,7 @@
 #include "glview.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QTime>
 
 #include "steveinterpreter.h"
 

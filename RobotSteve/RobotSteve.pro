@@ -17,11 +17,18 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     glview.cpp \
     world.cpp \
-    steveinterpreter.cpp
+    steveinterpreter.cpp \
+    glbox.cpp \
+    gldrawable.cpp
 
 HEADERS  += mainwindow.h \
     glview.h \
     world.h \
-    steveinterpreter.h
+    steveinterpreter.h \
+    gldrawable.h \
+    glbox.h
 
 FORMS    += mainwindow.ui
+
+RESOURCES += \
+    resources.qrc
