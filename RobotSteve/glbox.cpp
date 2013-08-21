@@ -59,10 +59,10 @@ void GLBox::draw()
 {
     glPushMatrix();
 
-    glTranslatef(posX + cenX, posY + cenY, posZ + cenZ);
-    glRotatef(rotZ, 0, 0, 1);
-    glRotatef(rotX, 1, 0, 0);
+    glTranslatef(posX, posY, posZ);
     glRotatef(rotY, 0, 1, 0);
+    glRotatef(rotX, 1, 0, 0);
+    glRotatef(rotZ, 0, 0, 1);
     glTranslatef(-cenX, -cenY, -cenZ);
 
     glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
@@ -73,10 +73,10 @@ void GLBox::draw()
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
+    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
     for(auto i : childs)
         i->draw();
-
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
     glPopMatrix();
 }
