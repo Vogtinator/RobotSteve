@@ -11,7 +11,6 @@
 #ifndef GLVIEW_H
 #define GLVIEW_H
 
-#include <memory>
 #include <QGLWidget>
 #include <QTimer>
 
@@ -24,9 +23,14 @@ class GLView : public QGLWidget
 public:
     explicit GLView(World *world, QWidget *parent = 0);
     ~GLView();
+
+protected:
     void paintGL();
     void initializeGL();
     void resizeGL(int w, int h);
+    void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
 
 public slots:
     void tick();
@@ -35,6 +39,8 @@ private:
     QTimer tick_timer;
     World *world;
     TextureAtlas *atlas;
+    QPoint last_pos;
+    float camera_rotX, camera_rotY, camera_dist;
     GLBox *player_body, *player_head, *player_hat, *player_leg_left, *player_leg_right, *player_arm_left, *player_arm_right;
 };
 

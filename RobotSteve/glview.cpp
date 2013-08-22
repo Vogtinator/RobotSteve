@@ -9,12 +9,16 @@
  */
 
 #include <QDebug>
+#include <QMouseEvent>
 
 #include "glview.h"
 
 GLView::GLView(World *world, QWidget *parent) :
     QGLWidget(parent),
     world(world),
+    camera_rotX(-30),
+    camera_rotY(15),
+    camera_dist(5),
     player_body(0),
     player_head(0),
     player_leg_left(0), player_leg_right(0),
@@ -32,8 +36,23 @@ void GLView::paintGL()
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
+    glPushMatrix();
+
+    glRotatef(camera_rotX, -1, 0, 0);
+    glRotatef(camera_rotY, 0, -1, 0);
+
+    float radX = camera_rotX*(M_PI/180), radY = camera_rotY*(M_PI/180), cosradX = cos(radX);
+
+    float camerax = camera_dist*(sin(radY) * cosradX);
+    float cameray = camera_dist*sin(radX-M_PI);
+    float cameraz = camera_dist*(cos(radY) * cosradX);
+
+    glTranslatef(-camerax, -cameray, -cameraz);
+
     atlas->bind();
     player_body->draw();
+
+    glPopMatrix();
 }
 
 void GLView::initializeGL()
@@ -57,27 +76,6 @@ void GLView::initializeGL()
                             atlas->getArea(20, 20, 8, 12), atlas->getArea(32, 20, 8, 12),
                             atlas->getArea(20, 16, 8, 4), atlas->getArea(28, 16, 8, 4),
                             atlas->getArea(16, 20, 4, 12), atlas->getArea(28, 20, 4, 12));
-
-    player_body->setXPosition(8 * m_per_px);
-    player_body->setYPosition(12 * m_per_px);
-    player_body->setZPosition(-10.0f);
-
-    player_head = new GLBox(8 * m_per_px, 8 * m_per_px, 8 * m_per_px,
-                            4 * m_per_px, 0, 4 * m_per_px,
-                            atlas->getArea(8, 8, 8, 8), atlas->getArea(24, 8, 8, 8),
-                            atlas->getArea(8, 0, 8, 8), atlas->getArea(16, 0, 8, 8),
-                            atlas->getArea(0, 8, 8, 8), atlas->getArea(16, 8, 8, 8));
-
-    player_head->setYPosition(12 * m_per_px);
-    player_body->addChild(player_head);
-
-    player_hat = new GLBox(9 * m_per_px, 9 * m_per_px, 9 * m_per_px,
-                           4.5 * m_per_px, 0.5 * m_per_px, 4.5 * m_per_px,
-                           atlas->getArea(40, 8, 8, 8), atlas->getArea(56, 8, 8, 8),
-                           atlas->getArea(40, 0, 8, 8), atlas->getArea(48, 0, 8, 8),
-                           atlas->getArea(32, 8, 8, 8), atlas->getArea(48, 8, 8, 8));
-
-    player_head->addChild(player_hat);
 
     player_arm_left = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                 2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
@@ -117,6 +115,23 @@ void GLView::initializeGL()
     player_leg_right->setXPosition(2 * m_per_px);
     player_body->addChild(player_leg_right);
 
+    player_head = new GLBox(8 * m_per_px, 8 * m_per_px, 8 * m_per_px,
+                            4 * m_per_px, 0, 4 * m_per_px,
+                            atlas->getArea(8, 8, 8, 8), atlas->getArea(24, 8, 8, 8),
+                            atlas->getArea(8, 0, 8, 8), atlas->getArea(16, 0, 8, 8),
+                            atlas->getArea(0, 8, 8, 8), atlas->getArea(16, 8, 8, 8));
+
+    player_head->setYPosition(12 * m_per_px);
+    player_body->addChild(player_head);
+
+    player_hat = new GLBox(9 * m_per_px, 9 * m_per_px, 9 * m_per_px,
+                           4.5 * m_per_px, 0.5 * m_per_px, 4.5 * m_per_px,
+                           atlas->getArea(40, 8, 8, 8), atlas->getArea(56, 8, 8, 8),
+                           atlas->getArea(40, 0, 8, 8), atlas->getArea(48, 0, 8, 8),
+                           atlas->getArea(32, 8, 8, 8), atlas->getArea(48, 8, 8, 8));
+
+    player_head->addChild(player_hat);
+
     tick_timer.start(10);
 }
 
@@ -126,7 +141,7 @@ void GLView::resizeGL(int w, int h)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(0, 1, 0, 1, 4, 30);
+    glFrustum(-1, 1, -1, 1, 2, 100);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -136,29 +151,72 @@ void GLView::tick()
     static int x = 0;
     static float s = 0;
 
-    player_body->setYRotation(360-x);
+    player_body->setYRotation(180);
     player_arm_left->setXRotation(sin(s) * 45.0);
     player_arm_right->setXRotation(sin(s) * -45.0);
     player_arm_left->setZRotation(-10);
     player_arm_right->setZRotation(10);
+    player_leg_left->setZRotation(-5);
+    player_leg_right->setZRotation(5);
     player_leg_left->setXRotation(sin(s) * -45.0);
     player_leg_right->setXRotation(sin(s) * 45.0);
 
-    s += 0.1;
+    s += 0.05;
     x += 1;
     x %= 360;
 
     updateGL();
 }
 
+void GLView::mousePressEvent(QMouseEvent *event)
+{
+    last_pos = event->pos();
+}
+
+void GLView::mouseMoveEvent(QMouseEvent *event)
+{
+    if (event->buttons() & (Qt::LeftButton | Qt::RightButton))
+    {
+        camera_rotX -= 0.1 * (event->y() - last_pos.y());
+        camera_rotY -= 0.1 * (event->x() - last_pos.x());
+
+        if(camera_rotX < -90)
+            camera_rotX = -90;
+        else if(camera_rotX > 0)
+            camera_rotX = 0;
+
+        while(camera_rotY > 360)
+            camera_rotY -= 360;
+        while(camera_rotY < 0)
+            camera_rotY += 360;
+
+        updateGL();
+    }
+
+    last_pos = event->pos();
+}
+
 GLView::~GLView()
 {
-    delete player_head;
     delete player_body;
+    delete player_head;
+    delete player_hat;
     delete player_leg_left;
     delete player_leg_right;
     delete player_arm_left;
     delete player_arm_right;
 
     delete atlas;
+}
+
+void GLView::wheelEvent(QWheelEvent *event)
+{
+    camera_dist -= event->delta() * 0.005;
+
+    if(camera_dist < 5)
+        camera_dist = 5;
+    if(camera_dist > 50)
+        camera_dist = 50;
+
+    updateGL();
 }
