@@ -60,20 +60,19 @@ void GLBox::draw()
     glPushMatrix();
 
     glTranslatef(posX, posY, posZ);
-    glRotatef(rotY, 0, 1, 0);
-    glRotatef(rotX, 1, 0, 0);
     glRotatef(rotZ, 0, 0, 1);
+    glRotatef(rotX, 1, 0, 0);
+    glRotatef(rotY, 0, 1, 0);
     glTranslatef(-cenX, -cenY, -cenZ);
 
     glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
     glNormalPointer(GL_FLOAT, 0, normals.constData());
     glTexCoordPointer(2, GL_FLOAT, 0, tex_coords.constData());
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+
+    //Childs aligned on cen{X,Y,Z}
+    glTranslatef(cenX, cenY, cenZ);
 
     for(auto i : childs)
         i->draw();

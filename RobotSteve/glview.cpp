@@ -28,6 +28,10 @@ void GLView::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
     atlas->bind();
     player_body->draw();
 }
@@ -35,7 +39,7 @@ void GLView::paintGL()
 void GLView::initializeGL()
 {
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -49,7 +53,7 @@ void GLView::initializeGL()
     static_assert(std::is_same<decltype(8 * m_per_px), decltype(m_per_px)>::value, "Your compiler is really bullshit!");
 
     player_body = new GLBox(8 * m_per_px, 12 * m_per_px, 4 * m_per_px,
-                            4 * m_per_px, 0, 2 * m_per_px,
+                            4 * m_per_px, 0 * m_per_px, 2 * m_per_px,
                             atlas->getArea(20, 20, 8, 12), atlas->getArea(32, 20, 8, 12),
                             atlas->getArea(20, 16, 8, 4), atlas->getArea(28, 16, 8, 4),
                             atlas->getArea(16, 20, 4, 12), atlas->getArea(28, 20, 4, 12));
@@ -64,10 +68,16 @@ void GLView::initializeGL()
                             atlas->getArea(8, 0, 8, 8), atlas->getArea(16, 0, 8, 8),
                             atlas->getArea(0, 8, 8, 8), atlas->getArea(16, 8, 8, 8));
 
-    player_head->setXPosition(4 * m_per_px);
     player_head->setYPosition(12 * m_per_px);
-    player_head->setZPosition(2 * m_per_px);
     player_body->addChild(player_head);
+
+    player_hat = new GLBox(9 * m_per_px, 9 * m_per_px, 9 * m_per_px,
+                           4.5 * m_per_px, 0.5 * m_per_px, 4.5 * m_per_px,
+                           atlas->getArea(40, 8, 8, 8), atlas->getArea(56, 8, 8, 8),
+                           atlas->getArea(40, 0, 8, 8), atlas->getArea(48, 0, 8, 8),
+                           atlas->getArea(32, 8, 8, 8), atlas->getArea(48, 8, 8, 8));
+
+    player_head->addChild(player_hat);
 
     player_arm_left = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                 2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
@@ -75,9 +85,8 @@ void GLView::initializeGL()
                                 atlas->getArea(44, 16, 4, 4), atlas->getArea(48, 16, 4, 4),
                                 atlas->getArea(48, 20, 4, 12), atlas->getArea(40, 20, 4, 12));
 
-    player_arm_left->setXPosition(-2 * m_per_px);
+    player_arm_left->setXPosition(-6 * m_per_px);
     player_arm_left->setYPosition(10 * m_per_px);
-    player_arm_left->setZPosition(2 * m_per_px);
     player_body->addChild(player_arm_left);
 
     player_arm_right = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
@@ -86,9 +95,8 @@ void GLView::initializeGL()
                                  atlas->getArea(44, 16, 4, 4), atlas->getArea(48, 16, 4, 4),
                                  atlas->getArea(40, 20, 4, 12), atlas->getArea(48, 20, 4, 12));
 
-    player_arm_right->setXPosition(10 * m_per_px);
+    player_arm_right->setXPosition(6 * m_per_px);
     player_arm_right->setYPosition(10 * m_per_px);
-    player_arm_right->setZPosition(2 * m_per_px);
     player_body->addChild(player_arm_right);
 
     player_leg_left = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
@@ -97,9 +105,7 @@ void GLView::initializeGL()
                                  atlas->getArea(4, 16, 4, 4), atlas->getArea(8, 16, 4, 4),
                                  atlas->getArea(8, 20, 4, 12), atlas->getArea(0, 20, 4, 12));
 
-    player_leg_left->setXPosition(2 * m_per_px);
-    player_leg_left->setYPosition(2 * m_per_px);
-    player_leg_left->setZPosition(2 * m_per_px);
+    player_leg_left->setXPosition(-2 * m_per_px);
     player_body->addChild(player_leg_left);
 
     player_leg_right = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
@@ -108,9 +114,7 @@ void GLView::initializeGL()
                                  atlas->getArea(4, 16, 4, 4), atlas->getArea(8, 16, 4, 4),
                                  atlas->getArea(0, 20, 4, 12), atlas->getArea(8, 20, 4, 12));
 
-    player_leg_right->setXPosition(6 * m_per_px);
-    player_leg_right->setYPosition(2 * m_per_px);
-    player_leg_right->setZPosition(2 * m_per_px);
+    player_leg_right->setXPosition(2 * m_per_px);
     player_body->addChild(player_leg_right);
 
     tick_timer.start(10);
@@ -132,17 +136,18 @@ void GLView::tick()
     static int x = 0;
     static float s = 0;
 
-    //player_head->setXRotation(x);
-    player_body->setYRotation(x);
+    player_body->setYRotation(360-x);
     player_arm_left->setXRotation(sin(s) * 45.0);
     player_arm_right->setXRotation(sin(s) * -45.0);
+    player_arm_left->setZRotation(-10);
+    player_arm_right->setZRotation(10);
     player_leg_left->setXRotation(sin(s) * -45.0);
     player_leg_right->setXRotation(sin(s) * 45.0);
+
     s += 0.1;
-    //player_head->setYRotation(x);
-    //box->setZRotation(x);
     x += 1;
     x %= 360;
+
     updateGL();
 }
 

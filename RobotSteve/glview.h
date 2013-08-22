@@ -35,7 +35,7 @@ private:
     QTimer tick_timer;
     World *world;
     TextureAtlas *atlas;
-    GLBox *player_body, *player_head, *player_leg_left, *player_leg_right, *player_arm_left, *player_arm_right;
+    GLBox *player_body, *player_head, *player_hat, *player_leg_left, *player_leg_right, *player_arm_left, *player_arm_right;
 };
 
 #endif // GLVIEW_H
