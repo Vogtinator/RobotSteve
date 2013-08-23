@@ -24,7 +24,19 @@ GLView::GLView(World *world, QWidget *parent) :
     player_leg_left(0), player_leg_right(0),
     player_arm_left(0), player_arm_right(0)
 {
+    anim_ticks.insert(ANIM_STANDING, 126);
+    anim_ticks.insert(ANIM_GREET1, 33);
+    anim_ticks.insert(ANIM_GREET2, 200);
+    anim_ticks.insert(ANIM_GREET3, 33);
+    anim_next.insert(ANIM_GREET1, ANIM_GREET2);
+    anim_next.insert(ANIM_GREET2, ANIM_GREET3);
+    anim_next.insert(ANIM_GREET3, ANIM_STANDING);
+    anim_next.insert(ANIM_STANDING, ANIM_STANDING);
+    setAnimation(ANIM_GREET1);
+
     connect(&tick_timer, SIGNAL(timeout()), this, SLOT(tick()));
+    connect(&refresh_timer, SIGNAL(timeout()), this, SLOT(updateGL()));
+    refresh_timer.start(25);
 }
 
 void GLView::paintGL()
@@ -77,6 +89,8 @@ void GLView::initializeGL()
                             atlas->getArea(20, 16, 8, 4), atlas->getArea(28, 16, 8, 4),
                             atlas->getArea(16, 20, 4, 12), atlas->getArea(28, 20, 4, 12));
 
+    player_body->setYRotation(180);
+
     player_arm_left = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                 2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
                                 atlas->getArea(44, 20, 4, 12), atlas->getArea(52, 20, 4, 12),
@@ -85,6 +99,7 @@ void GLView::initializeGL()
 
     player_arm_left->setXPosition(-6 * m_per_px);
     player_arm_left->setYPosition(10 * m_per_px);
+    player_arm_left->setZRotation(-10);
     player_body->addChild(player_arm_left);
 
     player_arm_right = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
@@ -95,6 +110,7 @@ void GLView::initializeGL()
 
     player_arm_right->setXPosition(6 * m_per_px);
     player_arm_right->setYPosition(10 * m_per_px);
+    player_arm_right->setZRotation(10);
     player_body->addChild(player_arm_right);
 
     player_leg_left = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
@@ -104,6 +120,7 @@ void GLView::initializeGL()
                                  atlas->getArea(8, 20, 4, 12), atlas->getArea(0, 20, 4, 12));
 
     player_leg_left->setXPosition(-2 * m_per_px);
+    player_leg_left->setZRotation(-5);
     player_body->addChild(player_leg_left);
 
     player_leg_right = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
@@ -113,6 +130,7 @@ void GLView::initializeGL()
                                  atlas->getArea(0, 20, 4, 12), atlas->getArea(8, 20, 4, 12));
 
     player_leg_right->setXPosition(2 * m_per_px);
+    player_leg_right->setZRotation(5);
     player_body->addChild(player_leg_right);
 
     player_head = new GLBox(8 * m_per_px, 8 * m_per_px, 8 * m_per_px,
@@ -131,8 +149,6 @@ void GLView::initializeGL()
                            atlas->getArea(32, 8, 8, 8), atlas->getArea(48, 8, 8, 8));
 
     player_head->addChild(player_hat);
-
-    tick_timer.start(10);
 }
 
 void GLView::resizeGL(int w, int h)
@@ -148,24 +164,34 @@ void GLView::resizeGL(int w, int h)
 
 void GLView::tick()
 {
-    static int x = 0;
-    static float s = 0;
+    switch(current_animation)
+    {
+    case ANIM_STANDING:
+        player_arm_left->setXRotation(sin(anim_float1) * 45.0);
+        player_arm_right->setXRotation(sin(anim_float1) * -45.0);
+        player_leg_left->setXRotation(sin(anim_float1) * -45.0);
+        player_leg_right->setXRotation(sin(anim_float1) * 45.0);
+        anim_float1 += 0.05;
+        break;
+    case ANIM_GREET1:
+        player_arm_right->setZRotation(sin(anim_float1) * -5);
+        player_arm_right->setXRotation(sin(anim_float1) * 180.0);
+        anim_float1 += 0.05;
+        break;
+    case ANIM_GREET2:
+        player_arm_right->setZRotation(sin(anim_float1) * 15.0);
+        anim_float1 += 0.05;
+        break;
+    case ANIM_GREET3:
+        player_arm_right->setZRotation(cos(anim_float1) * -5);
+        player_arm_right->setXRotation(cos(anim_float1) * 180.0);
+        anim_float1 += 0.05;
+        break;
+    }
 
-    player_body->setYRotation(180);
-    player_arm_left->setXRotation(sin(s) * 45.0);
-    player_arm_right->setXRotation(sin(s) * -45.0);
-    player_arm_left->setZRotation(-10);
-    player_arm_right->setZRotation(10);
-    player_leg_left->setZRotation(-5);
-    player_leg_right->setZRotation(5);
-    player_leg_left->setXRotation(sin(s) * -45.0);
-    player_leg_right->setXRotation(sin(s) * 45.0);
-
-    s += 0.05;
-    x += 1;
-    x %= 360;
-
-    updateGL();
+    current_anim_ticks--;
+    if(current_anim_ticks <= 0)
+        setAnimation(anim_next[current_animation]);
 }
 
 void GLView::mousePressEvent(QMouseEvent *event)
@@ -189,8 +215,6 @@ void GLView::mouseMoveEvent(QMouseEvent *event)
             camera_rotY -= 360;
         while(camera_rotY < 0)
             camera_rotY += 360;
-
-        updateGL();
     }
 
     last_pos = event->pos();
@@ -217,6 +241,14 @@ void GLView::wheelEvent(QWheelEvent *event)
         camera_dist = 5;
     if(camera_dist > 50)
         camera_dist = 50;
+}
 
-    updateGL();
+void GLView::setAnimation(ANIMATION animation)
+{
+    current_anim_ticks = anim_ticks[animation];
+    current_animation = animation;
+    tick_timer.stop();
+    tick_timer.start(world->speed_ms / current_anim_ticks);
+
+    anim_float1 = 0;
 }

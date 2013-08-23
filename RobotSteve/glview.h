@@ -17,6 +17,18 @@
 #include "world.h"
 #include "glbox.h"
 
+enum ANIMATION {
+    ANIM_STANDING,
+    ANIM_GREET1,
+    ANIM_GREET2,
+    ANIM_GREET3,
+    ANIM_STEP,
+    ANIM_TURNLEFT,
+    ANIM_TURNRIGHT,
+    ANIM_BEND,
+    ANIM_WAIT
+};
+
 class GLView : public QGLWidget
 {
     Q_OBJECT
@@ -31,17 +43,24 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void wheelEvent(QWheelEvent *event);
+    void setAnimation(ANIMATION animation);
 
 public slots:
     void tick();
     
 private:
-    QTimer tick_timer;
+    QTimer tick_timer, refresh_timer;
     World *world;
     TextureAtlas *atlas;
     QPoint last_pos;
     float camera_rotX, camera_rotY, camera_dist;
     GLBox *player_body, *player_head, *player_hat, *player_leg_left, *player_leg_right, *player_arm_left, *player_arm_right;
+    ANIMATION current_animation = ANIM_STANDING;
+    QMap<ANIMATION,int> anim_ticks;
+    QMap<ANIMATION,ANIMATION> anim_next;
+    int current_anim_ticks;
+
+    float anim_float1;
 };
 
 #endif // GLVIEW_H

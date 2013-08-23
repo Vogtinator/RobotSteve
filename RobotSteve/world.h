@@ -48,6 +48,7 @@ public:
     int getX() { return steve.first; }
     int getY() { return steve.second; }
     void dumpWorld();
+    void setSpeed(float ms) { speed_ms = ms; }
 
 private:
     Coords getForward();
@@ -56,6 +57,7 @@ private:
     Coords steve;
     ORIENTATION orientation;
     std::vector<std::vector<WorldObject> > map;
+    float speed_ms = 500; //How much time an action takes
 };
 
 #endif // WORLD_H
