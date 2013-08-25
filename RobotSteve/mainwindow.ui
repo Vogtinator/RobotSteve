@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>815</width>
+    <height>428</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -42,7 +42,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>400</width>
+     <width>815</width>
      <height>23</height>
     </rect>
    </property>
@@ -85,7 +85,7 @@
    </attribute>
    <addaction name="actionStarten"/>
    <addaction name="actionSchritt"/>
-   <addaction name="actionStop"/>
+   <addaction name="actionReset"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionLaden">
@@ -142,9 +142,9 @@
     <string>Schritt</string>
    </property>
   </action>
-  <action name="actionStop">
+  <action name="actionReset">
    <property name="text">
-    <string>Stop</string>
+    <string>Reset</string>
    </property>
   </action>
  </widget>

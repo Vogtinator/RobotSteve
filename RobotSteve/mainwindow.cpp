@@ -10,25 +10,23 @@
 
 #include <iostream>
 
-#include "glview.h"
+#include "glworld.h"
+#include "steveinterpreter.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QTime>
-
-#include "steveinterpreter.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    world(5, 5),
+    world(5, 5, this),
     interpreter(&world)
 {
     ui->setupUi(this);
-    ui->horizontalLayout->addWidget(new GLView(&world, this));
+    ui->horizontalLayout->addWidget(&world);
 
     connect(ui->actionStarten, SIGNAL(triggered()), this, SLOT(runCode()));
     connect(ui->actionSchritt, SIGNAL(triggered()), this, SLOT(step()));
-    connect(ui->actionStop, SIGNAL(triggered()), this, SLOT(stopExecution()));
+    connect(ui->actionReset, SIGNAL(triggered()), this, SLOT(reset()));
 }
 
 MainWindow::~MainWindow()
@@ -96,6 +94,13 @@ void MainWindow::stopExecution()
 
     ui->codeEdit->setReadOnly(false);
     execution_started = false;
+}
+
+void MainWindow::reset()
+{
+    stopExecution();
+    interpreter.reset();
+    world.reset();
 }
 
 void MainWindow::handleError(SteveInterpreterException &e)

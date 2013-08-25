@@ -19,7 +19,7 @@ public:
 
 private:
     QGLWidget *parent;
-    GLuint texture_id;
+    QPixmap pixmap;
     int w, h;
 };
 

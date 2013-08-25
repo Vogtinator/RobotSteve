@@ -8,14 +8,15 @@
  * Use in public and private schools for educational purposes strongly permitted!
  */
 
-#ifndef GLVIEW_H
-#define GLVIEW_H
+#ifndef GLWORLD_H
+#define GLWORLD_H
 
 #include <QGLWidget>
 #include <QTimer>
 
 #include "world.h"
 #include "glbox.h"
+#include "glquad.h"
 
 enum ANIMATION {
     ANIM_STANDING,
@@ -29,12 +30,19 @@ enum ANIMATION {
     ANIM_WAIT
 };
 
-class GLView : public QGLWidget
+class GLWorld : public QGLWidget, public World
 {
     Q_OBJECT
 public:
-    explicit GLView(World *world, QWidget *parent = 0);
-    ~GLView();
+    explicit GLWorld(int width, int length, QWidget *parent = 0);
+    ~GLWorld();
+
+    void reset() override;
+    bool stepForward() override;
+    void turnRight() override;
+    void turnLeft() override;
+    void setMark(bool b) override;
+    bool setCube(bool b) override;
 
 protected:
     void paintGL();
@@ -47,20 +55,25 @@ protected:
 
 public slots:
     void tick();
+    void setSpeed(float ms) { speed_ms = ms; }
     
 private:
+    void drawWallX();
+    void drawWallZ();
+    void updateAnimationTarget();
+
     QTimer tick_timer, refresh_timer;
-    World *world;
-    TextureAtlas *atlas;
+    TextureAtlas *player_atlas, *environment_atlas;
     QPoint last_pos;
     float camera_rotX, camera_rotY, camera_dist;
     GLBox *player_body, *player_head, *player_hat, *player_leg_left, *player_leg_right, *player_arm_left, *player_arm_right;
+    GLQuad *wall, *floor, *marked_floor;
     ANIMATION current_animation = ANIM_STANDING;
     QMap<ANIMATION,int> anim_ticks;
     QMap<ANIMATION,ANIMATION> anim_next;
     int current_anim_ticks;
-
-    float anim_float1;
+    float speed_ms = 500; //How much time an animation takes
+    float anim_progress = 0, player_posX_from = 0, player_posZ_from = 0, player_posX_target = 0, player_posZ_target = 0, player_rotY_from = 0, player_rotY_target = 0;
 };
 
-#endif // GLVIEW_H
+#endif // GLWORLD_H

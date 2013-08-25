@@ -283,7 +283,7 @@ void SteveInterpreter::reset()
 
 bool SteveInterpreter::handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException)
 {
-    QRegExp condition_regexp("^(([A-Z]|[a-z]|\\d)+)(\\((\\d+)\\))?$");
+    QRegExp condition_regexp("^((\\w|\\d)+)(\\((\\d+)\\))?$");
     if(condition_regexp.indexIn(condition_str) == -1)
         throw SteveInterpreterException(QObject::trUtf8("Ungültige Bedingung."), current_line, condition_str);
 
@@ -320,7 +320,7 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
 
 bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveInterpreterException)
 {
-    QRegExp instruction_regexp("^(([A-Z]|[a-z]|\\d)+)(\\((\\d+)\\))?$");
+    QRegExp instruction_regexp("^((\\w|\\d)+)(\\((\\d+)\\))?$");
     if(instruction_regexp.indexIn(instruction_str) == -1)
         throw SteveInterpreterException(QObject::trUtf8("Ungültige Anweisung."), current_line, instruction_str);
 

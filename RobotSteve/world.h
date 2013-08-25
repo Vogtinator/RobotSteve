@@ -34,30 +34,28 @@ class World
     friend class GLView;
 public:
     World(int width, int length);
-    void reset();
+    virtual void reset();
     bool resize(int width, int length);
-    bool stepForward();
-    void turnRight();
-    void turnLeft();
+    virtual bool stepForward();
+    virtual void turnRight();
+    virtual void turnLeft();
+    virtual void setMark(bool b);
+    virtual bool setCube(bool b);
     bool isWall();
-    void setMark(bool b);
-    bool setCube(bool b);
     int getStackSize();
     bool isMarked();
     ORIENTATION getOrientation() { return orientation; }
     int getX() { return steve.first; }
     int getY() { return steve.second; }
     void dumpWorld();
-    void setSpeed(float ms) { speed_ms = ms; }
 
-private:
+protected:
     Coords getForward();
 
     Coords size;
     Coords steve;
-    ORIENTATION orientation;
+    ORIENTATION orientation = ORIENT_SOUTH;
     std::vector<std::vector<WorldObject> > map;
-    float speed_ms = 500; //How much time an action takes
 };
 
 #endif // WORLD_H

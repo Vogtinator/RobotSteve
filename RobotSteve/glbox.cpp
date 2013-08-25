@@ -60,9 +60,9 @@ void GLBox::draw()
     glPushMatrix();
 
     glTranslatef(posX, posY, posZ);
-    glRotatef(rotZ, 0, 0, 1);
-    glRotatef(rotX, 1, 0, 0);
     glRotatef(rotY, 0, 1, 0);
+    glRotatef(rotX, 1, 0, 0);
+    glRotatef(rotZ, 0, 0, 1);
     glTranslatef(-cenX, -cenY, -cenZ);
 
     glVertexPointer(3, GL_FLOAT, 0, vertices.constData());

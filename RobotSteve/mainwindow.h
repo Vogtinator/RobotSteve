@@ -13,7 +13,7 @@
 
 #include <QMainWindow>
 
-#include "world.h"
+#include "glworld.h"
 #include "steveinterpreter.h"
 
 namespace Ui {
@@ -31,6 +31,7 @@ public:
 public slots:
     void runCode();
     void step();
+    void reset();
     void stopExecution();
     
 private:
@@ -39,7 +40,7 @@ private:
 
     bool execution_started = false;
     Ui::MainWindow *ui;
-    World world;
+    GLWorld world;
     SteveInterpreter interpreter;
     QStringList code;
 };

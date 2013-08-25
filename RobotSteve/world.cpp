@@ -18,7 +18,7 @@ Coords operator+(const Coords& left, const Coords& right)
 }
 
 World::World(int width, int length)
-    : size(width, length), orientation(ORIENT_NORTH)
+    : size(width, length)
 {
     if(!resize(width, length))
         throw std::string("Invalid world size!");
@@ -47,7 +47,7 @@ bool World::resize(int width, int length)
 void World::reset()
 {
     steve.first = steve.second = 0;
-    orientation = ORIENT_NORTH;
+    orientation = ORIENT_SOUTH;
     for(int x = 0; x < size.first; x++)
         for(int y = 0; y < size.second; y++)
             map[x][y] = {};

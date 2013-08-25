@@ -15,18 +15,20 @@ QMAKE_CXXFLAGS += -std=c++11
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    glview.cpp \
     world.cpp \
     steveinterpreter.cpp \
     glbox.cpp \
-    gldrawable.cpp
+    gldrawable.cpp \
+    glquad.cpp \
+    glworld.cpp
 
 HEADERS  += mainwindow.h \
-    glview.h \
     world.h \
     steveinterpreter.h \
     gldrawable.h \
-    glbox.h
+    glbox.h \
+    glquad.h \
+    glworld.h
 
 FORMS    += mainwindow.ui
 

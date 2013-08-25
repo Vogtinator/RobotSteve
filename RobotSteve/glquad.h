@@ -1,23 +1,18 @@
-#ifndef GLBOX_H
-#define GLBOX_H
-
-#include <QVector>
-#include <QVector2D>
-#include <QVector3D>
+#ifndef GLQUAD_H
+#define GLQUAD_H
 
 #include "gldrawable.h"
 
-class GLBox : public GLDrawable
+class GLQuad : public GLDrawable
 {
 public:
-    GLBox(float width, float height, float length, float cenX, float cenY, float cenZ, TextureAtlasEntry fr, TextureAtlasEntry ba, TextureAtlasEntry to, TextureAtlasEntry bot, TextureAtlasEntry le, TextureAtlasEntry ri);
+    GLQuad(float w, float l, float cenX, float cenY, float cenZ, TextureAtlasEntry tex);
     void setXPosition(float x) override { posX = x; }
     void setYPosition(float y) override { posY = y; }
     void setZPosition(float z) override { posZ = z; }
     void setXRotation(float x) override { rotX = x; }
     void setYRotation(float y) override { rotY = y; }
     void setZRotation(float z) override { rotZ = z; }
-    void addChild(GLDrawable* child) { childs.append(child); }
     void draw() override;
 
 private:
@@ -27,7 +22,6 @@ private:
 
     QVector<QVector2D> tex_coords;
     QVector<QVector3D> vertices, normals;
-    QVector<GLDrawable*> childs;
 };
 
-#endif // GLBOX_H
+#endif // GLQUAD_H
