@@ -131,7 +131,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
     {
         token[current_line] = code[current_line].simplified().split(" ", QString::SkipEmptyParts);
         QStringList &line = token[current_line];
-        if(line.size() == 0)
+        if(line.size() == 0 || isComment(line[0]))
             continue;
 
         if(line[0].compare(instructions[INSTR_FALSE], Qt::CaseInsensitive) == 0 || line[0].compare(instructions[INSTR_TRUE], Qt::CaseInsensitive) == 0)
@@ -234,6 +234,10 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                         throw SteveInterpreterException(QObject::trUtf8("Zu viele Bezeichnungen."), current_line);
 
                     QString name = line[1].toLower();
+                    QRegExp validName("^(\\w|\\d)+$");
+
+                    if(!validName.exactMatch(name))
+                        throw SteveInterpreterException(QObject::trUtf8("Die Bezeichnung %1 enthält ungültige Zeichen.").arg(name), current_line, name);
 
                     if(getKeyword(name) != -1 || getInstruction(name) != -1 || getCondition(name) != -1)
                         throw SteveInterpreterException(QObject::trUtf8("Die Bezeichnung %1 ist ein reserviertes Wort.").arg(name), current_line, name);
@@ -385,7 +389,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
     }
 
     QStringList &line = token[current_line];
-    if(line.size() == 0 || code[current_line].isEmpty())
+    if(line.size() == 0 || code[current_line].isEmpty() || isComment(line[0]))
     {
         current_line++;
         return;
@@ -945,4 +949,9 @@ const char* SteveInterpreterException::what()
         return QObject::trUtf8("Fehler in Zeilen %1-%2:\n%3").arg(line_start).arg(line_end).arg(error).toUtf8().data();
 
     return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line_start).arg(error).toUtf8().data();
+}
+
+bool SteveInterpreter::isComment(QString s)
+{
+    return s.startsWith(";") || s.startsWith("#") || s.startsWith("//");
 }

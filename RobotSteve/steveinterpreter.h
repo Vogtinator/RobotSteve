@@ -153,6 +153,7 @@ public:
     void dumpCode();
     void setWorld(World *world) { this->world = world; }
     bool executionFinished() { return execution_finished; }
+    bool isComment(QString s);
 
 private:
     void findAndThrowMissingBegin(int line, BLOCK block, QString affected = "") throw (SteveInterpreterException);
