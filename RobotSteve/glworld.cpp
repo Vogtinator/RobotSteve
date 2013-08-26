@@ -342,6 +342,8 @@ void GLWorld::setAnimation(ANIMATION animation)
 {
     if(speed_ms >= 500)
         speed_ms = 500;
+    if(speed_ms <= 250)
+        speed_ms = 0;
 
     //If previous animation didn't complete, skip it
     if(anim_progress != 1.0f)
@@ -354,7 +356,9 @@ void GLWorld::setAnimation(ANIMATION animation)
     current_anim_ticks = 0;
     current_animation = animation;
     tick_timer.stop();
-    tick_timer.start(speed_ms / anim_ticks[current_animation]);
+
+    if(speed_ms > 0)
+        tick_timer.start(speed_ms / anim_ticks[current_animation]);
 
     anim_progress = 0;
 }
@@ -450,6 +454,11 @@ void GLWorld::updateAnimationTarget()
         player_rotY_target = 270;
         break;
     }
+
+    if(player_rotY_from - player_rotY_target > 180)
+        player_rotY_from -= 360;
+    if(player_rotY_target - player_rotY_from > 180)
+        player_rotY_from += 360;
 
     player_posX_target = steve.first;
     player_posZ_target = steve.second;

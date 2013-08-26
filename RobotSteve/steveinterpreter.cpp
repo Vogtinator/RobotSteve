@@ -495,8 +495,8 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
                 int count = line[1].toInt(&is_numeric);
                 if(!is_numeric)
                     throw SteveInterpreterException(QObject::trUtf8("%1 ist keine Zahl.").arg(line[1]), current_line, line[1]);
-                if(count < 0)
-                    throw SteveInterpreterException(QObject::trUtf8("Die Zahl muss >= 0 sein."), current_line, line[1]);
+                if(count < 0 || count > 9999)
+                    throw SteveInterpreterException(QObject::trUtf8("Die Zahl muss >= 0 und kleiner als 10000 sein."), current_line, line[1]);
                 else if(count == 0)
                 {
                     current_line = branches[current_line] + 1;

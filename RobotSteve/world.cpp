@@ -76,18 +76,40 @@ bool World::stepForward()
 
 void World::turnRight()
 {
-    int o = static_cast<int>(orientation);
-    o++;
-    o %= 4;
-    orientation = static_cast<ORIENTATION>(o);
+    switch(orientation)
+    {
+    case ORIENT_NORTH:
+        orientation = ORIENT_EAST;
+        break;
+    case ORIENT_EAST:
+        orientation = ORIENT_SOUTH;
+        break;
+    case ORIENT_SOUTH:
+        orientation = ORIENT_WEST;
+        break;
+    case ORIENT_WEST:
+        orientation = ORIENT_NORTH;
+        break;
+    }
 }
 
 void World::turnLeft()
 {
-    int o = static_cast<int>(orientation);
-    o--;
-    o %= 4;
-    orientation = static_cast<ORIENTATION>(o);
+    switch(orientation)
+    {
+    case ORIENT_NORTH:
+        orientation = ORIENT_WEST;
+        break;
+    case ORIENT_EAST:
+        orientation = ORIENT_NORTH;
+        break;
+    case ORIENT_SOUTH:
+        orientation = ORIENT_EAST;
+        break;
+    case ORIENT_WEST:
+        orientation = ORIENT_SOUTH;
+        break;
+    }
 }
 
 void World::setMark(bool b)
@@ -124,7 +146,8 @@ Coords World::getForward()
     case ORIENT_WEST:
         return {-1, 0};
     default:
-        throw std::string("Umm, something weird happened.");
+        //throw std::string("Umm, something weird happened.");
+        return {0, 0};
     }
 }
 

@@ -49,6 +49,10 @@ void MainWindow::runCode()
     catch (SteveInterpreterException &e) {
         handleError(e);
     }
+    catch (std::string &e)
+    {
+        std::cerr << e << std::endl;
+    }
 
     stopExecution();
 }
