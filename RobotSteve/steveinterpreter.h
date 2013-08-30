@@ -51,33 +51,26 @@ public:
     //Needed for QHash
     SteveFunction() : SteveFunction(0, 0, false) {}
 
-    SteveFunction(SteveInterpreter *parent, SteveFunctionPtr function, bool has_param) : SteveFunction(parent, function, has_param, false) {}
-    SteveFunction(SteveInterpreter *parent, SteveFunctionPtr function, bool has_param, bool negate_return) : parent(parent), function(function), has_param(has_param), negate_return(negate_return) {}
+    SteveFunction(SteveInterpreter *parent, SteveFunctionPtr function, bool has_param) : parent(parent), function(function), has_param(has_param) {}
     bool hasParam() { return has_param; }
     bool operator() (World *world, int param)
     {
-        if(negate_return)
-            return !(parent->*function)(world, true, param);
-        else
-            return (parent->*function)(world, true, param);
+        return (parent->*function)(world, true, param);
     }
     bool operator() (World *world)
     {
-        if(negate_return)
-            return !(parent->*function)(world, false, 1);
-        else
-            return (parent->*function)(world, false, 1);
+        return (parent->*function)(world, false, 1);
     }
 
 private:
     SteveInterpreter *parent;
     SteveFunctionPtr function;
     bool has_param;
-    bool negate_return;
 };
 
 enum KEYWORD {
     KEYWORD_IF,
+    KEYWORD_NOT,
     KEYWORD_THEN,
     KEYWORD_ELSE,
     KEYWORD_IF_END,
@@ -109,22 +102,13 @@ enum INSTRUCTION {
 
 enum CONDITION {
     COND_ALWAYS,
-    COND_NEVER,
     COND_ISWALL,
-    COND_NOTISWALL,
     COND_ISBRICK,
-    COND_NOTISBRICK,
     COND_MARKED,
-    COND_NOTMARKED,
     COND_ISNORTH,
     COND_ISEAST,
     COND_ISSOUTH,
-    COND_ISWEST,
-    COND_ISFULL,
-    COND_NOTISFULL,
-    COND_ISEMPTY,
-    COND_NOTISEMPTY,
-    COND_HASBRICK
+    COND_ISWEST
 };
 
 enum BLOCK {
@@ -154,14 +138,6 @@ public:
     bool executionFinished() { return execution_finished; }
     bool isComment(QString s);
 
-private:
-    void findAndThrowMissingBegin(int line, BLOCK block, QString affected = "") throw (SteveInterpreterException);
-    bool handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException);
-    bool handleInstruction(QString instruction_str) throw (SteveInterpreterException);
-    KEYWORD getKeyword(QString string);
-    INSTRUCTION getInstruction(QString string);
-    CONDITION getCondition(QString string);
-
     //Conditions:
     bool cond_always(World *world, bool has_param, int param);
     bool is_wall(World *world, bool has_param, int param);
@@ -171,19 +147,27 @@ private:
     bool is_east(World *world, bool has_param, int param);
     bool is_south(World *world, bool has_param, int param);
     bool is_west(World *world, bool has_param, int param);
-    bool is_full(World *world, bool has_param, int param);
-    bool is_empty(World *world, bool has_param, int param);
-    bool has_bricks(World *world, bool has_param, int param);
 
     //Instructions:
     bool step(World *world, bool has_param, int param);
     bool turnLeft(World *world, bool has_param, int param);
     bool turnRight(World *world, bool has_param, int param);
-    bool putdown(World *world, bool has_param, int param);
+    bool deposit(World *world, bool has_param, int param);
     bool pickup(World *world, bool has_param, int param);
     bool mark(World *world, bool has_param, int param);
     bool unmark(World *world, bool has_param, int param);
     bool wait(World *world, bool has_param, int param);
+
+private:
+    void findAndThrowMissingBegin(int line, BLOCK block, QString affected = "") throw (SteveInterpreterException);
+    bool handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException);
+    bool handleInstruction(QString instruction_str) throw (SteveInterpreterException);
+    KEYWORD getKeyword(QString string);
+    INSTRUCTION getInstruction(QString string);
+    CONDITION getCondition(QString string);
+    bool match(QString &str, KEYWORD keyword);
+    bool match(QString &str, INSTRUCTION instr);
+    bool match(QString &str, CONDITION cond);
 
     //Independant
     World *world;

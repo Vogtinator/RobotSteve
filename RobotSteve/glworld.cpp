@@ -21,24 +21,24 @@ GLWorld::GLWorld(int width, int length, QWidget *parent) :
     camera_dist(5)
 {
     anim_ticks.insert(ANIM_STANDING, 1);
-    anim_ticks.insert(ANIM_TURNLEFT, 124);
-    anim_ticks.insert(ANIM_TURNRIGHT, 124);
-    anim_ticks.insert(ANIM_BEND, 124);
-    anim_ticks.insert(ANIM_WAIT, 62);
-    anim_ticks.insert(ANIM_STEP, 124);
-    anim_ticks.insert(ANIM_BUMP, 62);
+    anim_ticks.insert(ANIM_STEP, 100);
+    anim_ticks.insert(ANIM_BUMP, 100);
+    anim_ticks.insert(ANIM_TURN, 100);
+    anim_ticks.insert(ANIM_BEND, 100);
+    anim_ticks.insert(ANIM_DEPOSIT_FLY, 248);
     anim_ticks.insert(ANIM_GREET1, 31);
     anim_ticks.insert(ANIM_GREET2, 200);
     anim_ticks.insert(ANIM_GREET3, 31);
+
+    anim_next.insert(ANIM_STANDING, ANIM_STANDING);
+    anim_next.insert(ANIM_STEP, ANIM_STANDING);
+    anim_next.insert(ANIM_BUMP, ANIM_STANDING);
+    anim_next.insert(ANIM_TURN, ANIM_STANDING);
+    anim_next.insert(ANIM_BEND, ANIM_STANDING);
+    anim_next.insert(ANIM_DEPOSIT_FLY, ANIM_STANDING);
     anim_next.insert(ANIM_GREET1, ANIM_GREET2);
     anim_next.insert(ANIM_GREET2, ANIM_GREET3);
     anim_next.insert(ANIM_GREET3, ANIM_STANDING);
-    anim_next.insert(ANIM_STANDING, ANIM_STANDING);
-    anim_next.insert(ANIM_WAIT, ANIM_WAIT);
-    anim_next.insert(ANIM_TURNLEFT, ANIM_STANDING);
-    anim_next.insert(ANIM_TURNRIGHT, ANIM_STANDING);
-    anim_next.insert(ANIM_BEND, ANIM_STANDING);
-    anim_next.insert(ANIM_BUMP, ANIM_STANDING);
 
     player_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(":/textures/char.png")));
     environment_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(":/textures/environment.png")));
@@ -54,7 +54,7 @@ GLWorld::GLWorld(int width, int length, QWidget *parent) :
                             player_atlas->getArea(16, 20, 4, 12), player_atlas->getArea(28, 20, 4, 12)));
 
     player_body->setYRotation(player_rotY_from = 180);
-    player_body->setYPosition(-14 * m_per_px);
+    player_body->setYPosition(-1);
 
     player_arm_left = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                 2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
@@ -114,6 +114,12 @@ GLWorld::GLWorld(int width, int length, QWidget *parent) :
                            player_atlas->getArea(32, 8, 8, 8), player_atlas->getArea(48, 8, 8, 8)));
 
     player_head->addChild(player_hat);
+
+    brick = std::shared_ptr<GLBox>(new GLBox(0.5, 0.5, 0.5,
+                                             0.25, 0, 0.25,
+                                             environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
+                                             environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
+                                             environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16)));
 
     wall = std::unique_ptr<GLQuad>(new GLQuad(1, 1, 0.5, 0.5, 0.5, environment_atlas->getArea(16, 0, 16, 16)));
 
@@ -177,23 +183,33 @@ void GLWorld::paintGL()
     drawWallZ();
 
     for(int x = 0; x < World::size.first; x++)
-        for(int y = 0; y < World::size.second; y++)
+        for(int z = 0; z < World::size.second; z++)
         {
-            if(World::map[x][y].has_mark)
+            if(World::map[x][z].has_mark)
             {
                 marked_floor->setXPosition(x);
-                marked_floor->setZPosition(y);
+                marked_floor->setZPosition(z);
                 marked_floor->draw();
             }
             else
             {
                 floor->setXPosition(x);
-                floor->setZPosition(y);
+                floor->setZPosition(z);
                 floor->draw();
             }
-        }
 
-    //TODO: Cubes and bricks
+            brick->setXPosition(x);
+            brick->setZPosition(z);
+
+            float brick_y = 0;
+            for(int height = 0; height < World::map[x][z].stack_size; height++, brick_y += 0.5)
+            {
+                brick->setYPosition(brick_y - 1.5);
+                brick->draw();
+            }
+
+            //TODO: Cubes
+        }
 
     glDisable(GL_CULL_FACE);
 
@@ -225,7 +241,7 @@ void GLWorld::resizeGL(int w, int h)
     glLoadIdentity();
 }
 
-float lin_terpolation(float from, float to, float x)
+inline float lin_terpolation(float from, float to, float x)
 {
     return from + (to-from)*x;
 }
@@ -236,10 +252,14 @@ void GLWorld::tick()
     {
     case ANIM_STANDING:
         break;
-    case ANIM_TURNLEFT:
-    case ANIM_TURNRIGHT:
-    case ANIM_STEP:
     case ANIM_BUMP:
+    {
+        float triangle_progress = this->anim_progress > 0.5 ? 0.5 - (this->anim_progress - 0.5) : this->anim_progress;
+        player_body->setXPosition(lin_terpolation(player_posX_from, player_posX_from+bump_dir_x/2, triangle_progress));
+        player_body->setZPosition(lin_terpolation(player_posZ_from, player_posZ_from+bump_dir_z/2, triangle_progress));
+    }
+    case ANIM_TURN:
+    case ANIM_STEP:
         player_arm_left->setXRotation(sin(anim_progress * 2*M_PI) * 45.0);
         player_arm_right->setXRotation(sin(anim_progress * 2*M_PI) * -45.0);
         player_leg_left->setXRotation(sin(anim_progress * 2*M_PI) * -45.0);
@@ -249,37 +269,38 @@ void GLWorld::tick()
         player_arm_right->setXRotation(sin(anim_progress * M_PI/2) * 180.0);
         break;
     case ANIM_GREET2:
-        player_arm_right->setZRotation(sin(anim_progress * M_PI) * 15.0 + 5.0);
+        player_arm_right->setZRotation(sin(anim_progress * M_PI*2) * 15.0 + 5.0);
         break;
     case ANIM_GREET3:
         player_arm_right->setXRotation(cos(anim_progress * M_PI/2) * 180.0);
         break;
-    case ANIM_WAIT:
-        player_head->setXRotation(sin(anim_progress * M_PI) * 15.0);
-        break;
     case ANIM_BEND:
         player_body->setXRotation(sin(anim_progress * M_PI) * -50);
-        player_leg_left->setXRotation(sin(anim_progress * M_PI) * 50);
-        player_leg_right->setXRotation(sin(anim_progress * M_PI) * 50);
         player_arm_left->setXRotation(sin(anim_progress * M_PI) * 90);
         player_arm_right->setXRotation(sin(anim_progress * M_PI) * 90);
+        player_leg_left->setXRotation(sin(anim_progress * M_PI) * 50);
+        player_leg_right->setXRotation(sin(anim_progress * M_PI) * 50);
+        break;
+
+    case ANIM_DEPOSIT_FLY:
+        player_arm_left->setXRotation(sin(anim_progress * M_PI) * 90);
+        player_arm_right->setXRotation(sin(anim_progress * M_PI) * 90);
+        player_body->setYPosition(lin_terpolation(player_posY_from, bend_pos_y, sin(anim_progress * M_PI)));
         break;
     }
 
     if(player_rotY_target != player_rotY_from)
         player_body->setYRotation(lin_terpolation(player_rotY_from, player_rotY_target, sin(anim_progress * M_PI/2)));
 
-    if(player_posX_target != player_posX_from || player_posZ_target != player_posZ_from)
+    if(player_posX_target != player_posX_from || player_posY_target != player_posY_from || player_posZ_target != player_posZ_from)
     {
-        player_body->setXPosition(lin_terpolation(player_posX_from, player_posX_target, sin(anim_progress * M_PI/2)));
-        player_body->setZPosition(lin_terpolation(player_posZ_from, player_posZ_target, sin(anim_progress * M_PI/2)));
-    }
+        //Supersteve!
+        if(player_posY_target != player_posY_from)
+            player_arm_right->setXRotation(sin(anim_progress * M_PI) * 150);
 
-    if(current_animation == ANIM_BUMP)
-    {
-        float triangle_progress = this->anim_progress > 0.5 ? 0.5 - (this->anim_progress - 0.5) : this->anim_progress;
-        player_body->setXPosition(lin_terpolation(player_posX_from, player_posX_from+bump_dir_x/2, triangle_progress));
-        player_body->setZPosition(lin_terpolation(player_posZ_from, player_posZ_from+bump_dir_z/2, triangle_progress));
+        player_body->setXPosition(lin_terpolation(player_posX_from, player_posX_target, sin(anim_progress * M_PI/2)));
+        player_body->setYPosition(lin_terpolation(player_posY_from, player_posY_target, sin(anim_progress * M_PI/2)));
+        player_body->setZPosition(lin_terpolation(player_posZ_from, player_posZ_target, sin(anim_progress * M_PI/2)));
     }
 
     current_anim_ticks++;
@@ -333,6 +354,7 @@ void GLWorld::setAnimation(ANIMATION animation)
     tick_timer.stop();
 
     player_posX_from = player_posX_target;
+    player_posY_from = player_posY_target;
     player_posZ_from = player_posZ_target;
     player_rotY_from = player_rotY_target;
 
@@ -340,12 +362,21 @@ void GLWorld::setAnimation(ANIMATION animation)
     if(anim_progress != 1.0f)
     {
         player_body->setXPosition(player_posX_from);
+        player_body->setYPosition(player_posY_from);
         player_body->setZPosition(player_posZ_from);
         player_body->setYRotation(player_rotY_from);
 
         //For ANIM_GREET
-        player_arm_right->setXRotation(5);
+        player_arm_right->setXRotation(0);
         player_arm_right->setZRotation(5);
+
+        //For ANIM_BEND
+        player_body->setXRotation(0);
+        player_leg_left->setXRotation(0);
+        player_leg_right->setXRotation(0);
+
+        //For ANIM_BEND and ANIM_DEPOSIT
+        player_arm_left->setXRotation(0);
     }
 
     current_anim_ticks = 0;
@@ -375,17 +406,17 @@ bool GLWorld::stepForward()
     return true;
 }
 
-void GLWorld::turnRight()
+void GLWorld::turnRight(int quarters)
 {
-    World::turnRight();
-    setAnimation(ANIM_TURNRIGHT);
+    World::turnRight(quarters);
+    setAnimation(ANIM_TURN);
     updateAnimationTarget();
 }
 
-void GLWorld::turnLeft()
+void GLWorld::turnLeft(int quarters)
 {
-    World::turnLeft();
-    setAnimation(ANIM_TURNLEFT);
+    World::turnLeft(quarters);
+    setAnimation(ANIM_TURN);
     updateAnimationTarget();
 }
 
@@ -401,6 +432,36 @@ bool GLWorld::setCube(bool b)
         return false;
 
     setAnimation(ANIM_BEND);
+
+    return true;
+}
+
+bool GLWorld::deposit(int count)
+{
+    if(!World::deposit(count))
+        return false;
+
+    Coords then = World::getForward() + steve;
+    bend_pos_y = static_cast<float>(map[then.first][then.second].stack_size) * 0.5 - 2.0;
+    if(bend_pos_y < 0)
+        setAnimation(ANIM_BEND);
+    else
+        setAnimation(ANIM_DEPOSIT_FLY);
+
+    return true;
+}
+
+bool GLWorld::pickup(int count)
+{
+    if(!World::pickup(count))
+        return false;
+
+    Coords then = World::getForward() + steve;
+    bend_pos_y = static_cast<float>(map[then.first][then.second].stack_size) * 0.5 - 2.0;
+    if(bend_pos_y < 0)
+        setAnimation(ANIM_BEND);
+    else
+        setAnimation(ANIM_DEPOSIT_FLY);
 
     return true;
 }
@@ -463,6 +524,7 @@ void GLWorld::updateAnimationTarget()
 
     player_posX_target = steve.first;
     player_posZ_target = steve.second;
+    player_posY_target = map[steve.first][steve.second].stack_size * 0.5 - 0.8;
 }
 
 void GLWorld::reset()

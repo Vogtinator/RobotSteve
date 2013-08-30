@@ -39,16 +39,20 @@ class World
     friend class GLView;
 public:
     World(int width, int length);
+
     virtual void reset();
-    bool resize(int width, int length);
+    virtual bool resize(int width, int length);
     virtual bool stepForward();
-    virtual void turnRight();
-    virtual void turnLeft();
+    virtual void turnRight(int quarters);
+    virtual void turnLeft(int quarters);
     virtual void setMark(bool b);
     virtual bool setCube(bool b);
-    bool isWall();
-    int getStackSize();
-    bool isMarked();
+    virtual bool pickup(int count);
+    virtual bool deposit(int count);
+    virtual bool isWall();
+    virtual int getStackSize();
+    virtual bool isMarked();
+
     ORIENTATION getOrientation() { return orientation; }
     int getX() { return steve.first; }
     int getY() { return steve.second; }

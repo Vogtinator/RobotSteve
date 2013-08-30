@@ -1,0 +1,7 @@
+1. Keine Anweisungen "TON", "SCHNELL" und "LANGSAM"
+2. Keine einzeiligen Blöcke: wenn nichtistwand dann schritt *wenn
+3. Kommentare mit ';', '//' oder '#' am Anfang
+4. Kein Depot an Ziegeln (HatZiegel,IstVoll,IstLeer)
+5. Bedingungspräfix "nicht" anstelle von verkrüppelten Bedingungen ("solange nicht istwand" statt "solange NichtIstWand")
+6. Parameter für links und rechts drehen gibt die 90° Schritte an. Kein Geschwindigkeitsverlust.
+7. Block "Programm [...] *Programm": Einfach weglassen. Alles außerhalb selbstdefinierter Anweisungen und Bedingungen wird ausgeführt.

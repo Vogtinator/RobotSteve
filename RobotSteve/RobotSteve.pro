@@ -36,4 +36,5 @@ RESOURCES += \
     resources.qrc
 
 OTHER_FILES += \
-    TODO.txt
+    TODO.txt \
+    Unterschiede.txt

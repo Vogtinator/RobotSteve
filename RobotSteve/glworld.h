@@ -27,10 +27,9 @@ enum ANIMATION {
     ANIM_GREET3,
     ANIM_STEP,
     ANIM_BUMP,
-    ANIM_TURNLEFT,
-    ANIM_TURNRIGHT,
+    ANIM_TURN,
     ANIM_BEND,
-    ANIM_WAIT
+    ANIM_DEPOSIT_FLY
 };
 
 class GLWorld : public QGLWidget, public World
@@ -41,10 +40,12 @@ public:
 
     void reset() override;
     bool stepForward() override;
-    void turnRight() override;
-    void turnLeft() override;
+    void turnRight(int quarters) override;
+    void turnLeft(int quarters) override;
     void setMark(bool b) override;
     bool setCube(bool b) override;
+    bool deposit(int count) override;
+    bool pickup(int count) override;
 
 protected:
     void paintGL();
@@ -68,15 +69,15 @@ private:
     std::unique_ptr<TextureAtlas> player_atlas, environment_atlas;
     QPoint last_pos;
     float camera_rotX, camera_rotY, camera_dist;
-    std::shared_ptr<GLBox> player_body, player_head, player_hat, player_leg_left, player_leg_right, player_arm_left, player_arm_right;
+    std::shared_ptr<GLBox> player_body, player_head, player_hat, player_leg_left, player_leg_right, player_arm_left, player_arm_right, brick;
     std::unique_ptr<GLQuad> wall, floor, marked_floor;
     ANIMATION current_animation = ANIM_STANDING;
     QHash<ANIMATION,int> anim_ticks;
     QHash<ANIMATION,ANIMATION> anim_next;
     int current_anim_ticks;
     float speed_ms = 500; //How much time an animation takes
-    float anim_progress = 0, player_posX_from = 0, player_posZ_from = 0, player_posX_target = 0, player_posZ_target = 0, player_rotY_from = 0, player_rotY_target = 0;
-    float bump_dir_x, bump_dir_z;
+    float anim_progress = 0, player_posX_from = 0, player_posZ_from = 0, player_posY_from = -0.8, player_posY_target = -0.8, player_posX_target = 0, player_posZ_target = 0, player_rotY_from = 0, player_rotY_target = 0;
+    float bump_dir_x, bump_dir_z, bend_pos_y;
 };
 
 #endif // GLWORLD_H

@@ -95,6 +95,8 @@ void MainWindow::startExecution() throw (SteveInterpreterException)
 void MainWindow::stopExecution()
 {
     clock.stop();
+    ui->actionStarten->setText(QApplication::trUtf8("Starten"));
+    ui->actionSchritt->setEnabled(true);
     ui->codeEdit->setReadOnly(false);
     execution_started = false;
 }
@@ -143,7 +145,9 @@ void MainWindow::clockEvent()
 {
     try {
         startExecution();
-        ui->codeEdit->clear();
+
+        //TODO: Redo!
+        /*ui->codeEdit->clear();
 
         QTextCursor cursor(ui->codeEdit->document());
         QTextBlockFormat bf = cursor.blockFormat();
@@ -151,8 +155,7 @@ void MainWindow::clockEvent()
 
         for(int line = 0; line < code.size(); line++)
         {
-            //TODO: Get rid of this hack here
-            if(line == interpreter.getLine() + 1)
+            if(line == interpreter.getLine())
                 bf.setBackground(QBrush(QColor(255, 255, 0)));
             else
                 bf.clearBackground();
@@ -160,7 +163,7 @@ void MainWindow::clockEvent()
             cursor.setBlockFormat(bf);
 
             ui->codeEdit->appendHtml(Qt::convertFromPlainText(code[line]));
-        }
+        }*/
 
         interpreter.executeLine();
         /*interpreter.dumpCode();

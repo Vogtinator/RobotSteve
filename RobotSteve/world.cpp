@@ -43,7 +43,7 @@ World::World(int width, int length)
 
 bool World::resize(int width, int length)
 {
-    if(width > 25 || length > 25 || width < 3 || length < 3)
+    if(width > 100 || length > 100 || width < 3 || length < 3)
         return false;
 
     map.resize(width);
@@ -89,8 +89,12 @@ bool World::stepForward()
     return true;
 }
 
-void World::turnRight()
+void World::turnRight(int quarters)
 {
+    quarters %= 4;
+    if(quarters > 1)
+        turnRight(quarters - 1);
+
     switch(orientation)
     {
     case ORIENT_NORTH:
@@ -108,8 +112,12 @@ void World::turnRight()
     }
 }
 
-void World::turnLeft()
+void World::turnLeft(int quarters)
 {
+    quarters %= 4;
+    if(quarters > 1)
+        turnLeft(quarters - 1);
+
     switch(orientation)
     {
     case ORIENT_NORTH:
@@ -175,6 +183,37 @@ int World::getStackSize()
         return 0; //Nope, no cubes in walls please.
 
     return map[then.first][then.second].stack_size;
+}
+
+bool World::deposit(int count)
+{
+    Coords then = steve + getForward();
+
+    if(then.first < 0 || then.first >= size.first ||
+            then.second < 0 || then.second >= size.first)
+        return false; //Nope, no more bricks in walls please.
+
+    //TODO: Max height
+    map[then.first][then.second].stack_size += count;
+
+    return true;
+}
+
+bool World::pickup(int count)
+{
+    Coords then = steve + getForward();
+
+    if(then.first < 0 || then.first >= size.first ||
+            then.second < 0 || then.second >= size.first)
+        return false; //Nope, no more bricks in walls please.
+
+    WorldObject &obj = map[then.first][then.second];
+    if(obj.stack_size < count)
+        return false; //No more bricks to pick up
+
+    obj.stack_size -= count;
+
+    return true;
 }
 
 bool World::isMarked()
