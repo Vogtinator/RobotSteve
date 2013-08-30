@@ -24,9 +24,21 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->horizontalLayout->addWidget(&world);
 
+    speed_slider = new QSlider(Qt::Horizontal, this);
+    speed_slider->setMinimum(0);
+    speed_slider->setMaximum(2000);
+    speed_slider->setValue(500);
+    ui->mainToolBar->addWidget(speed_slider);
+
+    clock.setSingleShot(true);
+
     connect(ui->actionStarten, SIGNAL(triggered()), this, SLOT(runCode()));
     connect(ui->actionSchritt, SIGNAL(triggered()), this, SLOT(step()));
     connect(ui->actionReset, SIGNAL(triggered()), this, SLOT(reset()));
+    connect(speed_slider, SIGNAL(sliderMoved(int)), this, SLOT(setSpeed(int)));
+    connect(&clock, SIGNAL(timeout()), this, SLOT(clockEvent()));
+
+    setSpeed(speed_slider->value());
 }
 
 MainWindow::~MainWindow()
@@ -36,41 +48,30 @@ MainWindow::~MainWindow()
 
 void MainWindow::runCode()
 {
-    try {
-        startExecution();
-        interpreter.dumpCode();
-        world.dumpWorld();
-
-        while(!interpreter.executionFinished())
-            interpreter.executeLine();
-
-        world.dumpWorld();
-    }
-    catch (SteveInterpreterException &e) {
-        handleError(e);
-    }
-    catch (std::string &e)
+    //Start
+    if(!clock.isActive())
     {
-        std::cerr << e << std::endl;
-    }
+        ui->actionStarten->setText(QApplication::trUtf8("Stoppen"));
+        ui->actionSchritt->setDisabled(true);
 
-    stopExecution();
+        automatic = true;
+
+        clockEvent();
+    }
+    else //Stop
+    {
+        ui->actionStarten->setText(QApplication::trUtf8("Starten"));
+        ui->actionSchritt->setEnabled(true);
+
+        clock.stop();
+    }
 }
 
 void MainWindow::step()
 {
-    try {
-        startExecution();
-        interpreter.executeLine();
-        interpreter.dumpCode();
-        world.dumpWorld();
-    }
-    catch (SteveInterpreterException &e) {
-        handleError(e);
-    }
+    automatic = false;
 
-    if(interpreter.executionFinished())
-        stopExecution();
+    clockEvent();
 }
 
 void MainWindow::startExecution() throw (SteveInterpreterException)
@@ -83,7 +84,8 @@ void MainWindow::startExecution() throw (SteveInterpreterException)
     code = ui->codeEdit->toPlainText().split("\n");
 
     ui->codeEdit->clear();
-    ui->codeEdit->appendHtml(code.join("<br>"));
+    for(auto& line : code)
+        ui->codeEdit->appendHtml(Qt::convertFromPlainText(line));
 
     world.reset();
     interpreter.reset();
@@ -92,10 +94,7 @@ void MainWindow::startExecution() throw (SteveInterpreterException)
 
 void MainWindow::stopExecution()
 {
-    //Not really needed, but who cares :-)
-    if(!execution_started)
-        return;
-
+    clock.stop();
     ui->codeEdit->setReadOnly(false);
     execution_started = false;
 }
@@ -105,10 +104,15 @@ void MainWindow::reset()
     stopExecution();
     interpreter.reset();
     world.reset();
+
+    ui->codeEdit->clear();
+    for(auto& line : code)
+        ui->codeEdit->appendHtml(Qt::convertFromPlainText(line));
 }
 
 void MainWindow::handleError(SteveInterpreterException &e)
 {
+    //TODO: This function should use convertFromPlainText as well
     std::cerr << e.what() << std::endl;
     if(!e.getAffected().isEmpty())
     {
@@ -127,6 +131,48 @@ void MainWindow::handleError(SteveInterpreterException &e)
 
     ui->codeEdit->clear();
     ui->codeEdit->appendHtml(code.join("<br>"));
+}
 
-    stopExecution();
+void MainWindow::setSpeed(int ms)
+{
+    speed_ms = ms;
+    world.setSpeed(ms);
+}
+
+void MainWindow::clockEvent()
+{
+    try {
+        startExecution();
+        ui->codeEdit->clear();
+
+        QTextCursor cursor(ui->codeEdit->document());
+        QTextBlockFormat bf = cursor.blockFormat();
+        cursor.movePosition(QTextCursor::Start);
+
+        for(int line = 0; line < code.size(); line++)
+        {
+            //TODO: Get rid of this hack here
+            if(line == interpreter.getLine() + 1)
+                bf.setBackground(QBrush(QColor(255, 255, 0)));
+            else
+                bf.clearBackground();
+
+            cursor.setBlockFormat(bf);
+
+            ui->codeEdit->appendHtml(Qt::convertFromPlainText(code[line]));
+        }
+
+        interpreter.executeLine();
+        /*interpreter.dumpCode();
+        world.dumpWorld();*/
+
+        if(interpreter.executionFinished())
+            stopExecution();
+        else if(automatic)
+            clock.start(speed_ms);
+    }
+    catch (SteveInterpreterException &e) {
+        stopExecution();
+        handleError(e);
+    }
 }

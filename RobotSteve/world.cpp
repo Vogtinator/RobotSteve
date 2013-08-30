@@ -17,6 +17,21 @@ Coords operator+(const Coords& left, const Coords& right)
     return {left.first + right.first, left.second + right.second};
 }
 
+Coords operator-(const Coords& left, const Coords& right)
+{
+    return {left.first - right.first, left.second - right.second};
+}
+
+Coords operator*(const Coords& left, const float o)
+{
+    return {left.first * o, left.second * o};
+}
+
+Coords operator/(const Coords& left, const float o)
+{
+    return {left.first / o, left.second / o};
+}
+
 World::World(int width, int length)
     : size(width, length)
 {

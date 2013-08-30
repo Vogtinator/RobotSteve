@@ -18,11 +18,7 @@ GLWorld::GLWorld(int width, int length, QWidget *parent) :
     World(width, length),
     camera_rotX(-30),
     camera_rotY(15),
-    camera_dist(5),
-    player_body(0),
-    player_head(0),
-    player_leg_left(0), player_leg_right(0),
-    player_arm_left(0), player_arm_right(0)
+    camera_dist(5)
 {
     anim_ticks.insert(ANIM_STANDING, 1);
     anim_ticks.insert(ANIM_TURNLEFT, 124);
@@ -30,6 +26,7 @@ GLWorld::GLWorld(int width, int length, QWidget *parent) :
     anim_ticks.insert(ANIM_BEND, 124);
     anim_ticks.insert(ANIM_WAIT, 62);
     anim_ticks.insert(ANIM_STEP, 124);
+    anim_ticks.insert(ANIM_BUMP, 62);
     anim_ticks.insert(ANIM_GREET1, 31);
     anim_ticks.insert(ANIM_GREET2, 200);
     anim_ticks.insert(ANIM_GREET3, 31);
@@ -41,91 +38,92 @@ GLWorld::GLWorld(int width, int length, QWidget *parent) :
     anim_next.insert(ANIM_TURNLEFT, ANIM_STANDING);
     anim_next.insert(ANIM_TURNRIGHT, ANIM_STANDING);
     anim_next.insert(ANIM_BEND, ANIM_STANDING);
+    anim_next.insert(ANIM_BUMP, ANIM_STANDING);
 
-    player_atlas = new TextureAtlas(*this, QPixmap(":/textures/char.png"));
-    environment_atlas = new TextureAtlas(*this, QPixmap(":/textures/environment.png"));
+    player_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(":/textures/char.png")));
+    environment_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(":/textures/environment.png")));
 
     double m_per_px = 0.0579;
 
     static_assert(std::is_same<decltype(8 * m_per_px), decltype(m_per_px)>::value, "Your compiler is really bullshit!");
 
-    player_body = new GLBox(8 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_body = std::shared_ptr<GLBox>(new GLBox(8 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                             4 * m_per_px, 0 * m_per_px, 2 * m_per_px,
                             player_atlas->getArea(20, 20, 8, 12), player_atlas->getArea(32, 20, 8, 12),
                             player_atlas->getArea(20, 16, 8, 4), player_atlas->getArea(28, 16, 8, 4),
-                            player_atlas->getArea(16, 20, 4, 12), player_atlas->getArea(28, 20, 4, 12));
+                            player_atlas->getArea(16, 20, 4, 12), player_atlas->getArea(28, 20, 4, 12)));
 
     player_body->setYRotation(player_rotY_from = 180);
     player_body->setYPosition(-14 * m_per_px);
 
-    player_arm_left = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_arm_left = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                 2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
                                 player_atlas->getArea(44, 20, 4, 12), player_atlas->getArea(52, 20, 4, 12),
                                 player_atlas->getArea(44, 16, 4, 4), player_atlas->getArea(48, 16, 4, 4),
-                                player_atlas->getArea(48, 20, 4, 12), player_atlas->getArea(40, 20, 4, 12));
+                                player_atlas->getArea(48, 20, 4, 12), player_atlas->getArea(40, 20, 4, 12)));
 
     player_arm_left->setXPosition(-6 * m_per_px);
     player_arm_left->setYPosition(10 * m_per_px);
-    player_arm_left->setZRotation(-10);
+    player_arm_left->setZRotation(-5);
     player_body->addChild(player_arm_left);
 
-    player_arm_right = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_arm_right = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                  2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
                                  player_atlas->getArea(44, 20, 4, 12), player_atlas->getArea(52, 20, 4, 12),
                                  player_atlas->getArea(44, 16, 4, 4), player_atlas->getArea(48, 16, 4, 4),
-                                 player_atlas->getArea(40, 20, 4, 12), player_atlas->getArea(48, 20, 4, 12));
+                                 player_atlas->getArea(40, 20, 4, 12), player_atlas->getArea(48, 20, 4, 12)));
 
     player_arm_right->setXPosition(6 * m_per_px);
     player_arm_right->setYPosition(10 * m_per_px);
-    player_arm_right->setZRotation(10);
+    player_arm_right->setZRotation(5);
     player_body->addChild(player_arm_right);
 
-    player_leg_left = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_leg_left = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                  2 * m_per_px, 12 * m_per_px, 2 * m_per_px,
                                  player_atlas->getArea(4, 20, 4, 12), player_atlas->getArea(12, 20, 4, 12),
                                  player_atlas->getArea(4, 16, 4, 4), player_atlas->getArea(8, 16, 4, 4),
-                                 player_atlas->getArea(8, 20, 4, 12), player_atlas->getArea(0, 20, 4, 12));
+                                 player_atlas->getArea(8, 20, 4, 12), player_atlas->getArea(0, 20, 4, 12)));
 
     player_leg_left->setXPosition(-2 * m_per_px);
     player_leg_left->setZRotation(-5);
     player_body->addChild(player_leg_left);
 
-    player_leg_right = new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_leg_right = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                  2 * m_per_px, 12 * m_per_px, 2 * m_per_px,
                                  player_atlas->getArea(4, 20, 4, 12), player_atlas->getArea(12, 20, 4, 12),
                                  player_atlas->getArea(4, 16, 4, 4), player_atlas->getArea(8, 16, 4, 4),
-                                 player_atlas->getArea(0, 20, 4, 12), player_atlas->getArea(8, 20, 4, 12));
+                                 player_atlas->getArea(0, 20, 4, 12), player_atlas->getArea(8, 20, 4, 12)));
 
     player_leg_right->setXPosition(2 * m_per_px);
     player_leg_right->setZRotation(5);
     player_body->addChild(player_leg_right);
 
-    player_head = new GLBox(8 * m_per_px, 8 * m_per_px, 8 * m_per_px,
+    player_head = std::shared_ptr<GLBox>(new GLBox(8 * m_per_px, 8 * m_per_px, 8 * m_per_px,
                             4 * m_per_px, 0, 4 * m_per_px,
                             player_atlas->getArea(8, 8, 8, 8), player_atlas->getArea(24, 8, 8, 8),
                             player_atlas->getArea(8, 0, 8, 8), player_atlas->getArea(16, 0, 8, 8),
-                            player_atlas->getArea(0, 8, 8, 8), player_atlas->getArea(16, 8, 8, 8));
+                            player_atlas->getArea(0, 8, 8, 8), player_atlas->getArea(16, 8, 8, 8)));
 
     player_head->setYPosition(12 * m_per_px);
     player_body->addChild(player_head);
 
-    player_hat = new GLBox(9 * m_per_px, 9 * m_per_px, 9 * m_per_px,
+    player_hat = std::shared_ptr<GLBox>(new GLBox(9 * m_per_px, 9 * m_per_px, 9 * m_per_px,
                            4.5 * m_per_px, 0.5 * m_per_px, 4.5 * m_per_px,
                            player_atlas->getArea(40, 8, 8, 8), player_atlas->getArea(56, 8, 8, 8),
                            player_atlas->getArea(40, 0, 8, 8), player_atlas->getArea(48, 0, 8, 8),
-                           player_atlas->getArea(32, 8, 8, 8), player_atlas->getArea(48, 8, 8, 8));
+                           player_atlas->getArea(32, 8, 8, 8), player_atlas->getArea(48, 8, 8, 8)));
 
     player_head->addChild(player_hat);
 
-    wall = new GLQuad(1, 1, 0.5, 0.5, 0.5, environment_atlas->getArea(16, 0, 16, 16));
+    wall = std::unique_ptr<GLQuad>(new GLQuad(1, 1, 0.5, 0.5, 0.5, environment_atlas->getArea(16, 0, 16, 16)));
 
     wall->setXRotation(90);
 
-    floor = new GLQuad(1, 1, 0.5, 0.5, 0.5, environment_atlas->getArea(0, 0, 16, 16));
+    floor = std::unique_ptr<GLQuad>(new GLQuad(1, 1, 0.5, 0.5, 0.5, environment_atlas->getArea(0, 0, 16, 16)));
 
     floor->setYPosition(-1);
 
-    marked_floor = new GLQuad(1, 1, 0.5, 0.5, 0.5, environment_atlas->getArea(32, 0, 16, 16));
+    marked_floor = std::unique_ptr<GLQuad>(new GLQuad(1, 1, 0.5, 0.5, 0.5, environment_atlas->getArea(32, 0, 16, 16)));
 
     marked_floor->setYPosition(-1);
 
@@ -234,8 +232,6 @@ float lin_terpolation(float from, float to, float x)
 
 void GLWorld::tick()
 {
-    anim_progress = (static_cast<float>(current_anim_ticks)) / static_cast<float>(anim_ticks[current_animation]);
-
     switch(current_animation)
     {
     case ANIM_STANDING:
@@ -243,20 +239,19 @@ void GLWorld::tick()
     case ANIM_TURNLEFT:
     case ANIM_TURNRIGHT:
     case ANIM_STEP:
+    case ANIM_BUMP:
         player_arm_left->setXRotation(sin(anim_progress * 2*M_PI) * 45.0);
         player_arm_right->setXRotation(sin(anim_progress * 2*M_PI) * -45.0);
         player_leg_left->setXRotation(sin(anim_progress * 2*M_PI) * -45.0);
         player_leg_right->setXRotation(sin(anim_progress * 2*M_PI) * 45.0);
         break;
     case ANIM_GREET1:
-        player_arm_right->setZRotation(sin(anim_progress * M_PI/2) * -5);
         player_arm_right->setXRotation(sin(anim_progress * M_PI/2) * 180.0);
         break;
     case ANIM_GREET2:
-        player_arm_right->setZRotation(sin(anim_progress * M_PI) * 15.0);
+        player_arm_right->setZRotation(sin(anim_progress * M_PI) * 15.0 + 5.0);
         break;
     case ANIM_GREET3:
-        player_arm_right->setZRotation(cos(anim_progress * M_PI/2) * -5);
         player_arm_right->setXRotation(cos(anim_progress * M_PI/2) * 180.0);
         break;
     case ANIM_WAIT:
@@ -280,7 +275,16 @@ void GLWorld::tick()
         player_body->setZPosition(lin_terpolation(player_posZ_from, player_posZ_target, sin(anim_progress * M_PI/2)));
     }
 
+    if(current_animation == ANIM_BUMP)
+    {
+        float triangle_progress = this->anim_progress > 0.5 ? 0.5 - (this->anim_progress - 0.5) : this->anim_progress;
+        player_body->setXPosition(lin_terpolation(player_posX_from, player_posX_from+bump_dir_x/2, triangle_progress));
+        player_body->setZPosition(lin_terpolation(player_posZ_from, player_posZ_from+bump_dir_z/2, triangle_progress));
+    }
+
     current_anim_ticks++;
+    anim_progress = (static_cast<float>(current_anim_ticks)) / static_cast<float>(anim_ticks[current_animation]);
+
     if(current_anim_ticks == anim_ticks[current_animation])
         setAnimation(anim_next[current_animation]);
 }
@@ -311,23 +315,6 @@ void GLWorld::mouseMoveEvent(QMouseEvent *event)
     last_pos = event->pos();
 }
 
-GLWorld::~GLWorld()
-{
-    delete player_body;
-    delete player_head;
-    delete player_hat;
-    delete player_leg_left;
-    delete player_leg_right;
-    delete player_arm_left;
-    delete player_arm_right;
-
-    delete floor;
-    delete wall;
-
-    delete player_atlas;
-    delete environment_atlas;
-}
-
 void GLWorld::wheelEvent(QWheelEvent *event)
 {
     camera_dist -= event->delta() * 0.005;
@@ -342,21 +329,29 @@ void GLWorld::setAnimation(ANIMATION animation)
 {
     if(speed_ms >= 500)
         speed_ms = 500;
-    if(speed_ms <= 250)
-        speed_ms = 0;
+
+    tick_timer.stop();
+
+    player_posX_from = player_posX_target;
+    player_posZ_from = player_posZ_target;
+    player_rotY_from = player_rotY_target;
 
     //If previous animation didn't complete, skip it
     if(anim_progress != 1.0f)
     {
-        player_body->setXPosition(player_posX_from = player_posX_target);
-        player_body->setZPosition(player_posZ_from = player_posZ_target);
-        player_body->setYRotation(player_rotY_from = player_rotY_target);
+        player_body->setXPosition(player_posX_from);
+        player_body->setZPosition(player_posZ_from);
+        player_body->setYRotation(player_rotY_from);
+
+        //For ANIM_GREET
+        player_arm_right->setXRotation(5);
+        player_arm_right->setZRotation(5);
     }
 
     current_anim_ticks = 0;
     current_animation = animation;
-    tick_timer.stop();
 
+    //If no time for animation, don't do it at all
     if(speed_ms > 0)
         tick_timer.start(speed_ms / anim_ticks[current_animation]);
 
@@ -366,7 +361,13 @@ void GLWorld::setAnimation(ANIMATION animation)
 bool GLWorld::stepForward()
 {
     if(!World::stepForward())
+    {
+        Coords wall = getForward();
+        bump_dir_x = wall.first;
+        bump_dir_z = wall.second;
+        setAnimation(ANIM_BUMP);
         return false;
+    }
 
     setAnimation(ANIM_STEP);
     updateAnimationTarget();
@@ -400,7 +401,6 @@ bool GLWorld::setCube(bool b)
         return false;
 
     setAnimation(ANIM_BEND);
-    updateAnimationTarget();
 
     return true;
 }
@@ -455,6 +455,7 @@ void GLWorld::updateAnimationTarget()
         break;
     }
 
+    //Closest direction (270° to 360° instad of 270° to 0°)
     if(player_rotY_from - player_rotY_target > 180)
         player_rotY_from -= 360;
     if(player_rotY_target - player_rotY_from > 180)
@@ -468,4 +469,5 @@ void GLWorld::reset()
 {
     World::reset();
     updateAnimationTarget();
+    setAnimation(ANIM_STEP);
 }

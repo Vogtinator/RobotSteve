@@ -53,7 +53,6 @@ SteveInterpreter::SteveInterpreter(World *world) : world(world)
     instructions[INSTR_MARK] = QObject::trUtf8("markesetzen");
     instructions[INSTR_UNMARK] = QObject::trUtf8("markelöschen");
     instructions[INSTR_WAIT] = QObject::trUtf8("warten");
-    instructions[INSTR_TONE] = QObject::trUtf8("ton");
     instructions[INSTR_QUIT] = QObject::trUtf8("beenden");
     instructions[INSTR_TRUE] = QObject::trUtf8("wahr");
     instructions[INSTR_FALSE] = QObject::trUtf8("falsch");
@@ -102,7 +101,6 @@ SteveInterpreter::SteveInterpreter(World *world) : world(world)
     instruction_functions[INSTR_MARK] = SteveFunction(this, &SteveInterpreter::mark, false);
     instruction_functions[INSTR_UNMARK] = SteveFunction(this, &SteveInterpreter::unmark, false);
     instruction_functions[INSTR_WAIT] = SteveFunction(this, &SteveInterpreter::wait, true);
-    instruction_functions[INSTR_TONE] = SteveFunction(this, &SteveInterpreter::tone, false);
 }
 
 void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, QString affected) throw (SteveInterpreterException)
@@ -118,6 +116,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
 {
     QStack<int> branch_entrys;
     QStack<BLOCK> block_types;
+    bool in_custom_condition = false;
 
     code_valid = false;
     this->code = code;
@@ -136,10 +135,8 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
 
         if(line[0].compare(instructions[INSTR_FALSE], Qt::CaseInsensitive) == 0 || line[0].compare(instructions[INSTR_TRUE], Qt::CaseInsensitive) == 0)
         {
-            if(!branch_entrys.size() || block_types.top() != BLOCK_NEW_COND)
+            if(!in_custom_condition)
                 throw SteveInterpreterException(QObject::trUtf8("%1 und %2 dürfen nur in einer eigenen Bedingung auftreten.").arg(instructions[INSTR_TRUE]).arg(instructions[INSTR_FALSE]), current_line);
-
-            branches[current_line] = branch_entrys.top();
 
             continue;
         }
@@ -174,6 +171,9 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
             {
                 if(keyword == i.end)
                 {
+                    if(keyword == KEYWORD_NEW_COND_END)
+                                in_custom_condition = true;
+
                     block_types.push(i.type);
                     branch_entrys.push(current_line);
                     break;
@@ -182,6 +182,9 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                 {
                     if(!branch_entrys.size())
                         throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[i.end]), current_line, keywords[i.begin]);
+
+                    if(keyword == KEYWORD_NEW_COND)
+                                in_custom_condition = false;
 
                     BLOCK last_block = block_types.pop();
                     if(last_block == i.type || (last_block == BLOCK_ELSE && i.type == BLOCK_IF))
@@ -192,7 +195,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                     else
                     {
                         findAndThrowMissingBegin(current_line, last_block, keywords[i.begin]);
-                        throw SteveInterpreterException("WTF #1", current_line);
+                        throw SteveInterpreterException("WTF #2", current_line);
                     }
                 }
             }
@@ -202,7 +205,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
     if(branch_entrys.size())
     {
         findAndThrowMissingBegin(0, block_types.pop());
-        throw SteveInterpreterException("WTF #2", 0);
+        throw SteveInterpreterException("WTF #3", 0);
     }
 
     //Now parse a second time
@@ -212,9 +215,13 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
         if(line.size() == 0)
             continue;
 
+        KEYWORD keyword = getKeyword(line[0]);
+        if(keyword == -1)
+            continue; //Not a keyword, ignore for now
+
         for(auto i : blocks)
         {
-            if(line[0].compare(keywords[i.begin], Qt::CaseInsensitive) == 0)
+            if(keyword == i.begin)
             {
                 if(i.type == BLOCK_NEW_COND || i.type == BLOCK_NEW_INSTR)
                 {
@@ -225,7 +232,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                             if(bk.type == in)
                                 throw SteveInterpreterException(QObject::trUtf8("%1 ist nicht in einem %2-Block erlaubt.").arg(keywords[i.begin]).arg(keywords[bk.begin]), current_line);
 
-                        throw SteveInterpreterException(QObject::trUtf8("WTF #5"), current_line);
+                        throw SteveInterpreterException(QObject::trUtf8("WTF #4"), current_line);
                     }
 
                     if(line.size() == 1)
@@ -242,35 +249,45 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                     if(getKeyword(name) != -1 || getInstruction(name) != -1 || getCondition(name) != -1)
                         throw SteveInterpreterException(QObject::trUtf8("Die Bezeichnung %1 ist ein reserviertes Wort.").arg(name), current_line, name);
 
-                    QMap<QString, int> *customSymbols = i.type == BLOCK_NEW_COND ? &custom_conditions : &custom_instructions;
-                    if(customSymbols->contains(name))
-                        throw SteveInterpreterException(QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(keywords[i.begin]).arg(line[1]).arg((*customSymbols)[name]), current_line, line[1]);
+                    auto &customSymbols = i.type == BLOCK_NEW_COND ? custom_conditions : custom_instructions;
+                    if(customSymbols.contains(name))
+                        throw SteveInterpreterException(QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(keywords[i.begin]).arg(line[1]).arg(customSymbols[name]), current_line, line[1]);
 
-                    (*customSymbols)[name] = current_line;
+                    customSymbols[name] = current_line;
                 }
                 block_types.push(i.type);
                 branch_entrys.push(current_line);
-                break;
+                break; //Keyword found
             }
-
-            if(line[0].compare(keywords[i.end], Qt::CaseInsensitive) == 0)
+            else if(keyword == i.end)
             {
+
                 if(branch_entrys.size())
                 {
                     BLOCK last_block = block_types.pop();
                     if(last_block == i.type)
                     {
                         branches[current_line] = branch_entrys.pop();
-                        break;
+
+                        if(keyword == KEYWORD_REPEAT_END)
+                        {
+                            if(line.size() == 3 && token[branches[current_line]].size() != 1)
+                                throw SteveInterpreterException(QObject::trUtf8("Hier darf keine Bedingung sein, da in Zeile %1 eine angegeben wurde.").arg(branches[current_line]), current_line);
+
+                            if(line.size() == 1 && token[branches[current_line]].size() == 1)
+                                throw SteveInterpreterException(QObject::trUtf8("Hier wird eine Bedingung benötigt, da in Zeile %1 keine angegeben wurde.").arg(branches[current_line]), current_line);
+                        }
+
+                        break; //Keyword found
                     }
                 }
-                throw SteveInterpreterException(QObject::trUtf8("WTF #3"), current_line);
+                throw SteveInterpreterException(QObject::trUtf8("WTF #5"), current_line);
             }
         }
     }
 
     if(branch_entrys.size())
-        throw SteveInterpreterException("WTF #4", code.size() - 1);
+        throw SteveInterpreterException("WTF #6", code.size() - 1);
 
     reset();
 
@@ -281,8 +298,9 @@ void SteveInterpreter::reset()
 {
     current_line = 0;
     stack.clear();
+    loop_count.clear();
+    custom_condition_return_stack.clear();
     coming_from_condition = coming_from_repeat_end = enter_sub = enter_else = execution_finished = false;
-    condition_exit = true;
 }
 
 bool SteveInterpreter::handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException)
@@ -295,7 +313,7 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
     if(condition != -1)
     {
         if(!condition_functions.contains(condition))
-            throw SteveInterpreterException(QObject::trUtf8("WTF #6"), current_line);
+            throw SteveInterpreterException(QObject::trUtf8("WTF #7"), current_line);
 
         SteveFunction &func = condition_functions[condition];
         //Argument given
@@ -333,15 +351,13 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
     {
         if(instruction == INSTR_TRUE)
         {
-            condition_exit = true;
-            current_line = branches[current_line];
-            return false;
+            custom_condition_return_stack.top() = true;
+            return true;
         }
         else if(instruction == INSTR_FALSE)
         {
-            condition_exit = false;
-            current_line = branches[current_line];
-            return false;
+            custom_condition_return_stack.top() = false;
+            return true;
         }
         else if(instruction == INSTR_QUIT)
         {
@@ -350,7 +366,7 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
         }
 
         if(!instruction_functions.contains(instruction))
-            throw SteveInterpreterException(QObject::trUtf8("WTF #7"), current_line);
+            throw SteveInterpreterException(QObject::trUtf8("WTF #8"), current_line);
 
         SteveFunction &func = instruction_functions[instruction];
         //Argument given
@@ -396,14 +412,19 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
     }
 
 #define MAX_STACK_SIZE 500000
-    if(repeat_needs_condition.size() > MAX_STACK_SIZE ||
-            loop_count.size() > MAX_STACK_SIZE ||
+    if(loop_count.size() > MAX_STACK_SIZE ||
             stack.size() > MAX_STACK_SIZE)
         throw SteveInterpreterException(QObject::trUtf8("Der Stack wird langsam ein bisschen zu groß.."), current_line);
 
     KEYWORD keyword = getKeyword(line[0]);
+
     if(keyword != -1)
     {
+        if(keyword != KEYWORD_REPEAT)
+            coming_from_repeat_end = false;
+        if(keyword != KEYWORD_IF && keyword != KEYWORD_REPEAT && keyword != KEYWORD_WHILE)
+            coming_from_condition = false;
+
         switch(keyword)
         {
         case KEYWORD_IF:
@@ -414,7 +435,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             bool result;
             if(coming_from_condition)
             {
-                result = condition_exit;
+                result = custom_condition_return_stack.pop();
                 coming_from_condition = false;
             }
             else
@@ -458,11 +479,9 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
         {
             if(line.size() == 1)
             {
-                repeat_needs_condition.push(true);
                 current_line++;
                 return;
             }
-            repeat_needs_condition.push(false);
 
             KEYWORD kwhile = static_cast<KEYWORD>(-1), ktimes = static_cast<KEYWORD>(-1);
             if((line.size() != 3 || ((kwhile=getKeyword(line[1])) != KEYWORD_WHILE && (ktimes=getKeyword(line[2])) != KEYWORD_TIMES))
@@ -472,10 +491,6 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             //REPEAT ALWAYS
             if(line.size() == 2)
             {
-                if(coming_from_repeat_end)
-                    loop_count.pop();
-
-                loop_count.push(-1);
                 current_line++;
                 return;
             }
@@ -483,15 +498,17 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             {
                 if(coming_from_repeat_end)
                 {
+                    loop_count.top()--;
                     coming_from_repeat_end = false;
-                    int count = loop_count.pop();
+                    int count = loop_count.top();
                     if(count <= 0)
-                        current_line = branches[current_line] + 1;
-                    else
                     {
-                        loop_count.push(count);
-                        current_line++;
+                        current_line = branches[current_line] + 1;
+                        loop_count.pop();
                     }
+                    else
+                        current_line++;
+
                     return;
                 }
 
@@ -513,13 +530,10 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             }
             else
             {
-                if(coming_from_repeat_end)
-                    loop_count.pop();
-
                 bool result;
                 if(coming_from_condition)
                 {
-                    result = condition_exit;
+                    result = custom_condition_return_stack.pop();
                     coming_from_condition = false;
                 }
                 else
@@ -530,29 +544,16 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
                 }
 
                 if(result)
-                {
                     current_line++;
-                    //Condition, no count
-                    loop_count.push(-1);
-                    return;
-                }
+
                 else
-                {
                     current_line = branches[current_line] + 1;
-                    return;
-                }
             }
             return;
         }
         case KEYWORD_REPEAT_END:
         {
-            bool needs_condition = repeat_needs_condition.pop();
-            if(line.size() == 3 && !needs_condition)
-                throw SteveInterpreterException(QObject::trUtf8("Hier darf keine Bedingung sein, da in Zeile %1 eine angegeben wurde.").arg(branches[current_line]), current_line);
-
-            if(line.size() == 1 && needs_condition)
-                throw SteveInterpreterException(QObject::trUtf8("Hier wird eine Bedingung benötigt, da in Zeile %1 keine angegeben wurde.").arg(branches[current_line]), current_line);
-
+            //Condition here instead of at the beginning: DO...WHILE
             if(line.size() == 3)
             {
                 if(getKeyword(line[1]) != KEYWORD_WHILE)
@@ -560,7 +561,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
                 bool result;
                 if(coming_from_condition)
-                    result = condition_exit;
+                    result = custom_condition_return_stack.pop();
                 else
                 {
                     //If not handled, it means current_line is set to the beginning of a custom condition
@@ -575,14 +576,9 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
                 return;
             }
+            //No condition here: WHILE...DO
             else if(line.size() == 1)
             {
-                int count = loop_count.pop();
-                //Count, no condition
-                if(count != -1)
-                    count--;
-
-                loop_count.push(count);
                 current_line = branches[current_line];
                 coming_from_repeat_end = true;
                 return;
@@ -601,7 +597,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             bool result;
             if(coming_from_condition)
             {
-                result = condition_exit;
+                result = custom_condition_return_stack.pop();
                 coming_from_condition = false;
             }
             else
@@ -626,8 +622,8 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
         case KEYWORD_NEW_INSTR:
         case KEYWORD_NEW_COND:
-            //If neither TRUE nor FALSE given, default to TRUE
-            condition_exit = true;
+            //True is default
+            custom_condition_return_stack.push(true);
 
             if(enter_sub)
             {
@@ -644,6 +640,9 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
         case KEYWORD_NEW_COND_END:
             coming_from_condition = true;
             current_line = stack.pop();
+            if(custom_condition_return_stack.size() == 0)
+                throw SteveInterpreterException(QObject::trUtf8("WTF #9"), current_line);
+
             return;
 
         default:
@@ -659,6 +658,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
     return;
 
+    //Never called, handleInstruction throws it for us.
     throw SteveInterpreterException(QObject::trUtf8("Ich hab` keine Ahnung, was %1 bedeutet :-(").arg(code[current_line]), current_line);
 }
 
@@ -708,7 +708,7 @@ void SteveInterpreter::dumpCode()
     if(coming_from_repeat_end)
         std::cout << QObject::trUtf8("Ich komme gerade von %1.").arg(keywords[KEYWORD_REPEAT_END]).toStdString() << std::endl;
     if(coming_from_condition)
-        std::cout << QObject::trUtf8("Ich komme gerade von einer selbstdefinierten Bedingung. Der Wert ist %1").arg(condition_exit ? "WAHR" : "FALSCH" ).toStdString() << std::endl;
+        std::cout << QObject::trUtf8("Ich komme gerade von einer selbstdefinierten Bedingung. Der Wert ist %1").arg(custom_condition_return_stack.top() ? "WAHR" : "FALSCH" ).toStdString() << std::endl;
     if(executionFinished())
         std::cout << QObject::trUtf8("Das Programm ist zuende.").toStdString() << std::endl;
 }
@@ -810,16 +810,6 @@ bool SteveInterpreter::has_bricks(World *world, bool has_param, int param)
 }
 
 //Instructions
-bool SteveInterpreter::tone(World *world, bool has_param, int param)
-{
-    Q_UNUSED(world);
-    Q_UNUSED(has_param);
-    Q_UNUSED(param);
-
-    //Nope!
-    return true;
-}
-
 bool SteveInterpreter::wait(World *world, bool has_param, int param)
 {
     if(!has_param)
@@ -903,7 +893,7 @@ bool SteveInterpreter::step(World *world, bool has_param, int param)
 
     while(param--)
         if(!world->stepForward())
-            throw SteveInterpreterException(QObject::trUtf8("Steve war so dumm und wäre beinahe gegen die Wand gelaufen!"), current_line);
+            throw SteveInterpreterException(QObject::trUtf8("Steve war so dumm und ist gegen die Wand gelaufen!"), current_line);
 
     return true;
 }

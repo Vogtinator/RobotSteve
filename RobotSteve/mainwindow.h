@@ -11,6 +11,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QMutex>
+#include <QSlider>
 #include <QMainWindow>
 
 #include "glworld.h"
@@ -33,13 +35,19 @@ public slots:
     void step();
     void reset();
     void stopExecution();
+    void setSpeed(int ms);
+    void clockEvent();
     
 private:
     void handleError(SteveInterpreterException &e);
     void startExecution() throw (SteveInterpreterException);
 
+    float speed_ms;
+    bool automatic;
+    QTimer clock;
     bool execution_started = false;
     Ui::MainWindow *ui;
+    QSlider *speed_slider;
     GLWorld world;
     SteveInterpreter interpreter;
     QStringList code;

@@ -11,8 +11,10 @@
 #ifndef GLWORLD_H
 #define GLWORLD_H
 
+#include <memory>
 #include <QGLWidget>
 #include <QTimer>
+#include <QHash>
 
 #include "world.h"
 #include "glbox.h"
@@ -24,6 +26,7 @@ enum ANIMATION {
     ANIM_GREET2,
     ANIM_GREET3,
     ANIM_STEP,
+    ANIM_BUMP,
     ANIM_TURNLEFT,
     ANIM_TURNRIGHT,
     ANIM_BEND,
@@ -35,7 +38,6 @@ class GLWorld : public QGLWidget, public World
     Q_OBJECT
 public:
     explicit GLWorld(int width, int length, QWidget *parent = 0);
-    ~GLWorld();
 
     void reset() override;
     bool stepForward() override;
@@ -63,17 +65,18 @@ private:
     void updateAnimationTarget();
 
     QTimer tick_timer, refresh_timer;
-    TextureAtlas *player_atlas, *environment_atlas;
+    std::unique_ptr<TextureAtlas> player_atlas, environment_atlas;
     QPoint last_pos;
     float camera_rotX, camera_rotY, camera_dist;
-    GLBox *player_body, *player_head, *player_hat, *player_leg_left, *player_leg_right, *player_arm_left, *player_arm_right;
-    GLQuad *wall, *floor, *marked_floor;
+    std::shared_ptr<GLBox> player_body, player_head, player_hat, player_leg_left, player_leg_right, player_arm_left, player_arm_right;
+    std::unique_ptr<GLQuad> wall, floor, marked_floor;
     ANIMATION current_animation = ANIM_STANDING;
-    QMap<ANIMATION,int> anim_ticks;
-    QMap<ANIMATION,ANIMATION> anim_next;
+    QHash<ANIMATION,int> anim_ticks;
+    QHash<ANIMATION,ANIMATION> anim_next;
     int current_anim_ticks;
     float speed_ms = 500; //How much time an animation takes
     float anim_progress = 0, player_posX_from = 0, player_posZ_from = 0, player_posX_target = 0, player_posZ_target = 0, player_rotY_from = 0, player_rotY_target = 0;
+    float bump_dir_x, bump_dir_z;
 };
 
 #endif // GLWORLD_H

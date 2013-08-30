@@ -28,6 +28,11 @@ enum ORIENTATION {
     ORIENT_WEST
 };
 
+Coords operator+(const Coords& left, const Coords& right);
+Coords operator-(const Coords& left, const Coords& right);
+Coords operator*(const Coords& left, const float o);
+Coords operator/(const Coords& left, const float o);
+
 //Called World although it also contains Steve..
 class World
 {

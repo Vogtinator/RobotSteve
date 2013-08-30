@@ -102,7 +102,6 @@ enum INSTRUCTION {
     INSTR_MARK,
     INSTR_UNMARK,
     INSTR_WAIT,
-    INSTR_TONE,
     INSTR_QUIT,
     INSTR_TRUE,
     INSTR_FALSE
@@ -185,7 +184,6 @@ private:
     bool mark(World *world, bool has_param, int param);
     bool unmark(World *world, bool has_param, int param);
     bool wait(World *world, bool has_param, int param);
-    bool tone(World *world, bool has_param, int param);
 
     //Independant
     World *world;
@@ -199,13 +197,13 @@ private:
 
     //Execution state
     int current_line; // Starts at 0!
-    bool coming_from_condition, coming_from_repeat_end, condition_exit, enter_sub, enter_else, execution_finished;
+    bool coming_from_condition, coming_from_repeat_end, enter_sub, enter_else, execution_finished;
     QStack<int> stack;
-    QStack<bool> repeat_needs_condition;
     QStack<int> loop_count;
+    QStack<bool> custom_condition_return_stack;
 
     //After parse
-    QMap<QString, int> custom_instructions, custom_conditions;
+    QHash<QString, int> custom_instructions, custom_conditions;
     QStringList code;
     bool code_valid;
     QMap<int, QStringList> token;

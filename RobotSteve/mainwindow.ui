@@ -60,7 +60,6 @@
     </property>
     <addaction name="actionSchauspieler_ausw_hlen"/>
     <addaction name="actionHintergrundfarbe"/>
-    <addaction name="actionGitter"/>
    </widget>
    <widget class="QMenu" name="menuProgrammeingabe">
     <property name="title">

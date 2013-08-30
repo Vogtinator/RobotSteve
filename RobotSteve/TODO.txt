@@ -1,0 +1,9 @@
+Selbstmord (Wand suchen, hochklettern und runterspringen
+Tabs
+Laden + Speichern
+Beispiele
+Syntax highlighting + Automatisch einrücken
+Array keyword_enum_name[KEYWORD_IF] = "KEYWORD_IF" erstellen + Hilfe einbinden: F1 zeigt Hilfe zu dem ausgewählten Wort
+Steine + Würfel
+Einstellungen für den Spieler, die Welt und Minecraft Texturenimport
+Menü "Hilfe"

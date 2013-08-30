@@ -1,6 +1,7 @@
 #ifndef GLBOX_H
 #define GLBOX_H
 
+#include <memory>
 #include <QVector>
 #include <QVector2D>
 #include <QVector3D>
@@ -17,7 +18,7 @@ public:
     void setXRotation(float x) override { rotX = x; }
     void setYRotation(float y) override { rotY = y; }
     void setZRotation(float z) override { rotZ = z; }
-    void addChild(GLDrawable* child) { childs.append(child); }
+    void addChild(std::shared_ptr<GLDrawable> child) { childs.append(child); }
     void draw() override;
 
 private:
@@ -27,7 +28,7 @@ private:
 
     QVector<QVector2D> tex_coords;
     QVector<QVector3D> vertices, normals;
-    QVector<GLDrawable*> childs;
+    QVector<std::shared_ptr<GLDrawable> > childs;
 };
 
 #endif // GLBOX_H
