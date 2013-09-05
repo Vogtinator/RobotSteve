@@ -117,9 +117,17 @@ GLWorld::GLWorld(int width, int length, QWidget *parent) :
 
     brick = std::shared_ptr<GLBox>(new GLBox(0.5, 0.5, 0.5,
                                              0.25, 0, 0.25,
-                                             environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
-                                             environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
-                                             environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16)));
+                                             environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8),
+                                             environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8),
+                                             environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8)));
+
+    cube = std::shared_ptr<GLBox>(new GLBox(1, 1, 1,
+                                            0.5, 0, 0.5,
+                                            environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
+                                            environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
+                                            environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16)));
+
+    cube->setYPosition(-1.5); //Ground level
 
     wall = std::unique_ptr<GLQuad>(new GLQuad(1, 1, 0.5, 0.5, 0.5, environment_atlas->getArea(16, 0, 16, 16)));
 
@@ -185,11 +193,18 @@ void GLWorld::paintGL()
     for(int x = 0; x < World::size.first; x++)
         for(int z = 0; z < World::size.second; z++)
         {
-            if(World::map[x][z].has_mark)
+            WorldObject &obj = map[x][z];
+            if(obj.has_mark)
             {
                 marked_floor->setXPosition(x);
                 marked_floor->setZPosition(z);
                 marked_floor->draw();
+            }
+            else if(obj.has_cube)
+            {
+                cube->setXPosition(x);
+                cube->setZPosition(z);
+                cube->draw();
             }
             else
             {
@@ -207,8 +222,6 @@ void GLWorld::paintGL()
                 brick->setYPosition(brick_y - 1.5);
                 brick->draw();
             }
-
-            //TODO: Cubes
         }
 
     glDisable(GL_CULL_FACE);
@@ -525,11 +538,15 @@ void GLWorld::updateAnimationTarget()
     player_posX_target = steve.first;
     player_posZ_target = steve.second;
     player_posY_target = map[steve.first][steve.second].stack_size * 0.5 - 0.8;
+
+    //tick not called
+    if(speed_ms == 0)
+        setAnimation(ANIM_STANDING); //Update state
 }
 
 void GLWorld::reset()
 {
     World::reset();
     updateAnimationTarget();
-    setAnimation(ANIM_STEP);
+    setAnimation(ANIM_STANDING);
 }

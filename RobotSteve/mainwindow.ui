@@ -33,6 +33,65 @@
         </property>
        </widget>
       </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <layout class="QVBoxLayout" name="viewFrame"/>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Preferred</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="viewSwitch">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Struktogramm</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Preferred</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
      </layout>
     </item>
    </layout>
@@ -59,18 +118,9 @@
      <string>Darstellung</string>
     </property>
     <addaction name="actionSchauspieler_ausw_hlen"/>
-    <addaction name="actionHintergrundfarbe"/>
-   </widget>
-   <widget class="QMenu" name="menuProgrammeingabe">
-    <property name="title">
-     <string>Programmeingabe</string>
-    </property>
-    <addaction name="separator"/>
-    <addaction name="actionAutomatisch_einr_cken"/>
    </widget>
    <addaction name="menuDatei"/>
    <addaction name="menuEinstellungen"/>
-   <addaction name="menuProgrammeingabe"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="movable">

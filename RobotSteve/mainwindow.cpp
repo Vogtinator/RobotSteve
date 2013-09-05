@@ -22,7 +22,9 @@ MainWindow::MainWindow(QWidget *parent) :
     interpreter(&world)
 {
     ui->setupUi(this);
-    ui->horizontalLayout->addWidget(&world);
+    ui->viewFrame->addWidget(&world);
+
+    highlighter = new SteveHighlighter(ui->codeEdit, &interpreter);
 
     speed_slider = new QSlider(Qt::Horizontal, this);
     speed_slider->setMinimum(0);
@@ -37,13 +39,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionReset, SIGNAL(triggered()), this, SLOT(reset()));
     connect(speed_slider, SIGNAL(sliderMoved(int)), this, SLOT(setSpeed(int)));
     connect(&clock, SIGNAL(timeout()), this, SLOT(clockEvent()));
+    connect(ui->viewSwitch, SIGNAL(toggled(bool)), this, SLOT(switchViews(bool)));
+    connect(ui->codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
 
     setSpeed(speed_slider->value());
 }
 
 MainWindow::~MainWindow()
 {
+    //Slight hack prevents crashing on destruct
+    ui->codeEdit->blockSignals(true);
     delete ui;
+    delete highlighter;
 }
 
 void MainWindow::runCode()
@@ -51,6 +58,7 @@ void MainWindow::runCode()
     //Start
     if(!clock.isActive())
     {
+        world.setSpeed(speed_ms);
         ui->actionStarten->setText(QApplication::trUtf8("Stoppen"));
         ui->actionSchritt->setDisabled(true);
 
@@ -70,6 +78,8 @@ void MainWindow::runCode()
 void MainWindow::step()
 {
     automatic = false;
+    //The user can't be really fast, so animations always on
+    world.setSpeed(2000);
 
     clockEvent();
 }
@@ -79,26 +89,32 @@ void MainWindow::startExecution() throw (SteveInterpreterException)
     if(execution_started)
         return;
 
+    ui->statusBar->showMessage(QApplication::trUtf8("Parsen.."));
+
     execution_started = true;
     ui->codeEdit->setReadOnly(true);
     code = ui->codeEdit->toPlainText().split("\n");
 
-    ui->codeEdit->clear();
-    for(auto& line : code)
-        ui->codeEdit->appendHtml(Qt::convertFromPlainText(line));
-
     world.reset();
     interpreter.reset();
     interpreter.setCode(code);
+
+    if(automatic)
+        ui->statusBar->showMessage(QApplication::trUtf8("Programm läuft"));
+    else
+        ui->statusBar->showMessage(QApplication::trUtf8("Programm pausiert"));
 }
 
 void MainWindow::stopExecution()
 {
     clock.stop();
+    ui->statusBar->showMessage(QApplication::trUtf8("Programm beendet"));
     ui->actionStarten->setText(QApplication::trUtf8("Starten"));
     ui->actionSchritt->setEnabled(true);
     ui->codeEdit->setReadOnly(false);
     execution_started = false;
+
+    highlighter->resetHighlight();
 }
 
 void MainWindow::reset()
@@ -106,33 +122,20 @@ void MainWindow::reset()
     stopExecution();
     interpreter.reset();
     world.reset();
-
-    ui->codeEdit->clear();
-    for(auto& line : code)
-        ui->codeEdit->appendHtml(Qt::convertFromPlainText(line));
 }
 
 void MainWindow::handleError(SteveInterpreterException &e)
 {
-    //TODO: This function should use convertFromPlainText as well
     std::cerr << e.what() << std::endl;
-    if(!e.getAffected().isEmpty())
-    {
-        QString line = code[e.getLineStart()];
-        line.replace(e.getAffected(), QString("<i>%1</i>").arg(e.getAffected()));
-        code[e.getLineStart()] = line;
-    }
-    else
-    {
-        for(int line = e.getLineStart(); line <= e.getLineEnd(); line++)
-        {
-            code[line].prepend("<i>");
-            code[line].append("</i>");
-        }
-    }
+    ui->statusBar->showMessage(e.what());
 
-    ui->codeEdit->clear();
-    ui->codeEdit->appendHtml(code.join("<br>"));
+    QTextCharFormat format;
+    format.setForeground(Qt::white);
+    format.setBackground(Qt::red);
+    format.setFontItalic(true);
+    format.setFontWeight(QFont::Bold);
+
+    highlighter->highlight(e.getLine(), format, e.getAffected());
 }
 
 void MainWindow::setSpeed(int ms)
@@ -146,24 +149,17 @@ void MainWindow::clockEvent()
     try {
         startExecution();
 
-        //TODO: Redo!
-        /*ui->codeEdit->clear();
+        if(automatic)
+            clock.start(speed_ms);
 
-        QTextCursor cursor(ui->codeEdit->document());
-        QTextBlockFormat bf = cursor.blockFormat();
-        cursor.movePosition(QTextCursor::Start);
-
-        for(int line = 0; line < code.size(); line++)
+        if(speed_ms > 0 || !automatic)
         {
-            if(line == interpreter.getLine())
-                bf.setBackground(QBrush(QColor(255, 255, 0)));
-            else
-                bf.clearBackground();
+            QTextCharFormat format;
+            format.setBackground(Qt::yellow);
+            format.setFontWeight(QFont::Bold);
 
-            cursor.setBlockFormat(bf);
-
-            ui->codeEdit->appendHtml(Qt::convertFromPlainText(code[line]));
-        }*/
+            highlighter->highlight(interpreter.getLine(), format);
+        }
 
         interpreter.executeLine();
         /*interpreter.dumpCode();
@@ -171,11 +167,22 @@ void MainWindow::clockEvent()
 
         if(interpreter.executionFinished())
             stopExecution();
-        else if(automatic)
-            clock.start(speed_ms);
     }
-    catch (SteveInterpreterException &e) {
+    catch (SteveInterpreterException &e)
+    {
         stopExecution();
         handleError(e);
     }
+}
+
+void MainWindow::switchViews(bool which)
+{
+    world.setVisible(!which);
+    //TODO
+}
+
+void MainWindow::textChanged()
+{
+    //If user changes the code, the highlighting will no longer be valid
+    highlighter->resetHighlight();
 }

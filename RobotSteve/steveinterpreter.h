@@ -24,23 +24,19 @@ class SteveInterpreter;
 
 class SteveInterpreterException : public std::exception {
 public:
-    SteveInterpreterException(QString error, int line) : SteveInterpreterException(error, line, line, "") {}
-    SteveInterpreterException(QString error, int line, QString affected) : SteveInterpreterException(error, line, line, affected) {}
-    SteveInterpreterException(QString error, int line_start, int line_end) : SteveInterpreterException(error, line_start, line_end, "") {}
+    SteveInterpreterException(const QString &error, int line) : SteveInterpreterException(error, line, "") {}
+    SteveInterpreterException(const QString &error, int line, const QString &affected) : error(error), line(line), affected(affected) {}
     ~SteveInterpreterException() throw() {}
 
-    const QString getAffected() { return affected; }
-    int getLineStart() { return line_start; }
-    int getLineEnd() { return line_end; }
+    const QString &getAffected() { return affected; }
+    int getLine() { return line; }
 
     const char* what();
 
 private:
-    SteveInterpreterException(QString error, int line_start, int line_end, QString affected) : error(error), line_start(line_start), line_end(line_end), affected(affected) {}
 
     const QString error;
-    const int line_start;
-    const int line_end;
+    const int line;
     const QString affected;
 };
 
@@ -94,7 +90,6 @@ enum INSTRUCTION {
     INSTR_PICKUP,
     INSTR_MARK,
     INSTR_UNMARK,
-    INSTR_WAIT,
     INSTR_QUIT,
     INSTR_TRUE,
     INSTR_FALSE
@@ -102,13 +97,13 @@ enum INSTRUCTION {
 
 enum CONDITION {
     COND_ALWAYS,
-    COND_ISWALL,
-    COND_ISBRICK,
+    COND_WALL,
+    COND_BRICK,
     COND_MARKED,
-    COND_ISNORTH,
-    COND_ISEAST,
-    COND_ISSOUTH,
-    COND_ISWEST
+    COND_NORTH,
+    COND_EAST,
+    COND_SOUTH,
+    COND_WEST
 };
 
 enum BLOCK {
@@ -127,6 +122,8 @@ struct BlockKeywords {
 
 class SteveInterpreter
 {
+    friend class SteveHighlighter;
+
 public:
     SteveInterpreter(World *world);
     void setCode(QStringList code) throw (SteveInterpreterException);
@@ -136,7 +133,7 @@ public:
     void dumpCode();
     void setWorld(World *world) { this->world = world; }
     bool executionFinished() { return execution_finished; }
-    bool isComment(QString s);
+    bool isComment(const QString &s);
 
     //Conditions:
     bool cond_always(World *world, bool has_param, int param);
@@ -156,18 +153,18 @@ public:
     bool pickup(World *world, bool has_param, int param);
     bool mark(World *world, bool has_param, int param);
     bool unmark(World *world, bool has_param, int param);
-    bool wait(World *world, bool has_param, int param);
 
 private:
-    void findAndThrowMissingBegin(int line, BLOCK block, QString affected = "") throw (SteveInterpreterException);
+    void findAndThrowMissingBegin(int line, BLOCK block, const QString &affected = "") throw (SteveInterpreterException);
     bool handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException);
     bool handleInstruction(QString instruction_str) throw (SteveInterpreterException);
     KEYWORD getKeyword(QString string);
     INSTRUCTION getInstruction(QString string);
     CONDITION getCondition(QString string);
-    bool match(QString &str, KEYWORD keyword);
-    bool match(QString &str, INSTRUCTION instr);
-    bool match(QString &str, CONDITION cond);
+    template <typename TOKEN> bool match(const QString &str, const TOKEN tok);
+    const QString &str(KEYWORD keyword);
+    const QString &str(INSTRUCTION instr);
+    const QString &str(CONDITION cond);
 
     //Independant
     World *world;

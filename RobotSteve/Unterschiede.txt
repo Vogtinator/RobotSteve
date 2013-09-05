@@ -1,7 +1,13 @@
-1. Keine Anweisungen "TON", "SCHNELL" und "LANGSAM"
+Unterschiede zu Robot Karol:
+
+1. Keine Anweisungen "TON", "WARTEN", "SCHNELL" und "LANGSAM"
 2. Keine einzeiligen Blöcke: wenn nichtistwand dann schritt *wenn
 3. Kommentare mit ';', '//' oder '#' am Anfang
 4. Kein Depot an Ziegeln (HatZiegel,IstVoll,IstLeer)
-5. Bedingungspräfix "nicht" anstelle von verkrüppelten Bedingungen ("solange nicht istwand" statt "solange NichtIstWand")
-6. Parameter für links und rechts drehen gibt die 90° Schritte an. Kein Geschwindigkeitsverlust.
-7. Block "Programm [...] *Programm": Einfach weglassen. Alles außerhalb selbstdefinierter Anweisungen und Bedingungen wird ausgeführt.
+5. "wand" statt "istwand" usw.
+6. Bedingungspräfix "nicht" anstelle von verkrüppelten Bedingungen ("solange nicht wand" statt "solange NichtIstWand")
+7. Parameter für links und rechts drehen gibt die 90° Schritte an. Kein Geschwindigkeitsverlust.
+8. Block "Programm [...] *Programm": Einfach weglassen. Alles außerhalb selbstdefinierter Anweisungen und Bedingungen wird ausgeführt.
+9. Maximale Stapelhöhe fest auf 10
+10. Maximale Weltgröße 25x25
+11. Anweisung "stop" pausiert das Programm, gut zum Debuggen

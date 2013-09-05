@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     glbox.cpp \
     gldrawable.cpp \
     glquad.cpp \
-    glworld.cpp
+    glworld.cpp \
+    stevehighlighter.cpp
 
 HEADERS  += mainwindow.h \
     world.h \
@@ -28,7 +29,8 @@ HEADERS  += mainwindow.h \
     gldrawable.h \
     glbox.h \
     glquad.h \
-    glworld.h
+    glworld.h \
+    stevehighlighter.h
 
 FORMS    += mainwindow.ui
 
@@ -37,4 +39,5 @@ RESOURCES += \
 
 OTHER_FILES += \
     TODO.txt \
-    Unterschiede.txt
+    Unterschiede.txt \
+    Beispiele.txt

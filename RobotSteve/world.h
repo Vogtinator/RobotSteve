@@ -36,7 +36,6 @@ Coords operator/(const Coords& left, const float o);
 //Called World although it also contains Steve..
 class World
 {
-    friend class GLView;
 public:
     World(int width, int length);
 

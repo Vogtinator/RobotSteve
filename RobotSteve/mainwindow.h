@@ -14,9 +14,11 @@
 #include <QMutex>
 #include <QSlider>
 #include <QMainWindow>
+#include <QPushButton>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
+#include "stevehighlighter.h"
 
 namespace Ui {
 class MainWindow;
@@ -37,6 +39,8 @@ public slots:
     void stopExecution();
     void setSpeed(int ms);
     void clockEvent();
+    void switchViews(bool which);
+    void textChanged();
     
 private:
     void handleError(SteveInterpreterException &e);
@@ -51,6 +55,7 @@ private:
     GLWorld world;
     SteveInterpreter interpreter;
     QStringList code;
+    SteveHighlighter *highlighter;
 };
 
 #endif // MAINWINDOW_H

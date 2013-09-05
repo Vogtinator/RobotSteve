@@ -1,0 +1,24 @@
+Jeden Punkt besuchen (funktioniert nur ohne Würfel):
+wiederhole immer
+    solange nicht wand tue
+        schritt
+    *solange
+    linksdrehen
+    schritt
+    linksdrehen
+    solange nicht wand tue
+        schritt
+    *solange
+    rechtsdrehen
+    schritt
+    rechtsdrehen
+    schritt
+*wiederhole
+
+Steve läuft an der Wand entlang bis ihm schwindelig wird oder er keine Lust mehr hat:
+wiederhole immer
+    wenn wand dann
+        linksdrehen
+    *wenn
+    schritt
+*wiederhole

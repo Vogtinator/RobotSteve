@@ -69,7 +69,7 @@ private:
     std::unique_ptr<TextureAtlas> player_atlas, environment_atlas;
     QPoint last_pos;
     float camera_rotX, camera_rotY, camera_dist;
-    std::shared_ptr<GLBox> player_body, player_head, player_hat, player_leg_left, player_leg_right, player_arm_left, player_arm_right, brick;
+    std::shared_ptr<GLBox> player_body, player_head, player_hat, player_leg_left, player_leg_right, player_arm_left, player_arm_right, brick, cube;
     std::unique_ptr<GLQuad> wall, floor, marked_floor;
     ANIMATION current_animation = ANIM_STANDING;
     QHash<ANIMATION,int> anim_ticks;

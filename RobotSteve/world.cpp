@@ -81,7 +81,7 @@ bool World::stepForward()
     Coords then = steve + getForward();
 
     if(then.first < 0 || then.first >= size.first ||
-            then.second < 0 || then.second >= size.first)
+            then.second < 0 || then.second >= size.first || map[then.first][then.second].has_cube)
         return false; //Oh no! Stepped into a wall :-(
 
     steve = then;
@@ -137,7 +137,9 @@ void World::turnLeft(int quarters)
 
 void World::setMark(bool b)
 {
-    map[steve.first][steve.second].has_mark = b;
+    WorldObject &obj = map[steve.first][steve.second];
+    if(!obj.has_cube)
+        map[steve.first][steve.second].has_mark = b;
 }
 
 bool World::setCube(bool b)
@@ -149,8 +151,8 @@ bool World::setCube(bool b)
         return false; //Nope, no cubes in walls please.
 
     WorldObject &obj = map[then.first][then.second];
-    if((obj.has_cube && b) || (!obj.has_cube && !b))
-        return false; //Mine non-existent or place into existing cube
+    if((obj.has_cube && b) || (!obj.has_cube && !b) || obj.stack_size != 0 || obj.has_mark)
+        return false; //Mine non-existent, place into existing cube, place into stack or onto a mark
 
     obj.has_cube = b;
     return true;
@@ -180,7 +182,11 @@ int World::getStackSize()
 
     if(then.first < 0 || then.first >= size.first ||
             then.second < 0 || then.second >= size.first)
-        return 0; //Nope, no cubes in walls please.
+        return 0;
+
+    WorldObject &obj = map[then.first][then.second];
+    if(obj.has_cube)
+        return 0; //Nope, no bricks in cubes, please.
 
     return map[then.first][then.second].stack_size;
 }
@@ -193,8 +199,16 @@ bool World::deposit(int count)
             then.second < 0 || then.second >= size.first)
         return false; //Nope, no more bricks in walls please.
 
-    //TODO: Max height
-    map[then.first][then.second].stack_size += count;
+    WorldObject &obj = map[then.first][then.second];
+    if(obj.has_cube)
+        return false; //Nope, no bricks in cubes, please.
+
+    obj.stack_size += count;
+    if(count > 10)
+    {
+        obj.stack_size = 10;
+        return false;
+    }
 
     return true;
 }
@@ -208,7 +222,7 @@ bool World::pickup(int count)
         return false; //Nope, no more bricks in walls please.
 
     WorldObject &obj = map[then.first][then.second];
-    if(obj.stack_size < count)
+    if(obj.stack_size < count || obj.has_cube)
         return false; //No more bricks to pick up
 
     obj.stack_size -= count;
