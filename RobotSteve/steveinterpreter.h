@@ -92,7 +92,8 @@ enum INSTRUCTION {
     INSTR_UNMARK,
     INSTR_QUIT,
     INSTR_TRUE,
-    INSTR_FALSE
+    INSTR_FALSE,
+    INSTR_BREAK
 };
 
 enum CONDITION {
@@ -132,7 +133,8 @@ public:
     int getLine();
     void dumpCode();
     void setWorld(World *world) { this->world = world; }
-    bool executionFinished() { return execution_finished; }
+    bool executionFinished() { return execution_finished || current_line >= code.size(); }
+    bool hitBreakpoint() { return hit_breakpoint; }
     bool isComment(const QString &s);
 
     //Conditions:
@@ -153,6 +155,7 @@ public:
     bool pickup(World *world, bool has_param, int param);
     bool mark(World *world, bool has_param, int param);
     bool unmark(World *world, bool has_param, int param);
+    bool breakpoint(World *world, bool has_param, int param);
 
 private:
     void findAndThrowMissingBegin(int line, BLOCK block, const QString &affected = "") throw (SteveInterpreterException);
@@ -178,7 +181,7 @@ private:
 
     //Execution state
     int current_line; // Starts at 0!
-    bool coming_from_condition, coming_from_repeat_end, enter_sub, enter_else, execution_finished;
+    bool coming_from_condition, coming_from_repeat_end, enter_sub, enter_else, execution_finished, hit_breakpoint;
     QStack<int> stack;
     QStack<int> loop_count;
     QStack<bool> custom_condition_return_stack;

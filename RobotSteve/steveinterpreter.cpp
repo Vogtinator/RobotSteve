@@ -56,6 +56,7 @@ SteveInterpreter::SteveInterpreter(World *world) : world(world)
     instructions[INSTR_QUIT] = QObject::trUtf8("beenden");
     instructions[INSTR_TRUE] = QObject::trUtf8("wahr");
     instructions[INSTR_FALSE] = QObject::trUtf8("falsch");
+    instructions[INSTR_BREAK] = QObject::trUtf8("stop");
 
     conditions[COND_ALWAYS] = QObject::trUtf8("immer");
     conditions[COND_WALL] = QObject::trUtf8("wand");
@@ -82,6 +83,7 @@ SteveInterpreter::SteveInterpreter(World *world) : world(world)
     instruction_functions[INSTR_PICKUP] = SteveFunction(this, &SteveInterpreter::pickup, true);
     instruction_functions[INSTR_MARK] = SteveFunction(this, &SteveInterpreter::mark, false);
     instruction_functions[INSTR_UNMARK] = SteveFunction(this, &SteveInterpreter::unmark, false);
+    instruction_functions[INSTR_BREAK] = SteveFunction(this, &SteveInterpreter::breakpoint, false);
 }
 
 void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, const QString &affected) throw (SteveInterpreterException)
@@ -281,7 +283,7 @@ void SteveInterpreter::reset()
     stack.clear();
     loop_count.clear();
     custom_condition_return_stack.clear();
-    coming_from_condition = coming_from_repeat_end = enter_sub = enter_else = execution_finished = false;
+    coming_from_condition = coming_from_repeat_end = enter_sub = enter_else = execution_finished = hit_breakpoint = false;
 }
 
 bool SteveInterpreter::handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException)
@@ -377,7 +379,9 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
 void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 {
     if(!code_valid)
-        throw SteveInterpreterException(QObject::trUtf8("Der Code ist nicht richtig."), 0);
+        throw SteveInterpreterException(QObject::trUtf8("Der Code enthält Fehler."), 0);
+
+    hit_breakpoint = false;
 
     if(current_line >= code.size())
     {
@@ -845,6 +849,16 @@ bool SteveInterpreter::step(World *world, bool has_param, int param)
         if(!world->stepForward())
             throw SteveInterpreterException(QObject::trUtf8("Steve war so dumm und ist gegen die Wand gelaufen!"), current_line);
 
+    return true;
+}
+
+bool SteveInterpreter::breakpoint(World *world, bool has_param, int param)
+{
+    Q_UNUSED(world);
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    hit_breakpoint = true;
     return true;
 }
 

@@ -24,6 +24,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->viewFrame->addWidget(&world);
 
+    error_format.setForeground(Qt::white);
+    error_format.setBackground(Qt::red);
+    error_format.setFontItalic(true);
+    error_format.setFontWeight(QFont::Bold);
+
+    current_line_format.setBackground(Qt::yellow);
+    current_line_format.setFontWeight(QFont::Bold);
+
     highlighter = new SteveHighlighter(ui->codeEdit, &interpreter);
 
     speed_slider = new QSlider(Qt::Horizontal, this);
@@ -66,13 +74,8 @@ void MainWindow::runCode()
 
         clockEvent();
     }
-    else //Stop
-    {
-        ui->actionStarten->setText(QApplication::trUtf8("Starten"));
-        ui->actionSchritt->setEnabled(true);
-
-        clock.stop();
-    }
+    else
+        pauseExecution();
 }
 
 void MainWindow::step()
@@ -129,13 +132,7 @@ void MainWindow::handleError(SteveInterpreterException &e)
     std::cerr << e.what() << std::endl;
     ui->statusBar->showMessage(e.what());
 
-    QTextCharFormat format;
-    format.setForeground(Qt::white);
-    format.setBackground(Qt::red);
-    format.setFontItalic(true);
-    format.setFontWeight(QFont::Bold);
-
-    highlighter->highlight(e.getLine(), format, e.getAffected());
+    highlighter->highlight(e.getLine(), error_format, e.getAffected());
 }
 
 void MainWindow::setSpeed(int ms)
@@ -152,21 +149,22 @@ void MainWindow::clockEvent()
         if(automatic)
             clock.start(speed_ms);
 
+        //Highlight the line which is being executed, but only if it's visible
+        //(highlighting costs performance)
+        int line = interpreter.getLine();
         if(speed_ms > 0 || !automatic)
-        {
-            QTextCharFormat format;
-            format.setBackground(Qt::yellow);
-            format.setFontWeight(QFont::Bold);
-
-            highlighter->highlight(interpreter.getLine(), format);
-        }
+            highlighter->highlight(interpreter.getLine(), current_line_format);
 
         interpreter.executeLine();
-        /*interpreter.dumpCode();
-        world.dumpWorld();*/
+
+        //After a breakpoint current line has to be highlighted
+        if(interpreter.hitBreakpoint() && speed_ms == 0 && automatic)
+            highlighter->highlight(line, current_line_format);
 
         if(interpreter.executionFinished())
             stopExecution();
+        else if(interpreter.hitBreakpoint())
+            pauseExecution();
     }
     catch (SteveInterpreterException &e)
     {
@@ -185,4 +183,12 @@ void MainWindow::textChanged()
 {
     //If user changes the code, the highlighting will no longer be valid
     highlighter->resetHighlight();
+}
+
+void MainWindow::pauseExecution()
+{
+    clock.stop();
+    ui->statusBar->showMessage(QApplication::trUtf8("Programm pausiert"));
+    ui->actionStarten->setText(QApplication::trUtf8("Starten"));
+    ui->actionSchritt->setEnabled(true);
 }

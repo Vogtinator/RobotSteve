@@ -36,6 +36,7 @@ public slots:
     void runCode();
     void step();
     void reset();
+    void pauseExecution();
     void stopExecution();
     void setSpeed(int ms);
     void clockEvent();
@@ -56,6 +57,7 @@ private:
     SteveInterpreter interpreter;
     QStringList code;
     SteveHighlighter *highlighter;
+    QTextCharFormat current_line_format, error_format;
 };
 
 #endif // MAINWINDOW_H
