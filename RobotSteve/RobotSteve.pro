@@ -41,7 +41,8 @@ OTHER_FILES += \
     TODO.txt \
     Unterschiede.txt \
     Beispiele.txt \
-    RobotSteve.desktop
+    RobotSteve.desktop \
+    RobotSteve.spec
 
 target.path = /usr/bin
 desktop.path = /usr/share/applications
