@@ -23,6 +23,10 @@ public:
     void resetHighlight();
     void setFormat(Token what, const QTextCharFormat &format);
 
+public slots:
+    //This rehighlight doesn't trigger textChanged()
+    void rehighlight();
+
 private:
     int highlight_line;
     QString highlight_str;

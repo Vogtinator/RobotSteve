@@ -63,7 +63,7 @@ void SteveHighlighter::highlightBlock(const QString &text)
                 }
                 else
                 {
-                    parent->extraSelections().clear();
+                    parent->setExtraSelections({});
                     highlight_start = text.indexOf(highlight_str);
                     highlight_end = highlight_start + highlight_str.length();
                     highlight_format.setProperty(QTextFormat::FullWidthSelection, false);
@@ -123,10 +123,7 @@ void SteveHighlighter::highlight(int line, const QTextCharFormat &format, const 
     highlight_format = format;
     highlight_str = what;
 
-    //We don't want to trigger textChanged()
-    parent->blockSignals(true);
     rehighlight();
-    parent->blockSignals(false);
 }
 
 void SteveHighlighter::resetHighlight()
@@ -136,9 +133,13 @@ void SteveHighlighter::resetHighlight()
 
     highlight_line = -1;
 
-    //We don't want to trigger textChanged()
-    parent->blockSignals(true);
     parent->setExtraSelections({});
     rehighlight();
+}
+
+void SteveHighlighter::rehighlight()
+{
+    parent->blockSignals(true);
+    QSyntaxHighlighter::rehighlight();
     parent->blockSignals(false);
 }
