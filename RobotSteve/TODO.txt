@@ -1,6 +1,7 @@
 Selbstmord (Wand suchen, hochklettern und runterspringen)
 Tabs
 Laden + Speichern
+Icon: Programm, Dateizuordnung, .desktop-Datei
 Beispiele
 Automatisch einrücken
 Array keyword_enum_name[KEYWORD_IF] = "KEYWORD_IF" erstellen + Hilfe einbinden: F1 zeigt Hilfe zu dem ausgewählten Wort

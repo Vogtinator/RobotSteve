@@ -40,4 +40,11 @@ RESOURCES += \
 OTHER_FILES += \
     TODO.txt \
     Unterschiede.txt \
-    Beispiele.txt
+    Beispiele.txt \
+    RobotSteve.desktop
+
+target.path = /usr/bin
+desktop.path = /usr/share/applications
+desktop.files += RobotSteve.desktop
+
+INSTALLS += target desktop
