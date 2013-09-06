@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Robot Steve</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/textures/RobotSteve.png</normaloff>:/textures/RobotSteve.png</iconset>
+  </property>
   <property name="animated">
    <bool>false</bool>
   </property>
@@ -198,6 +202,8 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

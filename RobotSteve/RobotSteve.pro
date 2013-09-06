@@ -42,10 +42,15 @@ OTHER_FILES += \
     Unterschiede.txt \
     Beispiele.txt \
     RobotSteve.desktop \
-    RobotSteve.spec
+    RobotSteve.spec \
+    environment.png \
+    char.png \
+    RobotSteve.png
 
 target.path = /usr/bin
 desktop.path = /usr/share/applications
 desktop.files += RobotSteve.desktop
+icon.path = /usr/share/icons
+icon.files += RobotSteve.png
 
-INSTALLS += target desktop
+INSTALLS += target desktop icon
