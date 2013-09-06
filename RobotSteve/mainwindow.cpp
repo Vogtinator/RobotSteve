@@ -21,9 +21,27 @@ MainWindow::MainWindow(QWidget *parent) :
     world(5, 5, this),
     interpreter(&world)
 {
+    //UI
     ui->setupUi(this);
     ui->viewFrame->addWidget(&world);
 
+    speed_slider = new QSlider(Qt::Horizontal, this);
+    speed_slider->setMinimum(0);
+    speed_slider->setMaximum(2000);
+    speed_slider->setValue(500);
+    ui->mainToolBar->addWidget(speed_slider);
+
+    //Editor
+    QFont font;
+    font.setFamily("Monospace");
+    font.setStyleHint(QFont::Monospace);
+    font.setFixedPitch(true);
+    font.setPointSize(10);
+    ui->codeEdit->setFont(font);
+    QFontMetrics metrics(font);
+    ui->codeEdit->setTabStopWidth(4 * metrics.width(' '));
+
+    //Syntax highlighting
     error_format.setForeground(Qt::white);
     error_format.setBackground(Qt::red);
     error_format.setFontItalic(true);
@@ -34,13 +52,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     highlighter = new SteveHighlighter(ui->codeEdit, &interpreter);
 
-    speed_slider = new QSlider(Qt::Horizontal, this);
-    speed_slider->setMinimum(0);
-    speed_slider->setMaximum(2000);
-    speed_slider->setValue(500);
-    ui->mainToolBar->addWidget(speed_slider);
+    //Miscellaneous
 
     clock.setSingleShot(true);
+    setSpeed(speed_slider->value());
+
+    //Signals & Slots
 
     connect(ui->actionStarten, SIGNAL(triggered()), this, SLOT(runCode()));
     connect(ui->actionSchritt, SIGNAL(triggered()), this, SLOT(step()));
@@ -49,8 +66,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&clock, SIGNAL(timeout()), this, SLOT(clockEvent()));
     connect(ui->viewSwitch, SIGNAL(toggled(bool)), this, SLOT(switchViews(bool)));
     connect(ui->codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
-
-    setSpeed(speed_slider->value());
 }
 
 MainWindow::~MainWindow()

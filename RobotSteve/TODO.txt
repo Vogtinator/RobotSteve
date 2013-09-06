@@ -8,6 +8,5 @@ Einstellungen für den Spieler, die Welt und Minecraft Texturenimport
 Menü "Hilfe"
 Manuelle Steuerung
 Struktogramm
-Anweisung "stop" als "Breakpoint"
 Vergleiche: Ziegel > 5 oder Ziegel < 5
 Vielleicht andere Syntax: "vorne = wand" oder "rechts = ziegel"
