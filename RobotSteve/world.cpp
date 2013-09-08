@@ -1,39 +1,19 @@
-/*
- * Author: Fabian Vogt
- *
- * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
- * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
- *
- * Use in public and private schools for educational purposes strongly permitted!
- */
-
 #include "world.h"
 
 #include <iostream>
 
-Coords operator+(const Coords& left, const Coords& right)
+SignedCoords operator+(const Coords& left, const SignedCoords& right)
 {
-    return {left.first + right.first, left.second + right.second};
+    return {static_cast<int>(left.first + right.first), static_cast<int>(left.second + right.second)};
 }
 
-Coords operator-(const Coords& left, const Coords& right)
+SignedCoords operator+(const SignedCoords& left, const Coords& right)
 {
-    return {left.first - right.first, left.second - right.second};
+    return {static_cast<int>(left.first + right.first), static_cast<int>(left.second + right.second)};
 }
 
-Coords operator*(const Coords& left, const float o)
-{
-    return {left.first * o, left.second * o};
-}
-
-Coords operator/(const Coords& left, const float o)
-{
-    return {left.first / o, left.second / o};
-}
-
-World::World(int width, int length)
-    : size{width, length}
+World::World(unsigned int width, unsigned int length)
+    : front_obj{0}, size{width, length}
 {
     if(!resize(width, length))
         throw std::string("Invalid world size!");
@@ -41,13 +21,13 @@ World::World(int width, int length)
     reset();
 }
 
-bool World::resize(int width, int length)
+bool World::resize(unsigned int width, unsigned int length)
 {
     if(width > 100 || length > 100 || width < 3 || length < 3)
         return false;
 
     map.resize(width);
-    for(int x = 0; x < width; x++)
+    for(unsigned int x = 0; x < width; x++)
         map[x].resize(length);
 
     if(steve.first >= width || steve.second >= length)
@@ -56,6 +36,8 @@ bool World::resize(int width, int length)
     size.first = width;
     size.second = length;
 
+    updateFront();
+
     return true;
 }
 
@@ -63,28 +45,42 @@ void World::reset()
 {
     steve.first = steve.second = 0;
     orientation = ORIENT_SOUTH;
-    for(int x = 0; x < size.first; x++)
-        for(int y = 0; y < size.second; y++)
+    for(unsigned int x = 0; x < size.first; x++)
+        for(unsigned int y = 0; y < size.second; y++)
             map[x][y] = {};
+
+    updateFront();
+}
+
+bool World::inBounds(SignedCoords &coords)
+{
+    return coords.first >= 0 && coords.second >= 0 && static_cast<unsigned int>(coords.first) < size.first && static_cast<unsigned int>(coords.second) < size.second;
 }
 
 bool World::isWall()
 {
-    Coords then = steve + getForward();
+    return !inBounds(front);
+}
 
-    return then.first < 0 || then.first >= size.first ||
-            then.second < 0 || then.second >= size.first;
+bool World::isCube()
+{
+    return front_obj->has_cube;
+}
+
+bool World::frontBlocked()
+{
+    return isWall() || isCube();
 }
 
 bool World::stepForward()
 {
-    Coords then = steve + getForward();
-
-    if(then.first < 0 || then.first >= size.first ||
-            then.second < 0 || then.second >= size.first || map[then.first][then.second].has_cube)
+    if(frontBlocked())
         return false; //Oh no! Stepped into a wall :-(
 
-    steve = then;
+    steve.first = front.first;
+    steve.second = front.second;
+
+    updateFront();
 
     return true;
 }
@@ -110,6 +106,8 @@ void World::turnRight(int quarters)
         orientation = ORIENT_NORTH;
         break;
     }
+
+    updateFront();
 }
 
 void World::turnLeft(int quarters)
@@ -133,6 +131,8 @@ void World::turnLeft(int quarters)
         orientation = ORIENT_SOUTH;
         break;
     }
+
+    updateFront();
 }
 
 void World::setMark(bool b)
@@ -144,21 +144,19 @@ void World::setMark(bool b)
 
 bool World::setCube(bool b)
 {
-    Coords then = steve + getForward();
-
-    if(then.first < 0 || then.first >= size.first ||
-            then.second < 0 || then.second >= size.first)
+    if(isWall())
         return false; //Nope, no cubes in walls please.
 
-    WorldObject &obj = map[then.first][then.second];
-    if((obj.has_cube && b) || (!obj.has_cube && !b) || obj.stack_size != 0 || obj.has_mark)
+    if((front_obj->has_cube && b) || (!front_obj->has_cube && !b) || front_obj->stack_size != 0 || front_obj->has_mark)
         return false; //Mine non-existent, place into existing cube, place into stack or onto a mark
 
-    obj.has_cube = b;
+    front_obj->has_cube = b;
+    front_obj->has_mark = false;
+
     return true;
 }
 
-Coords World::getForward()
+SignedCoords World::getForward()
 {
     switch(orientation)
     {
@@ -178,35 +176,23 @@ Coords World::getForward()
 
 int World::getStackSize()
 {
-    Coords then = steve + getForward();
+    if(frontBlocked())
+        return 0; //No bricks in walls or cubes.
 
-    if(then.first < 0 || then.first >= size.first ||
-            then.second < 0 || then.second >= size.first)
-        return 0;
-
-    WorldObject &obj = map[then.first][then.second];
-    if(obj.has_cube)
-        return 0; //Nope, no bricks in cubes, please.
-
-    return map[then.first][then.second].stack_size;
+    return map[front.first][front.second].stack_size;
 }
 
 bool World::deposit(int count)
 {
-    Coords then = steve + getForward();
+    if(frontBlocked())
+        return false;
 
-    if(then.first < 0 || then.first >= size.first ||
-            then.second < 0 || then.second >= size.first)
-        return false; //Nope, no more bricks in walls please.
+    front_obj->stack_size += count;
 
-    WorldObject &obj = map[then.first][then.second];
-    if(obj.has_cube)
-        return false; //Nope, no bricks in cubes, please.
-
-    obj.stack_size += count;
+    //TODO: Make changeable
     if(count > 10)
     {
-        obj.stack_size = 10;
+        front_obj->stack_size = 10;
         return false;
     }
 
@@ -215,17 +201,10 @@ bool World::deposit(int count)
 
 bool World::pickup(int count)
 {
-    Coords then = steve + getForward();
+    if(frontBlocked() || front_obj->stack_size < count)
+        return false; //Not enough bricks or in wall/cube
 
-    if(then.first < 0 || then.first >= size.first ||
-            then.second < 0 || then.second >= size.first)
-        return false; //Nope, no more bricks in walls please.
-
-    WorldObject &obj = map[then.first][then.second];
-    if(obj.stack_size < count || obj.has_cube)
-        return false; //No more bricks to pick up
-
-    obj.stack_size -= count;
+    front_obj->stack_size -= count;
 
     return true;
 }
@@ -235,17 +214,26 @@ bool World::isMarked()
     return map[steve.first][steve.second].has_mark;
 }
 
+void World::updateFront()
+{
+    front = steve + getForward();
+
+    //Check whether in array bounds
+    if(inBounds(front))
+        front_obj = &(map[front.first][front.second]);
+}
+
 void World::dumpWorld()
 {
     std::cout << " ";
-    for(int width = 0; width < size.first; width++)
+    for(unsigned int width = 0; width < size.first; width++)
         std::cout << "-";
     std::cout << std::endl;
 
-    for(int y = 0; y < size.second; y++)
+    for(unsigned int y = 0; y < size.second; y++)
     {
         std::cout << "|";
-        for(int x = 0; x < size.first; x++)
+        for(unsigned int x = 0; x < size.first; x++)
         {
             if(steve.first == x && steve.second == y)
             {
@@ -275,7 +263,34 @@ void World::dumpWorld()
     }
 
     std::cout << " ";
-    for(int width = 0; width < size.first; width++)
+    for(unsigned int width = 0; width < size.first; width++)
         std::cout << "-";
     std::cout << std::endl;
+}
+
+bool World::setState(WorldState &state)
+{
+    if(state.map.size() != state.size.first)
+        return false;
+
+    for(auto & i : state.map)
+        if(i.size() != state.size.second)
+            return false;
+
+    if(steve.first >= state.size.first || steve.second >= state.size.second)
+        return false;
+
+    map = state.map;
+    size = state.size;
+    steve = state.steve;
+    orientation = state.orientation;
+
+    updateFront();
+
+    return true;
+}
+
+WorldState World::getState()
+{
+    return {steve, size, orientation, map};
 }

@@ -1,19 +1,11 @@
-/*
- * Author: Fabian Vogt
- *
- * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
- * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
- *
- * Use in public and private schools for educational purposes strongly permitted!
- */
-
 #ifndef WORLD_H
 #define WORLD_H
 
 #include <vector>
 
-typedef std::pair<int,int> Coords;
+typedef std::pair<int,int> SignedCoords;
+typedef std::pair<unsigned int, unsigned int> Size;
+typedef std::pair<unsigned int, unsigned int> Coords;
 
 struct WorldObject {
     bool has_mark = false;
@@ -28,6 +20,17 @@ enum ORIENTATION {
     ORIENT_WEST
 };
 
+struct WorldState {
+    WorldState() {}
+    WorldState(Coords &steve, Size &size, ORIENTATION &orientation, std::vector<std::vector<WorldObject> > &map)
+        : steve{steve}, size{size}, orientation{orientation}, map{map} {}
+
+    Coords steve;
+    Size size;
+    ORIENTATION orientation;
+    std::vector<std::vector<WorldObject> > map;
+};
+
 Coords operator+(const Coords& left, const Coords& right);
 Coords operator-(const Coords& left, const Coords& right);
 Coords operator*(const Coords& left, const float o);
@@ -37,10 +40,10 @@ Coords operator/(const Coords& left, const float o);
 class World
 {
 public:
-    World(int width, int length);
+    World(unsigned int width, unsigned int length);
 
     virtual void reset();
-    virtual bool resize(int width, int length);
+    virtual bool resize(unsigned int width, unsigned int length);
     virtual bool stepForward();
     virtual void turnRight(int quarters);
     virtual void turnLeft(int quarters);
@@ -49,6 +52,8 @@ public:
     virtual bool pickup(int count);
     virtual bool deposit(int count);
     virtual bool isWall();
+    virtual bool isCube();
+    virtual bool frontBlocked();
     virtual int getStackSize();
     virtual bool isMarked();
 
@@ -56,12 +61,18 @@ public:
     int getX() { return steve.first; }
     int getY() { return steve.second; }
     void dumpWorld();
+    WorldState getState();
+    virtual bool setState(WorldState &state);
 
 protected:
-    Coords getForward();
+    SignedCoords getForward();
+    void updateFront();
+    bool inBounds(SignedCoords &coords);
 
-    Coords size;
+    WorldObject *front_obj;
+    Size size;
     Coords steve;
+    SignedCoords front;
     ORIENTATION orientation = ORIENT_SOUTH;
     std::vector<std::vector<WorldObject> > map;
 };

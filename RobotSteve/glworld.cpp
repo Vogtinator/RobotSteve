@@ -1,19 +1,9 @@
-/*
- * Author: Fabian Vogt
- *
- * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
- * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
- *
- * Use in public and private schools for educational purposes strongly permitted!
- */
-
 #include <iostream>
 #include <QMouseEvent>
 
 #include "glworld.h"
 
-GLWorld::GLWorld(int width, int length, QWidget *parent) :
+GLWorld::GLWorld(unsigned int width, unsigned int length, QWidget *parent) :
     QGLWidget{parent},
     World{width, length},
     camera_rotX{-30},
@@ -190,8 +180,8 @@ void GLWorld::paintGL()
     wall->setXPosition(World::size.first - 1);
     drawWallZ();
 
-    for(int x = 0; x < World::size.first; x++)
-        for(int z = 0; z < World::size.second; z++)
+    for(unsigned int x = 0; x < World::size.first; x++)
+        for(unsigned int z = 0; z < World::size.second; z++)
         {
             WorldObject &obj = map[x][z];
             if(obj.has_mark)
@@ -406,7 +396,7 @@ bool GLWorld::stepForward()
 {
     if(!World::stepForward())
     {
-        Coords wall = getForward();
+        SignedCoords wall = getForward();
         bump_dir_x = wall.first;
         bump_dir_z = wall.second;
         setAnimation(ANIM_BUMP);
@@ -454,8 +444,7 @@ bool GLWorld::deposit(int count)
     if(!World::deposit(count))
         return false;
 
-    Coords then = World::getForward() + steve;
-    bend_pos_y = static_cast<float>(map[then.first][then.second].stack_size) * 0.5 - 2.0;
+    bend_pos_y = static_cast<float>(getStackSize()) * 0.5 - 2.0;
     if(bend_pos_y < 0)
         setAnimation(ANIM_BEND);
     else
@@ -469,8 +458,7 @@ bool GLWorld::pickup(int count)
     if(!World::pickup(count))
         return false;
 
-    Coords then = World::getForward() + steve;
-    bend_pos_y = static_cast<float>(map[then.first][then.second].stack_size) * 0.5 - 2.0;
+    bend_pos_y = static_cast<float>(getStackSize()) * 0.5 - 2.0;
     if(bend_pos_y < 0)
         setAnimation(ANIM_BEND);
     else
@@ -481,7 +469,7 @@ bool GLWorld::pickup(int count)
 
 void GLWorld::drawWallX()
 {
-    for(int x = 0; x < World::size.first; x++)
+    for(unsigned int x = 0; x < World::size.first; x++)
     {
         wall->setXPosition(x);
         wall->setYPosition(-1);
@@ -497,7 +485,7 @@ void GLWorld::drawWallX()
 
 void GLWorld::drawWallZ()
 {
-    for(int y = 0; y < World::size.second; y++)
+    for(unsigned int y = 0; y < World::size.second; y++)
     {
         wall->setZPosition(y);
         wall->setYPosition(-1);
@@ -549,4 +537,15 @@ void GLWorld::reset()
     World::reset();
     updateAnimationTarget();
     setAnimation(ANIM_STANDING);
+}
+
+bool GLWorld::setState(WorldState &state)
+{
+    if(!World::setState(state))
+        return false;
+
+    updateAnimationTarget();
+    setAnimation(ANIM_STANDING);
+
+    return true;
 }

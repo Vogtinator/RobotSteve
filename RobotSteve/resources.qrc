@@ -4,4 +4,11 @@
         <file>environment.png</file>
         <file>RobotSteve.png</file>
     </qresource>
+    <qresource prefix="/buttons">
+        <file>down.png</file>
+        <file>rot_left.png</file>
+        <file>rot_right.png</file>
+        <file>step.png</file>
+        <file>up.png</file>
+    </qresource>
 </RCC>

@@ -1,13 +1,3 @@
-/*
- * Author: Fabian Vogt
- *
- * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
- * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
- *
- * Use in public and private schools for educational purposes strongly permitted!
- */
-
 #include <iostream>
 
 #include "glworld.h"
@@ -57,15 +47,24 @@ MainWindow::MainWindow(QWidget *parent) :
     //Miscellaneous
     clock.setSingleShot(true);
     setSpeed(speed_slider->value());
+    refreshButtons();
 
     //Signals & Slots
     connect(ui->actionStarten, SIGNAL(triggered()), this, SLOT(runCode()));
-    connect(ui->actionSchritt, SIGNAL(triggered()), this, SLOT(step()));
+    connect(ui->actionSchritt, SIGNAL(triggered()), this, SLOT(codeStep()));
     connect(ui->actionReset, SIGNAL(triggered()), this, SLOT(reset()));
     connect(speed_slider, SIGNAL(sliderMoved(int)), this, SLOT(setSpeed(int)));
     connect(&clock, SIGNAL(timeout()), this, SLOT(clockEvent()));
     connect(ui->viewSwitch, SIGNAL(toggled(bool)), this, SLOT(switchViews(bool)));
     connect(ui->codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
+
+    //Manual control
+    connect(ui->buttonStep, SIGNAL(clicked()), this, SLOT(step()));
+    connect(ui->buttonLayDown, SIGNAL(clicked()), this, SLOT(layDown()));
+    connect(ui->buttonPickUp, SIGNAL(clicked()), this, SLOT(pickUp()));
+    connect(ui->buttonTurnLeft, SIGNAL(clicked()), this, SLOT(turnLeft()));
+    connect(ui->buttonTurnRight, SIGNAL(clicked()), this, SLOT(turnRight()));
+    connect(ui->buttonCube, SIGNAL(clicked()), this, SLOT(cube()));
 }
 
 MainWindow::~MainWindow()
@@ -79,13 +78,14 @@ MainWindow::~MainWindow()
 void MainWindow::runCode()
 {
     //Start
-    if(!clock.isActive())
+    if(!automatic)
     {
         world.setSpeed(speed_ms);
         ui->actionStarten->setText(QApplication::trUtf8("Stoppen"));
         ui->actionSchritt->setDisabled(true);
 
         automatic = true;
+        refreshButtons();
 
         clockEvent();
     }
@@ -93,50 +93,15 @@ void MainWindow::runCode()
         pauseExecution();
 }
 
-void MainWindow::step()
+void MainWindow::codeStep()
 {
     automatic = false;
     //The user can't be really fast, so animations always on
     world.setSpeed(2000);
 
     clockEvent();
-}
 
-void MainWindow::startExecution() throw (SteveInterpreterException)
-{
-    if(execution_started)
-        return;
-
-    execution_started = true;
-    ui->codeEdit->setReadOnly(true);
-    if(code_changed)
-        setCode();
-
-    world.reset();
-
-    if(automatic)
-        ui->statusBar->showMessage(QApplication::trUtf8("Programm läuft"));
-    else
-        ui->statusBar->showMessage(QApplication::trUtf8("Programm pausiert"));
-}
-
-void MainWindow::stopExecution()
-{
-    clock.stop();
-    ui->statusBar->showMessage(QApplication::trUtf8("Programm beendet"));
-    ui->actionStarten->setText(QApplication::trUtf8("Starten"));
-    ui->actionSchritt->setEnabled(true);
-    ui->codeEdit->setReadOnly(false);
-    execution_started = false;
-
-    highlighter->resetHighlight();
-}
-
-void MainWindow::reset()
-{
-    stopExecution();
-    interpreter.reset();
-    world.reset();
+    refreshButtons();
 }
 
 void MainWindow::handleError(SteveInterpreterException &e)
@@ -217,12 +182,69 @@ void MainWindow::textChanged()
     code_changed = true;
 }
 
+//Wait for interruption or program end
+void MainWindow::startExecution() throw (SteveInterpreterException)
+{
+    if(execution_started)
+        return;
+
+    execution_started = true;
+    ui->codeEdit->setReadOnly(true);
+    if(code_changed)
+        setCode();
+
+    saved_state = world.getState();
+
+    refreshButtons();
+
+    if(automatic)
+        ui->statusBar->showMessage(QApplication::trUtf8("Programm läuft"));
+    else
+        ui->statusBar->showMessage(QApplication::trUtf8("Programm pausiert"));
+}
+
 void MainWindow::pauseExecution()
 {
     clock.stop();
+    automatic = false;
+
     ui->statusBar->showMessage(QApplication::trUtf8("Programm pausiert"));
     ui->actionStarten->setText(QApplication::trUtf8("Starten"));
     ui->actionSchritt->setEnabled(true);
+
+    refreshButtons();
+}
+
+//Wait for reset
+void MainWindow::stopExecution()
+{
+    clock.stop();
+    highlighter->resetHighlight();
+
+    ui->codeEdit->setReadOnly(false);
+
+    ui->statusBar->showMessage(QApplication::trUtf8("Programm beendet"));
+
+    ui->actionSchritt->setDisabled(true);
+    ui->actionStarten->setDisabled(true);
+}
+
+//Wait for start
+void MainWindow::reset()
+{
+    stopExecution();
+
+    ui->actionStarten->setText(QApplication::trUtf8("Starten"));
+    ui->actionStarten->setEnabled(true);
+    ui->actionSchritt->setEnabled(true);
+
+    execution_started = false;
+    automatic = false;
+
+    world.setState(saved_state);
+    interpreter.reset();
+
+    refreshButtons();
 }
 
 void MainWindow::setCode()
@@ -242,4 +264,95 @@ void MainWindow::setCode()
     {
         handleError(e);
     }
+}
+
+void MainWindow::refreshButtons()
+{
+    if(automatic)
+    {
+        ui->buttonStep->setDisabled(true);
+        ui->buttonLayDown->setDisabled(true);
+        ui->buttonPickUp->setDisabled(true);
+        ui->buttonTurnLeft->setDisabled(true);
+        ui->buttonTurnRight->setDisabled(true);
+        ui->buttonCube->setDisabled(true);
+
+        return;
+    }
+
+    bool front_blocked = world.frontBlocked();
+    bool wall = world.isWall();
+    bool brick = !wall && world.getStackSize() > 0;
+    bool placeCube = !brick && !wall;
+
+    ui->buttonStep->setDisabled(front_blocked);
+    ui->buttonPickUp->setEnabled(brick);
+    ui->buttonLayDown->setDisabled(front_blocked);
+    ui->buttonCube->setEnabled(placeCube);
+    ui->buttonTurnLeft->setDisabled(false);
+    ui->buttonTurnRight->setDisabled(false);
+}
+
+//Manual control
+void MainWindow::cube()
+{
+    //The user can't be really fast, so animations always on
+    world.setSpeed(2000);
+
+    if(!world.isWall())
+        world.setCube(!world.isCube());
+
+    refreshButtons();
+}
+
+void MainWindow::pickUp()
+{
+    //The user can't be really fast, so animations always on
+    world.setSpeed(2000);
+
+    if(!world.frontBlocked())
+        world.pickup(1);
+
+    refreshButtons();
+}
+
+void MainWindow::layDown()
+{
+    //The user can't be really fast, so animations always on
+    world.setSpeed(2000);
+
+    if(!world.frontBlocked())
+        world.deposit(1);
+
+    refreshButtons();
+}
+
+void MainWindow::turnRight()
+{
+    //The user can't be really fast, so animations always on
+    world.setSpeed(2000);
+
+    world.turnRight(1);
+
+    refreshButtons();
+}
+
+void MainWindow::turnLeft()
+{
+    //The user can't be really fast, so animations always on
+    world.setSpeed(2000);
+
+    world.turnLeft(1);
+
+    refreshButtons();
+}
+
+void MainWindow::step()
+{
+    //The user can't be really fast, so animations always on
+    world.setSpeed(2000);
+
+    world.stepForward();
+
+    refreshButtons();
 }

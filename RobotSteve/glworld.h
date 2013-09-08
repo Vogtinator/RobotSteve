@@ -1,13 +1,3 @@
-/*
- * Author: Fabian Vogt
- *
- * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
- * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
- *
- * Use in public and private schools for educational purposes strongly permitted!
- */
-
 #ifndef GLWORLD_H
 #define GLWORLD_H
 
@@ -36,7 +26,7 @@ class GLWorld : public QGLWidget, public World
 {
     Q_OBJECT
 public:
-    explicit GLWorld(int width, int length, QWidget *parent = 0);
+    explicit GLWorld(unsigned int width, unsigned int length, QWidget *parent = 0);
 
     void reset() override;
     bool stepForward() override;
@@ -46,6 +36,7 @@ public:
     bool setCube(bool b) override;
     bool deposit(int count) override;
     bool pickup(int count) override;
+    bool setState(WorldState &state) override;
 
 protected:
     void paintGL();

@@ -1,13 +1,3 @@
-/*
- * Author: Fabian Vogt
- *
- * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
- * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
- *
- * Use in public and private schools for educational purposes strongly permitted!
- */
-
 #ifndef STEVEINTERPRETER_H
 #define STEVEINTERPRETER_H
 
@@ -100,6 +90,7 @@ enum INSTRUCTION {
 enum CONDITION {
     COND_ALWAYS,
     COND_WALL,
+    COND_CUBE,
     COND_BRICK,
     COND_MARKED,
     COND_NORTH,
@@ -129,20 +120,21 @@ public:
     int getLine();
     void dumpCode();
     void setWorld(World *world) { this->world = world; }
-    bool executionFinished() { return execution_finished || current_line >= code.size(); }
+    bool executionFinished() { return execution_finished; }
     bool hitBreakpoint() { return hit_breakpoint; }
     QPixmap structureChart()  throw (SteveInterpreterException);
     void setStructureChartFont(QFont font);
 
     //Conditions:
-    bool cond_always(World *world, bool has_param, int param);
-    bool is_wall(World *world, bool has_param, int param);
-    bool is_brick(World *world, bool has_param, int param);
-    bool is_marked(World *world, bool has_param, int param);
-    bool is_north(World *world, bool has_param, int param);
-    bool is_east(World *world, bool has_param, int param);
-    bool is_south(World *world, bool has_param, int param);
-    bool is_west(World *world, bool has_param, int param);
+    bool condAlways(World *world, bool has_param, int param);
+    bool isWall(World *world, bool has_param, int param);
+    bool isCube(World *world, bool has_param, int param);
+    bool isBrick(World *world, bool has_param, int param);
+    bool isMarked(World *world, bool has_param, int param);
+    bool isNorth(World *world, bool has_param, int param);
+    bool isEast(World *world, bool has_param, int param);
+    bool isSouth(World *world, bool has_param, int param);
+    bool isWest(World *world, bool has_param, int param);
 
     //Instructions:
     bool step(World *world, bool has_param, int param);

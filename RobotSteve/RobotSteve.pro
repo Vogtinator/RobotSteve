@@ -45,7 +45,8 @@ OTHER_FILES += \
     RobotSteve.spec \
     environment.png \
     char.png \
-    RobotSteve.png
+    RobotSteve.png \
+    license.txt
 
 target.path = /usr/bin
 desktop.path = /usr/share/applications

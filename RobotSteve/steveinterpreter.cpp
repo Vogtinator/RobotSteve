@@ -1,13 +1,3 @@
-/*
- * Author: Fabian Vogt
- *
- * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
- * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
- * or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
- *
- * Use in public and private schools for educational purposes strongly permitted!
- */
-
 #include <iostream>
 #include <QObject>
 #include <QString>
@@ -75,6 +65,7 @@ SteveInterpreter::SteveInterpreter(World *world) : world{world}, structure_chart
 
     conditions[COND_ALWAYS] = QObject::trUtf8("immer");
     conditions[COND_WALL] = QObject::trUtf8("wand");
+    conditions[COND_CUBE] = QObject::trUtf8("würfel");
     conditions[COND_BRICK] = QObject::trUtf8("ziegel");
     conditions[COND_MARKED] = QObject::trUtf8("marke");
     conditions[COND_NORTH] = QObject::trUtf8("norden");
@@ -82,14 +73,15 @@ SteveInterpreter::SteveInterpreter(World *world) : world{world}, structure_chart
     conditions[COND_EAST] = QObject::trUtf8("osten");
     conditions[COND_WEST] = QObject::trUtf8("westen");
 
-    condition_functions[COND_ALWAYS] = SteveFunction(this, &SteveInterpreter::cond_always, false);
-    condition_functions[COND_WALL] = SteveFunction(this, &SteveInterpreter::is_wall, false);
-    condition_functions[COND_BRICK] = SteveFunction(this, &SteveInterpreter::is_brick, true);
-    condition_functions[COND_MARKED] = SteveFunction(this, &SteveInterpreter::is_marked, false);
-    condition_functions[COND_NORTH] = SteveFunction(this, &SteveInterpreter::is_north, false);
-    condition_functions[COND_EAST] = SteveFunction(this, &SteveInterpreter::is_east, false);
-    condition_functions[COND_SOUTH] = SteveFunction(this, &SteveInterpreter::is_south, false);
-    condition_functions[COND_WEST] = SteveFunction(this, &SteveInterpreter::is_west, false);
+    condition_functions[COND_ALWAYS] = SteveFunction(this, &SteveInterpreter::condAlways, false);
+    condition_functions[COND_WALL] = SteveFunction(this, &SteveInterpreter::isWall, false);
+    condition_functions[COND_CUBE] = SteveFunction(this, &SteveInterpreter::isCube, false);
+    condition_functions[COND_BRICK] = SteveFunction(this, &SteveInterpreter::isBrick, true);
+    condition_functions[COND_MARKED] = SteveFunction(this, &SteveInterpreter::isMarked, false);
+    condition_functions[COND_NORTH] = SteveFunction(this, &SteveInterpreter::isNorth, false);
+    condition_functions[COND_EAST] = SteveFunction(this, &SteveInterpreter::isEast, false);
+    condition_functions[COND_SOUTH] = SteveFunction(this, &SteveInterpreter::isSouth, false);
+    condition_functions[COND_WEST] = SteveFunction(this, &SteveInterpreter::isWest, false);
 
     instruction_functions[INSTR_STEP] = SteveFunction(this, &SteveInterpreter::step, true);
     instruction_functions[INSTR_TURNLEFT] = SteveFunction(this, &SteveInterpreter::turnLeft, true);
@@ -411,6 +403,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
         return;
     }
 
+    //TODO: Backtrace?
 #define MAX_STACK_SIZE 500000
     if(loop_count.size() > MAX_STACK_SIZE ||
             stack.size() > MAX_STACK_SIZE)
@@ -725,7 +718,7 @@ void SteveInterpreter::dumpCode()
 }
 
 //Conditions
-bool SteveInterpreter::cond_always(World *world, bool has_param, int param)
+bool SteveInterpreter::condAlways(World *world, bool has_param, int param)
 {
     Q_UNUSED(world);
     Q_UNUSED(has_param);
@@ -734,15 +727,23 @@ bool SteveInterpreter::cond_always(World *world, bool has_param, int param)
     return true;
 }
 
-bool SteveInterpreter::is_wall(World *world, bool has_param, int param)
+bool SteveInterpreter::isWall(World *world, bool has_param, int param)
 {
     Q_UNUSED(has_param);
     Q_UNUSED(param);
 
-    return world->isWall();
+    return world->frontBlocked();
 }
 
-bool SteveInterpreter::is_brick(World *world, bool has_param, int param)
+bool SteveInterpreter::isCube(World *world, bool has_param, int param)
+{
+    Q_UNUSED(has_param);
+    Q_UNUSED(param);
+
+    return world->isCube();
+}
+
+bool SteveInterpreter::isBrick(World *world, bool has_param, int param)
 {
     if(!has_param)
         return world->getStackSize() > 0;
@@ -750,7 +751,7 @@ bool SteveInterpreter::is_brick(World *world, bool has_param, int param)
     return world->getStackSize() == param;
 }
 
-bool SteveInterpreter::is_marked(World *world, bool has_param, int param)
+bool SteveInterpreter::isMarked(World *world, bool has_param, int param)
 {
     Q_UNUSED(has_param);
     Q_UNUSED(param);
@@ -758,7 +759,7 @@ bool SteveInterpreter::is_marked(World *world, bool has_param, int param)
     return world->isMarked();
 }
 
-bool SteveInterpreter::is_north(World *world, bool has_param, int param)
+bool SteveInterpreter::isNorth(World *world, bool has_param, int param)
 {
     Q_UNUSED(has_param);
     Q_UNUSED(param);
@@ -766,7 +767,7 @@ bool SteveInterpreter::is_north(World *world, bool has_param, int param)
     return world->getOrientation() == ORIENT_NORTH;
 }
 
-bool SteveInterpreter::is_east(World *world, bool has_param, int param)
+bool SteveInterpreter::isEast(World *world, bool has_param, int param)
 {
     Q_UNUSED(has_param);
     Q_UNUSED(param);
@@ -774,7 +775,7 @@ bool SteveInterpreter::is_east(World *world, bool has_param, int param)
     return world->getOrientation() == ORIENT_EAST;
 }
 
-bool SteveInterpreter::is_south(World *world, bool has_param, int param)
+bool SteveInterpreter::isSouth(World *world, bool has_param, int param)
 {
     Q_UNUSED(has_param);
     Q_UNUSED(param);
@@ -782,7 +783,7 @@ bool SteveInterpreter::is_south(World *world, bool has_param, int param)
     return world->getOrientation() == ORIENT_SOUTH;
 }
 
-bool SteveInterpreter::is_west(World *world, bool has_param, int param)
+bool SteveInterpreter::isWest(World *world, bool has_param, int param)
 {
     Q_UNUSED(has_param);
     Q_UNUSED(param);
