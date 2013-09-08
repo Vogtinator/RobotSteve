@@ -33,7 +33,7 @@ Coords operator/(const Coords& left, const float o)
 }
 
 World::World(int width, int length)
-    : size(width, length)
+    : size{width, length}
 {
     if(!resize(width, length))
         throw std::string("Invalid world size!");

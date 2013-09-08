@@ -30,17 +30,34 @@
       <item>
        <widget class="QPlainTextEdit" name="codeEdit">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>250</width>
+          <height>0</height>
+         </size>
         </property>
        </widget>
       </item>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
-         <layout class="QVBoxLayout" name="viewFrame"/>
+         <layout class="QVBoxLayout" name="viewFrame">
+          <item>
+           <widget class="QGraphicsView" name="chart_view">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -128,6 +145,12 @@
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="movable">
+    <bool>false</bool>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::TopToolBarArea</set>
+   </property>
+   <property name="floatable">
     <bool>false</bool>
    </property>
    <attribute name="toolBarArea">

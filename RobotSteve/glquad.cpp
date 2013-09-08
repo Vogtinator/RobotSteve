@@ -4,7 +4,7 @@
 #include "glquad.h"
 
 GLQuad::GLQuad(float w, float l, float cenX, float cenY, float cenZ, TextureAtlasEntry tex)
-    : cenX(cenX), cenY(cenY), cenZ(cenZ)
+    : cenX{cenX}, cenY{cenY}, cenZ{cenZ}
 {
     vertices.append({0, 0, 0}); tex_coords.append({tex.left, tex.bottom}); normals.append({0, 1, 0});
     vertices.append({0, 0, l}); tex_coords.append({tex.left, tex.top}); normals.append({0, 1, 0});

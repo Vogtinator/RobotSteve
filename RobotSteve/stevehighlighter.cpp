@@ -1,7 +1,7 @@
 #include "stevehighlighter.h"
 
 SteveHighlighter::SteveHighlighter(QPlainTextEdit *editor, SteveInterpreter *interpreter)
-    : QSyntaxHighlighter(editor->document()), interpreter(interpreter), parent(editor)
+    : QSyntaxHighlighter{editor->document()}, interpreter{interpreter}, parent{editor}
 {
     QTextCharFormat format;
 

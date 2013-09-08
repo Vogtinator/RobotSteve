@@ -16,14 +16,16 @@
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    world(5, 5, this),
-    interpreter(&world)
+    QMainWindow{parent},
+    ui{new Ui::MainWindow},
+    world{5, 5, this},
+    interpreter{&world}
 {
     //UI
     ui->setupUi(this);
     ui->viewFrame->addWidget(&world);
+    ui->chart_view->setScene(&chart_scene);
+    switchViews(false);
 
     speed_slider = new QSlider(Qt::Horizontal, this);
     speed_slider->setMinimum(0);
@@ -38,7 +40,7 @@ MainWindow::MainWindow(QWidget *parent) :
     font.setFixedPitch(true);
     font.setPointSize(10);
     ui->codeEdit->setFont(font);
-    QFontMetrics metrics(font);
+    QFontMetrics metrics{font};
     ui->codeEdit->setTabStopWidth(4 * metrics.width(' '));
 
     //Syntax highlighting
@@ -50,15 +52,13 @@ MainWindow::MainWindow(QWidget *parent) :
     current_line_format.setBackground(Qt::yellow);
     current_line_format.setFontWeight(QFont::Bold);
 
-    highlighter = new SteveHighlighter(ui->codeEdit, &interpreter);
+    highlighter = new SteveHighlighter{ui->codeEdit, &interpreter};
 
     //Miscellaneous
-
     clock.setSingleShot(true);
     setSpeed(speed_slider->value());
 
     //Signals & Slots
-
     connect(ui->actionStarten, SIGNAL(triggered()), this, SLOT(runCode()));
     connect(ui->actionSchritt, SIGNAL(triggered()), this, SLOT(step()));
     connect(ui->actionReset, SIGNAL(triggered()), this, SLOT(reset()));
@@ -107,15 +107,12 @@ void MainWindow::startExecution() throw (SteveInterpreterException)
     if(execution_started)
         return;
 
-    ui->statusBar->showMessage(QApplication::trUtf8("Parsen.."));
-
     execution_started = true;
     ui->codeEdit->setReadOnly(true);
-    code = ui->codeEdit->toPlainText().split("\n");
+    if(code_changed)
+        setCode();
 
     world.reset();
-    interpreter.reset();
-    interpreter.setCode(code);
 
     if(automatic)
         ui->statusBar->showMessage(QApplication::trUtf8("Programm läuft"));
@@ -190,14 +187,34 @@ void MainWindow::clockEvent()
 
 void MainWindow::switchViews(bool which)
 {
+    if(code_changed)
+        setCode();
+
+    //If still changed, code is invalid
+    if(code_changed)
+    {
+        ui->viewSwitch->blockSignals(true);
+        ui->viewSwitch->setChecked(!which);
+        ui->viewSwitch->blockSignals(false);
+        return;
+    }
+
+    ui->chart_view->setVisible(which);
     world.setVisible(!which);
-    //TODO
+
+    //Structure chart
+    if(which)
+    {
+        chart_scene.clear();
+        chart_scene.addPixmap(interpreter.structureChart());
+    }
 }
 
 void MainWindow::textChanged()
 {
     //If user changes the code, the highlighting will no longer be valid
     highlighter->resetHighlight();
+    code_changed = true;
 }
 
 void MainWindow::pauseExecution()
@@ -206,4 +223,23 @@ void MainWindow::pauseExecution()
     ui->statusBar->showMessage(QApplication::trUtf8("Programm pausiert"));
     ui->actionStarten->setText(QApplication::trUtf8("Starten"));
     ui->actionSchritt->setEnabled(true);
+}
+
+void MainWindow::setCode()
+{
+    try {
+        ui->statusBar->showMessage(QApplication::trUtf8("Parsen.."));
+
+        code = ui->codeEdit->toPlainText().split("\n");
+        interpreter.setCode(code);
+        interpreter.reset();
+
+        code_changed = false;
+
+        ui->statusBar->showMessage(QApplication::trUtf8("Geparst!"));
+    }
+    catch (SteveInterpreterException &e)
+    {
+        handleError(e);
+    }
 }

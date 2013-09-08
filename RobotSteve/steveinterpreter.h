@@ -17,6 +17,7 @@
 #include <QMap>
 #include <QHash>
 #include <QStack>
+#include <QPixmap>
 
 #include "world.h"
 
@@ -115,18 +116,13 @@ enum BLOCK {
     BLOCK_NEW_COND
 };
 
-struct BlockKeywords {
-    KEYWORD begin;
-    KEYWORD end;
-    BLOCK type;
-};
-
 class SteveInterpreter
 {
     friend class SteveHighlighter;
 
 public:
     SteveInterpreter(World *world);
+
     void setCode(QStringList code) throw (SteveInterpreterException);
     void reset();
     void executeLine() throw (SteveInterpreterException);
@@ -135,7 +131,8 @@ public:
     void setWorld(World *world) { this->world = world; }
     bool executionFinished() { return execution_finished || current_line >= code.size(); }
     bool hitBreakpoint() { return hit_breakpoint; }
-    bool isComment(const QString &s);
+    QPixmap structureChart()  throw (SteveInterpreterException);
+    void setStructureChartFont(QFont font);
 
     //Conditions:
     bool cond_always(World *world, bool has_param, int param);
@@ -161,6 +158,7 @@ private:
     void findAndThrowMissingBegin(int line, BLOCK block, const QString &affected = "") throw (SteveInterpreterException);
     bool handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException);
     bool handleInstruction(QString instruction_str) throw (SteveInterpreterException);
+    bool isComment(const QString &s);
     KEYWORD getKeyword(QString string);
     INSTRUCTION getInstruction(QString string);
     CONDITION getCondition(QString string);
@@ -169,8 +167,14 @@ private:
     const QString &str(INSTRUCTION instr);
     const QString &str(CONDITION cond);
 
+    //Structure chart generation
+    QPixmap structureChartBlock(const struct StructureBlock &sb);
+    QPixmap structureChartIfBlock(const struct StructureBlock &sb);
+    QPixmap structureChartOtherBlock(const struct StructureBlock &sb);
+
     //Independant
     World *world;
+    QFont structure_chart_font;
 
     //Const after construction
     QHash<KEYWORD, QString> keywords;

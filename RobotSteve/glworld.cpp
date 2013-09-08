@@ -14,11 +14,11 @@
 #include "glworld.h"
 
 GLWorld::GLWorld(int width, int length, QWidget *parent) :
-    QGLWidget(parent),
-    World(width, length),
-    camera_rotX(-30),
-    camera_rotY(15),
-    camera_dist(5)
+    QGLWidget{parent},
+    World{width, length},
+    camera_rotX{-30},
+    camera_rotY{15},
+    camera_dist{5}
 {
     anim_ticks.insert(ANIM_STANDING, 1);
     anim_ticks.insert(ANIM_STEP, 100);

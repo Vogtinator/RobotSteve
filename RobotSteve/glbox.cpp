@@ -4,7 +4,7 @@
 #include "glbox.h"
 
 GLBox::GLBox(float w, float h, float l, float cenX, float cenY, float cenZ, TextureAtlasEntry fr, TextureAtlasEntry ba, TextureAtlasEntry to, TextureAtlasEntry bo, TextureAtlasEntry le, TextureAtlasEntry ri)
-    : posX(0), posY(0), posZ(0), rotX(0), rotY(0), rotZ(0), cenX(cenX), cenY(cenY), cenZ(cenZ)
+    : posX{0}, posY{0}, posZ{0}, rotX{0}, rotY{0}, rotZ{0}, cenX{cenX}, cenY{cenY}, cenZ{cenZ}
 {
     //Front
     vertices.append({0, 0, 0}); tex_coords.append({fr.left, fr.bottom}); normals.append({0, 0, 1});

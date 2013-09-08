@@ -1,13 +1,16 @@
-Selbstmord (Wand suchen, hochklettern und runterspringen)
-Tabs
-Laden + Speichern
-Icon: Programm, Dateizuordnung, .desktop-Datei
+Bis Schulanfang:
+Laden + Speichern, Dateizuordnung
 Beispiele
-Automatisch einrücken
 Array keyword_enum_name[KEYWORD_IF] = "KEYWORD_IF" erstellen + Hilfe einbinden: F1 zeigt Hilfe zu dem ausgewählten Wort
 Einstellungen für den Spieler, die Welt und Minecraft Texturenimport
-Menü "Hilfe"
 Manuelle Steuerung
-Struktogramm
+
+Später:
+Syntaxhervorhebung im Struktogramm
+Aktuelle Zeile im Struktogramm
+Selbstmord (Wand suchen, hochklettern und runterspringen)
+Tabs
+Automatisch einrücken
+Menü "Hilfe"
 Vergleiche: Ziegel > 5 oder Ziegel < 5
 Vielleicht andere Syntax: "vorne = wand" oder "rechts = ziegel"

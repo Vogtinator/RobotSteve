@@ -15,6 +15,7 @@
 #include <QSlider>
 #include <QMainWindow>
 #include <QPushButton>
+#include <QGraphicsView>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
@@ -46,14 +47,16 @@ public slots:
 private:
     void handleError(SteveInterpreterException &e);
     void startExecution() throw (SteveInterpreterException);
+    void setCode();
 
     float speed_ms;
-    bool automatic;
+    bool automatic, code_changed;
     QTimer clock;
     bool execution_started = false;
     Ui::MainWindow *ui;
     QSlider *speed_slider;
     GLWorld world;
+    QGraphicsScene chart_scene;
     SteveInterpreter interpreter;
     QStringList code;
     SteveHighlighter *highlighter;

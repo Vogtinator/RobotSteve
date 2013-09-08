@@ -10,7 +10,14 @@
 
 #include <iostream>
 #include <QObject>
-#include <QDebug>
+#include <QString>
+#include <QStringList>
+#include <QMap>
+#include <QHash>
+#include <QStack>
+#include <QPixmap>
+#include <QFontMetrics>
+#include <QPainter>
 
 #include "steveinterpreter.h"
 
@@ -19,7 +26,13 @@
         .type = BLOCK_##name, \
     }
 
-static struct BlockKeywords blocks[] = {
+struct BlockKeywords {
+    KEYWORD begin;
+    KEYWORD end;
+    BLOCK type;
+};
+
+static BlockKeywords blocks[] = {
     DEFAULT_BLOCK_KEYWORDS(IF),
     DEFAULT_BLOCK_KEYWORDS(REPEAT),
     DEFAULT_BLOCK_KEYWORDS(WHILE),
@@ -27,8 +40,10 @@ static struct BlockKeywords blocks[] = {
     DEFAULT_BLOCK_KEYWORDS(NEW_COND)
 };
 
-SteveInterpreter::SteveInterpreter(World *world) : world(world)
+SteveInterpreter::SteveInterpreter(World *world) : world{world}, structure_chart_font{"Monospace"}
 {
+    structure_chart_font.setStyleHint(QFont::Monospace);
+
     keywords[KEYWORD_IF] = QObject::trUtf8("wenn");
     keywords[KEYWORD_NOT] = QObject::trUtf8("nicht");
     keywords[KEYWORD_THEN] = QObject::trUtf8("dann");
@@ -91,7 +106,7 @@ void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, const QSt
     for(auto block_keywords : blocks)
     {
         if(block_keywords.type == block || (block == BLOCK_ELSE && block_keywords.type == BLOCK_IF))
-            throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(keywords[block_keywords.begin]), line, affected);
+            throw SteveInterpreterException{QObject::trUtf8("Es fehlt ein %1.").arg(keywords[block_keywords.begin]), line, affected};
     }
 }
 
@@ -119,7 +134,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
         if(match(line[0], INSTR_FALSE) || match(line[0], INSTR_TRUE))
         {
             if(!in_custom_condition)
-                throw SteveInterpreterException(QObject::trUtf8("%1 und %2 dürfen nur in einer eigenen Bedingung auftreten.").arg(str(INSTR_TRUE)).arg(str(INSTR_FALSE)), current_line);
+                throw SteveInterpreterException{QObject::trUtf8("%1 und %2 dürfen nur in einer eigenen Bedingung auftreten.").arg(str(INSTR_TRUE)).arg(str(INSTR_FALSE)), current_line};
 
             continue;
         }
@@ -132,7 +147,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
         if(keyword == KEYWORD_ELSE)
         {
             if(!branch_entrys.size())
-                throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(str(KEYWORD_IF_END)), current_line, str(KEYWORD_ELSE));
+                throw SteveInterpreterException{QObject::trUtf8("Es fehlt ein %1.").arg(str(KEYWORD_IF_END)), current_line, str(KEYWORD_ELSE)};
 
             BLOCK last_block = block_types.pop();
             if(last_block == BLOCK_IF)
@@ -145,7 +160,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
             else
             {
                 findAndThrowMissingBegin(current_line, last_block, str(KEYWORD_ELSE));
-                throw SteveInterpreterException("WTF #1", current_line);
+                throw SteveInterpreterException{"WTF #1", current_line};
             }
         }
         else
@@ -164,7 +179,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                 else if(keyword == i.begin)
                 {
                     if(!branch_entrys.size())
-                        throw SteveInterpreterException(QObject::trUtf8("Es fehlt ein %1.").arg(str(i.end)), current_line, str(i.begin));
+                        throw SteveInterpreterException{QObject::trUtf8("Es fehlt ein %1.").arg(str(i.end)), current_line, str(i.begin)};
 
                     if(keyword == KEYWORD_NEW_COND)
                                 in_custom_condition = false;
@@ -178,7 +193,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                     else
                     {
                         findAndThrowMissingBegin(current_line, last_block, str(i.begin));
-                        throw SteveInterpreterException("WTF #2", current_line);
+                        throw SteveInterpreterException{"WTF #2", current_line};
                     }
                 }
             }
@@ -213,28 +228,28 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                         BLOCK in = block_types.pop();
                         for(auto bk : blocks)
                             if(bk.type == in)
-                                throw SteveInterpreterException(QObject::trUtf8("%1 ist nicht in einem %2-Block erlaubt.").arg(str(i.begin)).arg(str(bk.begin)), current_line);
+                                throw SteveInterpreterException{QObject::trUtf8("%1 ist nicht in einem %2-Block erlaubt.").arg(str(i.begin)).arg(str(bk.begin)), current_line};
 
-                        throw SteveInterpreterException(QObject::trUtf8("WTF #4"), current_line);
+                        throw SteveInterpreterException{QObject::trUtf8("WTF #4"), current_line};
                     }
 
                     if(line.size() == 1)
-                        throw SteveInterpreterException(QObject::trUtf8("Bezeichnung fehlt."), current_line);
+                        throw SteveInterpreterException{QObject::trUtf8("Bezeichnung fehlt."), current_line};
                     else if(line.size() > 2)
-                        throw SteveInterpreterException(QObject::trUtf8("Zu viele Bezeichnungen."), current_line);
+                        throw SteveInterpreterException{QObject::trUtf8("Zu viele Bezeichnungen."), current_line};
 
                     QString name = line[1].toLower();
                     QRegExp validName("^(\\w|\\d)+$");
 
                     if(!validName.exactMatch(name))
-                        throw SteveInterpreterException(QObject::trUtf8("Die Bezeichnung %1 enthält ungültige Zeichen.").arg(name), current_line, name);
+                        throw SteveInterpreterException{QObject::trUtf8("Die Bezeichnung %1 enthält ungültige Zeichen.").arg(name), current_line, name};
 
                     if(getKeyword(name) != -1 || getInstruction(name) != -1 || getCondition(name) != -1)
-                        throw SteveInterpreterException(QObject::trUtf8("Die Bezeichnung %1 ist ein reserviertes Wort.").arg(name), current_line, name);
+                        throw SteveInterpreterException{QObject::trUtf8("Die Bezeichnung %1 ist ein reserviertes Wort.").arg(name), current_line, name};
 
                     auto &customSymbols = i.type == BLOCK_NEW_COND ? custom_conditions : custom_instructions;
                     if(customSymbols.contains(name))
-                        throw SteveInterpreterException(QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(str(i.begin)).arg(line[1]).arg(customSymbols[name]), current_line, line[1]);
+                        throw SteveInterpreterException{QObject::trUtf8("%1 %2 existiert schon in Zeile %3").arg(str(i.begin)).arg(line[1]).arg(customSymbols[name]), current_line, line[1]};
 
                     customSymbols[name] = current_line;
                 }
@@ -255,22 +270,22 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                         if(keyword == KEYWORD_REPEAT_END)
                         {
                             if(line.size() != 1 && token[branches[current_line]].size() != 1)
-                                throw SteveInterpreterException(QObject::trUtf8("Hier darf keine Bedingung sein, da in Zeile %1 eine angegeben wurde.").arg(branches[current_line]), current_line);
+                                throw SteveInterpreterException{QObject::trUtf8("Hier darf keine Bedingung sein, da in Zeile %1 eine angegeben wurde.").arg(branches[current_line]), current_line};
 
                             if(line.size() == 1 && token[branches[current_line]].size() == 1)
-                                throw SteveInterpreterException(QObject::trUtf8("Hier wird eine Bedingung benötigt, da in Zeile %1 keine angegeben wurde.").arg(branches[current_line]), current_line);
+                                throw SteveInterpreterException{QObject::trUtf8("Hier wird eine Bedingung benötigt, da in Zeile %1 keine angegeben wurde.").arg(branches[current_line]), current_line};
                         }
 
                         break; //Keyword found
                     }
                 }
-                throw SteveInterpreterException(QObject::trUtf8("WTF #5"), current_line);
+                throw SteveInterpreterException{QObject::trUtf8("WTF #5"), current_line};
             }
         }
     }
 
     if(branch_entrys.size())
-        throw SteveInterpreterException("WTF #6", code.size() - 1);
+        throw SteveInterpreterException{"WTF #6", code.size() - 1};
 
     reset();
 
@@ -296,14 +311,14 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
     if(condition != -1)
     {
         if(!condition_functions.contains(condition))
-            throw SteveInterpreterException(QObject::trUtf8("WTF #7"), current_line);
+            throw SteveInterpreterException{QObject::trUtf8("WTF #7"), current_line};
 
         SteveFunction &func = condition_functions[condition];
         //Argument given
         if(!condition_regexp.cap(4).isEmpty())
         {
             if(!func.hasParam())
-                throw SteveInterpreterException(QObject::trUtf8("Bedingung %1 kann mit einem Argument nichts anfangen.").arg(condition_regexp.cap(1)), current_line, condition_regexp.cap(3));
+                throw SteveInterpreterException{QObject::trUtf8("Bedingung %1 kann mit einem Argument nichts anfangen.").arg(condition_regexp.cap(1)), current_line, condition_regexp.cap(3)};
 
             result = func(world, condition_regexp.cap(4).toInt());
         }
@@ -320,14 +335,14 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
         return false;
     }
     else
-        throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Bedingung %1 nicht.").arg(condition_regexp.cap(1)), current_line, condition_regexp.cap(1));
+        throw SteveInterpreterException{QObject::trUtf8("Ich kenne die Bedingung %1 nicht.").arg(condition_regexp.cap(1)), current_line, condition_regexp.cap(1)};
 }
 
 bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveInterpreterException)
 {
     QRegExp instruction_regexp("^((\\w|\\d)+)(\\((\\d+)\\))?$");
     if(instruction_regexp.indexIn(instruction_str) == -1)
-        throw SteveInterpreterException(QObject::trUtf8("Ungültige Anweisung."), current_line, instruction_str);
+        throw SteveInterpreterException{QObject::trUtf8("Ungültige Anweisung."), current_line, instruction_str};
 
     INSTRUCTION instruction = getInstruction(instruction_regexp.cap(1));
     if(instruction != -1)
@@ -349,14 +364,14 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
         }
 
         if(!instruction_functions.contains(instruction))
-            throw SteveInterpreterException(QObject::trUtf8("WTF #8"), current_line);
+            throw SteveInterpreterException{QObject::trUtf8("WTF #8"), current_line};
 
         SteveFunction &func = instruction_functions[instruction];
         //Argument given
         if(!instruction_regexp.cap(4).isEmpty())
         {
             if(!func.hasParam())
-                throw SteveInterpreterException(QObject::trUtf8("Anweisung %1 kann mit einem Argument nichts anfangen!").arg(instruction_regexp.cap(1)), current_line, instruction_regexp.cap(3));
+                throw SteveInterpreterException{QObject::trUtf8("Anweisung %1 kann mit einem Argument nichts anfangen!").arg(instruction_regexp.cap(1)), current_line, instruction_regexp.cap(3)};
 
             func(world, instruction_regexp.cap(4).toInt());
         }
@@ -373,13 +388,13 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
         return false;
     }
     else
-        throw SteveInterpreterException(QObject::trUtf8("Ich kenne die Anweisung %1 nicht.").arg(instruction_regexp.cap(1)), current_line, instruction_regexp.cap(1));
+        throw SteveInterpreterException{QObject::trUtf8("Ich kenne die Anweisung %1 nicht.").arg(instruction_regexp.cap(1)), current_line, instruction_regexp.cap(1)};
 }
 
 void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 {
     if(!code_valid)
-        throw SteveInterpreterException(QObject::trUtf8("Der Code enthält Fehler."), 0);
+        throw SteveInterpreterException{QObject::trUtf8("Der Code enthält Fehler."), 0};
 
     hit_breakpoint = false;
 
@@ -920,6 +935,332 @@ const QString &SteveInterpreter::str(INSTRUCTION instr)
 const QString &SteveInterpreter::str(CONDITION cond)
 {
     return conditions[cond];
+}
+
+//Structure chart generation
+
+struct StructureBlock {
+    QString title;
+    QList<int> code_lines;
+    QStringList code;
+    QPixmap chart;
+};
+
+QPixmap SteveInterpreter::structureChart() throw (SteveInterpreterException)
+{
+    if(!code_valid)
+        throw SteveInterpreterException(QObject::trUtf8("Der Code enthält Fehler."), 0);
+
+    int line;
+
+    QVector<StructureBlock> blocks;
+    QVector<QPixmap> pixmaps;
+    blocks.resize(1 + custom_instructions.size() + custom_conditions.size());
+
+    blocks[0].title = QObject::trUtf8("Hauptprogramm");
+
+    //Main block
+    int current_block = 0, last_block = 0;
+    for(line = 0; line < code.size(); line++)
+    {
+        if(token[line].size() < 1)
+            continue;
+
+        KEYWORD keyword = getKeyword(token[line][0]);
+        switch(keyword)
+        {
+        case KEYWORD_NEW_COND_END:
+        case KEYWORD_NEW_INSTR_END:
+            current_block = 0;
+            break;
+        case KEYWORD_NEW_COND:
+            current_block = ++last_block;
+            blocks[current_block].title = QObject::trUtf8("Bedingung %0").arg(custom_conditions.key(line, "WTF #10"));
+            break;
+        case KEYWORD_NEW_INSTR:
+            current_block = ++last_block;
+            blocks[current_block].title = QObject::trUtf8("Anweisung %0").arg(custom_instructions.key(line, "WTF #11"));
+            break;
+        default:
+            blocks[current_block].code.append(code[line].trimmed());
+            blocks[current_block].code_lines.append(line);
+        }
+    }
+
+    for(StructureBlock &block : blocks)
+        pixmaps.append(structureChartBlock(block));
+
+    //Calculate dimensions of pixmap
+    QFont title_font{structure_chart_font};
+    title_font.setWeight(QFont::Bold);
+
+    QFontMetrics metrics{title_font};
+
+    int height = 0;
+    int width = 0;
+    for(int i = 0; i < blocks.size(); i++)
+    {
+        if(pixmaps[i].height() > height)
+            height = pixmaps[i].height();
+
+        if(pixmaps[i].width() < metrics.width(blocks[i].title))
+            width += metrics.width(blocks[i].title);
+        else
+            width += pixmaps[i].width();
+
+        width += 10;
+    }
+
+    height += metrics.height() * 2;
+
+    QPixmap pixmap{width, height};
+    pixmap.fill(Qt::white);
+    QPainter painter{&pixmap};
+    painter.setFont(title_font);
+
+    int x = 0;
+    for(int i = 0; i < blocks.size(); i++)
+    {
+        painter.drawText(x, metrics.height(), blocks[i].title);
+        painter.drawPixmap(x, metrics.height() * 2, pixmaps[i]);
+
+        if(metrics.width(blocks[i].title) > pixmaps[i].width())
+            x += metrics.width(blocks[i].title);
+        else
+            x += pixmaps[i].width();
+
+        x += 10;
+    }
+
+    return pixmap;
+}
+
+QPixmap SteveInterpreter::structureChartBlock(const StructureBlock &sb)
+{
+    if(sb.code.size() == 0)
+        return {};
+
+    QHash<int,QPixmap> child_pixmaps;
+    QHash<int,StructureBlock> child_blocks;
+    QFontMetrics metrics{structure_chart_font};
+
+    int width = 0, height = 0;
+
+    //Calculate height and get QPixmaps for child blocks
+    for(int line = 0; line < sb.code.size(); line++)
+    {
+        int actual_line = sb.code_lines[line];
+        if(token[actual_line].size() < 1)
+            continue;
+
+        KEYWORD keyword = getKeyword(token[actual_line][0]);
+        StructureBlock child_block;
+
+        //TODO: This works, but is ugly code
+        if(keyword == KEYWORD_IF)
+        {
+            int child_start = line;
+            int actual_if_start = actual_line;
+            while(actual_line < branches[actual_if_start])
+            {
+                child_block.code.append(sb.code[line]);
+                child_block.code_lines.append(sb.code_lines[line]);
+                actual_line = sb.code_lines[++line];
+            }
+            if(match(token[actual_line][0], KEYWORD_ELSE))
+            {
+                actual_if_start = actual_line;
+                while(actual_line < branches[actual_if_start])
+                {
+                    child_block.code.append(sb.code[line]);
+                    child_block.code_lines.append(sb.code_lines[line]);
+                    actual_line = sb.code_lines[++line];
+                }
+            }
+            child_block.code.append(sb.code[line]);
+            child_block.code_lines.append(sb.code_lines[line]);
+
+            child_blocks[child_start] = child_block;
+            child_pixmaps[child_start] = structureChartIfBlock(child_block);
+            height += child_pixmaps[child_start].height();
+            if(child_pixmaps[child_start].width() > width)
+                width = child_pixmaps[child_start].width();
+        }
+        else if(keyword == KEYWORD_REPEAT || keyword == KEYWORD_WHILE)
+        {
+            int child_start = line;
+            int actual_block_start = actual_line;
+            while(actual_line < branches[actual_block_start])
+            {
+                child_block.code.append(sb.code[line]);
+                child_block.code_lines.append(sb.code_lines[line]);
+                actual_line = sb.code_lines[++line];
+            }
+            child_block.code.append(sb.code[line]);
+            child_block.code_lines.append(sb.code_lines[line]);
+
+            child_blocks[child_start] = child_block;
+            child_pixmaps[child_start] = structureChartOtherBlock(child_block);
+            height += child_pixmaps[child_start].height();
+            int w = child_pixmaps[child_start].width();
+            if(w > width)
+                width = w;
+        }
+        else //Normal text
+        {
+            height += metrics.height();
+            int w = metrics.width(sb.code[line]);
+            if(w > width)
+                width = w;
+        }
+    }
+
+    QPixmap pixmap{width + 4, height + 4};
+    pixmap.fill(Qt::white);
+    QPainter painter{&pixmap};
+    painter.setFont(structure_chart_font);
+
+    //Finally, render!
+    int current_y = 2;
+    for(int line = 0; line < sb.code.size(); line++)
+    {
+        int actual_line = sb.code_lines[line];
+        if(token[actual_line].size() < 1)
+            continue;
+
+        KEYWORD keyword = getKeyword(token[actual_line][0]);
+        if(keyword == KEYWORD_IF || keyword == KEYWORD_REPEAT || keyword == KEYWORD_WHILE)
+        {
+            painter.drawPixmap(2, current_y, child_pixmaps[line]);
+            current_y += child_pixmaps[line].height();
+            line += child_blocks[line].code.size();
+        }
+        else
+        {
+            //Increment before, y is at baseline
+            current_y += metrics.height();
+            painter.drawText(2, current_y - 5, sb.code[line]);
+        }
+    }
+
+    painter.drawRect(0, 0, width + 2, height + 2);
+
+    return pixmap;
+}
+
+QPixmap SteveInterpreter::structureChartIfBlock(const StructureBlock &sb)
+{
+    Q_ASSERT(match(token[sb.code_lines[0]][0], KEYWORD_IF));
+
+    StructureBlock if_true_block, if_false_block;
+
+    int line = 0, actual_if_line = sb.code_lines[line];
+    int actual_line = sb.code_lines[++line];
+    while(actual_line < branches[actual_if_line])
+    {
+        if_true_block.code_lines.append(actual_line);
+        if_true_block.code.append(sb.code[line]);
+        actual_line = sb.code_lines[++line];
+    }
+    if(match(token[actual_line][0], KEYWORD_ELSE))
+    {
+        //This line with "else" as new start
+        actual_if_line = actual_line;
+
+        line += 1;
+        actual_line = sb.code_lines[line];
+        while(actual_line < branches[actual_if_line])
+        {
+            if_false_block.code_lines.append(actual_line);
+            if_false_block.code.append(sb.code[line]);
+            actual_line = sb.code_lines[++line];
+        }
+    }
+
+    QPixmap if_true = structureChartBlock(if_true_block);
+    QPixmap if_false = structureChartBlock(if_false_block);
+
+    int width = if_true.width() + if_false.width();
+    int height = std::max(if_true.height(), if_false.height());
+
+    QFontMetrics metrics{structure_chart_font};
+    int header_height = 2*metrics.height();
+    int header_text_width = metrics.width(sb.code[0]);
+    if(width < header_text_width)
+        width = header_text_width;
+
+    QPixmap pixmap{width, height + header_height};
+    pixmap.fill(Qt::white);
+    QPainter painter{&pixmap};
+    painter.setFont(structure_chart_font);
+
+    //Draw the header
+    painter.drawText((width/2)-(header_text_width/2) + 2, metrics.height() - 5, sb.code[0]);
+    painter.drawRect(0, 0, width - 2, header_height - 2);
+    if(if_true.width() > 0 && if_false.width() > 0)
+    {
+        painter.drawLine(1, metrics.height(), if_true.width(), header_height - 2);
+        painter.drawLine(width, metrics.height(), if_true.width(), header_height - 2);
+    }
+    else if(if_true.width() > 0)
+        painter.drawLine(1, metrics.height(), width - 2, header_height - 2);
+    else
+        painter.drawLine(width, metrics.height(), 2, header_height - 2);
+
+    if(if_true.width() > 0)
+        painter.drawText(2, header_height - 5, QObject::trUtf8("W"));
+    if(if_false.width() > 0)
+        painter.drawText(width - metrics.width(QObject::trUtf8("F")) - 2, header_height - 5, QObject::trUtf8("F"));
+
+    painter.drawPixmap(0, header_height, if_true);
+    painter.drawPixmap(width - if_false.width(), header_height, if_false);
+
+    return pixmap;
+}
+
+QPixmap SteveInterpreter::structureChartOtherBlock(const StructureBlock &sb)
+{
+    Q_ASSERT(match(token[sb.code_lines[0]][0], KEYWORD_REPEAT) || match(token[sb.code_lines[0]][0], KEYWORD_WHILE));
+
+    StructureBlock this_block;
+
+    int line = 0, actual_start_line = sb.code_lines[line];
+    int actual_line = sb.code_lines[++line];
+    while(actual_line < branches[actual_start_line])
+    {
+        this_block.code_lines.append(actual_line);
+        this_block.code.append(sb.code[line]);
+        actual_line = sb.code_lines[++line];
+    }
+
+    QPixmap block_pixmap = structureChartBlock(this_block);
+
+    int width = block_pixmap.width();
+    int height = block_pixmap.height();
+
+    QFontMetrics metrics{structure_chart_font};
+    int intendation_width = 15;
+
+    if(width < metrics.width(sb.code[0]))
+        width = metrics.width(sb.code[0]);
+    else if(width < metrics.width(sb.code.last()))
+        width = metrics.width(sb.code.last());
+
+    QPixmap pixmap{width + intendation_width, height + 2*metrics.height()};
+    pixmap.fill(Qt::white);
+    QPainter painter{&pixmap};
+    painter.setFont(structure_chart_font);
+
+    painter.drawText(0, metrics.height() - 5, sb.code[0]);
+
+    //Strip the right border
+    painter.drawPixmap(intendation_width, metrics.height(), block_pixmap.width() - 2, block_pixmap.height(),
+                       block_pixmap, 0, 0, block_pixmap.width() - 2, block_pixmap.height());
+    painter.drawRect(intendation_width, metrics.height(), width, block_pixmap.height() - 2);
+
+    painter.drawText(0, pixmap.height() - 5, sb.code.last());
+
+    return pixmap;
 }
 
 //SteveInterpreterException
