@@ -62,6 +62,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
     connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(open()));
     connect(ui->actionSave, SIGNAL(triggered()), this, SLOT(save()));
+    connect(ui->actionSaveWorld, SIGNAL(triggered()), this, SLOT(saveWorld()));
+    connect(ui->actionLoadWorld, SIGNAL(triggered()), this, SLOT(openWorld()));
 
     //Manual control
     connect(ui->buttonStep, SIGNAL(clicked()), this, SLOT(step()));
@@ -72,7 +74,18 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->buttonCube, SIGNAL(clicked()), this, SLOT(cube()));
 
     if(QCoreApplication::argc() > 1)
-        loadFile(QCoreApplication::arguments()[1]);
+    {
+        QFileInfo file_info{QCoreApplication::arguments()[1]};
+
+        //Load world
+        if(file_info.completeSuffix().compare("stworld", Qt::CaseInsensitive))
+        {
+            if(!world.loadFile(file_info.absoluteFilePath()))
+                QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
+        }
+        else //Load program
+            loadFile(file_info.absoluteFilePath());
+    }
 }
 
 MainWindow::~MainWindow()
@@ -306,8 +319,6 @@ void MainWindow::loadFile(QString path)
     QFile file{path};
     QFileInfo file_info{file};
 
-    settings.setValue("lastOpenDir", file_info.absolutePath());
-
     if(!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
@@ -329,6 +340,10 @@ void MainWindow::open()
     if(filename.isEmpty())
         return;
 
+    QFileInfo file_info{filename};
+
+    settings.setValue("lastOpenDir", file_info.absolutePath());
+
     loadFile(filename);
 }
 
@@ -348,12 +363,49 @@ void MainWindow::save()
 
     if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
     {
-        QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
+        QMessageBox::critical(this, trUtf8("Fehler beim Speichern"), trUtf8("Die Datei '%1' konnte nicht gespeichert werden!").arg(file_info.fileName()));
         return;
     }
 
     QTextStream file_stream{&file};
     file_stream << ui->codeEdit->toPlainText();
+}
+
+void MainWindow::openWorld()
+{
+    QString filename = QFileDialog::getOpenFileName(this, trUtf8("Welt öffnen"),
+                                                    settings.value("lastOpenWorldDir", QDir::homePath()).toString(),
+                                                    trUtf8("Welt (*.stworld);;Alle Dateien (*)"));
+
+    //Open dialog closed or cancelled
+    if(filename.isEmpty())
+        return;
+
+    QFileInfo file_info{filename};
+
+    settings.setValue("lastOpenWorldDir", file_info.absolutePath());
+
+    if(!world.loadFile(filename))
+        QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
+
+    refreshButtons();
+}
+
+void MainWindow::saveWorld()
+{
+    QString filename = QFileDialog::getSaveFileName(this, trUtf8("Welt speichern"),
+                                                    settings.value("lastOpenWorldDir", QDir::homePath()).toString(),
+                                                    trUtf8("Welt (*.stworld);;Alle Dateien (*)"));
+
+     if(filename.isEmpty())
+         return;
+
+     QFileInfo file_info{filename};
+
+     settings.setValue("lastOpenWorldDir", file_info.absolutePath());
+
+     if(!world.saveFile(filename))
+         QMessageBox::critical(this, trUtf8("Fehler beim Speichern"), trUtf8("Die Datei '%1' konnte nicht gespeichert werden!").arg(file_info.fileName()));
 }
 
 //Manual control

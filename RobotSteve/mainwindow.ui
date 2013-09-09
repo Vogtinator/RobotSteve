@@ -220,6 +220,10 @@
     </property>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
+    <addaction name="separator"/>
+    <addaction name="actionSaveWorld"/>
+    <addaction name="actionLoadWorld"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEinstellungen">
@@ -309,6 +313,16 @@
   <action name="actionReset">
    <property name="text">
     <string>Reset</string>
+   </property>
+  </action>
+  <action name="actionSaveWorld">
+   <property name="text">
+    <string>Welt speichern</string>
+   </property>
+  </action>
+  <action name="actionLoadWorld">
+   <property name="text">
+    <string>Welt laden</string>
    </property>
   </action>
  </widget>

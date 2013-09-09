@@ -1,6 +1,9 @@
 #include "world.h"
 
 #include <iostream>
+#include <QFile>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 SignedCoords operator+(const Coords& left, const SignedCoords& right)
 {
@@ -182,7 +185,7 @@ int World::getStackSize()
     return map[front.first][front.second].stack_size;
 }
 
-bool World::deposit(int count)
+bool World::deposit(unsigned int count)
 {
     if(frontBlocked())
         return false;
@@ -199,7 +202,7 @@ bool World::deposit(int count)
     return true;
 }
 
-bool World::pickup(int count)
+bool World::pickup(unsigned int count)
 {
     if(frontBlocked() || front_obj->stack_size < count)
         return false; //Not enough bricks or in wall/cube
@@ -293,4 +296,182 @@ bool World::setState(WorldState &state)
 WorldState World::getState()
 {
     return {steve, size, orientation, map};
+}
+
+//TODO: If canceled midway, updateFront() should be called or state not saved at all
+bool World::loadFile(const QString &filename)
+{
+    QFile file{filename};
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+
+    QXmlStreamReader file_reader(&file);
+    bool size_set, steve_set;
+    while(!file_reader.atEnd())
+    {
+        if(!file_reader.readNextStartElement())
+            continue;
+
+        if(file_reader.name().compare("world", Qt::CaseInsensitive) == 0)
+        {
+            const QXmlStreamAttributes attributes = file_reader.attributes();
+            QString width_str = attributes.value("width").toString();
+            bool ok = false;
+            unsigned int width = width_str.toUInt(&ok);
+            if(width_str.isEmpty() || !ok)
+                    return false;
+
+            QString length_str = attributes.value("length").toString();
+            unsigned int length = length_str.toUInt(&ok);
+            if(length_str.isEmpty() || !ok)
+                    return false;
+
+            if(!resize(width, length))
+                return false;
+
+            reset();
+
+            size_set = true;
+        }
+        else if(file_reader.name().compare("steve", Qt::CaseInsensitive) == 0)
+        {
+            const QXmlStreamAttributes attributes = file_reader.attributes();
+            QString x_str = attributes.value("x").toString();
+            bool ok = false;
+            unsigned int x = x_str.toUInt(&ok);
+            if(x_str.isEmpty() || !ok)
+                    return false;
+
+            QString y_str = attributes.value("y").toString();
+            unsigned int y = y_str.toUInt(&ok);
+            if(y_str.isEmpty() || !ok)
+                    return false;
+
+            QString orientation_str = attributes.value("orientation").toString();
+            ORIENTATION orientation = static_cast<ORIENTATION>(-1);
+            for(auto&& t : this->orientation_str)
+            {
+                if(std::get<1>(t).compare(orientation_str, Qt::CaseInsensitive) == 0)
+                {
+                    orientation = std::get<0>(t);
+                    break;
+                }
+            }
+            if(orientation == -1)
+                    return false;
+
+            if(y >= size.first || x >= size.second)
+                return false;
+
+            steve.first = x;
+            steve.second = y;
+            this->orientation = orientation;
+
+            steve_set = true;
+        }
+        else if(file_reader.name().compare("stack", Qt::CaseInsensitive) == 0
+                || file_reader.name().compare("cube", Qt::CaseInsensitive) == 0
+                || file_reader.name().compare("mark", Qt::CaseInsensitive) == 0)
+        {
+            const QXmlStreamAttributes attributes = file_reader.attributes();
+            QString x_str = attributes.value("x").toString();
+            bool ok = false;
+            unsigned int x = x_str.toUInt(&ok);
+            if(x_str.isEmpty() || !ok)
+                    return false;
+
+            QString y_str = attributes.value("y").toString();
+            unsigned int y = y_str.toUInt(&ok);
+            if(y_str.isEmpty() || !ok)
+                    return false;
+
+            if(y >= size.first || x >= size.second)
+                return false;
+
+            WorldObject *obj = &(map[x][y]);
+
+            if(file_reader.name().compare("stack", Qt::CaseInsensitive) == 0)
+            {
+                QString height_str = attributes.value("height").toString();
+                unsigned int height = height_str.toUInt(&ok);
+                if(height_str.isEmpty() || !ok)
+                    return false;
+
+                obj->stack_size = height;
+                obj->has_cube = false;
+            }
+            else if(file_reader.name().compare("cube", Qt::CaseInsensitive) == 0)
+            {
+                obj->has_cube = true;
+                obj->has_mark = false;
+                obj->stack_size = 0;
+            }
+            else if(file_reader.name().compare("mark", Qt::CaseInsensitive) == 0)
+            {
+                obj->has_mark = true;
+                obj->has_cube = false;
+            }
+        }
+    }
+
+    updateFront();
+
+    return size_set && steve_set;
+}
+
+bool World::saveFile(const QString &filename)
+{
+    QFile file{filename};
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+        return false;
+
+    QXmlStreamWriter file_writer(&file);
+    file_writer.setAutoFormatting(true);
+    file_writer.writeStartDocument();
+
+    //Write world dimensions
+    file_writer.writeStartElement("world");
+    file_writer.writeAttribute("width", QString("%1").arg(size.first));
+    file_writer.writeAttribute("length", QString("%1").arg(size.second));
+
+    //Write steve's position and orientation
+    file_writer.writeStartElement("steve");
+    file_writer.writeAttribute("x", QString("%1").arg(steve.first));
+    file_writer.writeAttribute("y", QString("%1").arg(steve.second));
+    file_writer.writeAttribute("orientation", orientation_str.at(orientation));
+
+    //Write elements
+    for(unsigned int x = 0; x < size.first; x++)
+        for(unsigned int y = 0; y < size.second; y++)
+        {
+            const WorldObject &obj = map[x][y];
+            if(obj.has_mark)
+            {
+                file_writer.writeStartElement("mark");
+                file_writer.writeAttribute("x", QString("%1").arg(x));
+                file_writer.writeAttribute("y", QString("%1").arg(y));
+                file_writer.writeEndElement();
+            }
+
+            if(obj.has_cube)
+                file_writer.writeStartElement("cube");
+            else if(obj.stack_size > 0)
+            {
+                file_writer.writeStartElement("stack");
+                file_writer.writeAttribute("height", QString("%1").arg(obj.stack_size));
+            }
+            else
+                continue;
+
+            file_writer.writeAttribute("x", QString("%1").arg(x));
+            file_writer.writeAttribute("y", QString("%1").arg(y));
+            file_writer.writeEndElement();
+
+        }
+
+    file_writer.writeEndElement();
+
+    file_writer.writeEndDocument();
+
+    return !file_writer.hasError();
 }

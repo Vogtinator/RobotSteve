@@ -38,6 +38,8 @@ public slots:
 
     void open();
     void save();
+    void openWorld();
+    void saveWorld();
 
     //Manual control:
     void step();

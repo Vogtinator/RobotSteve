@@ -34,9 +34,10 @@ public:
     void turnLeft(int quarters) override;
     void setMark(bool b) override;
     bool setCube(bool b) override;
-    bool deposit(int count) override;
-    bool pickup(int count) override;
+    bool deposit(unsigned int count) override;
+    bool pickup(unsigned int count) override;
     bool setState(WorldState &state) override;
+    bool loadFile(const QString &filename) override;
 
 protected:
     void paintGL();

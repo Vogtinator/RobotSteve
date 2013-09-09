@@ -1,7 +1,10 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include <QString>
 #include <vector>
+#include <map>
+#include <utility>
 
 typedef std::pair<int,int> SignedCoords;
 typedef std::pair<unsigned int, unsigned int> Size;
@@ -10,7 +13,7 @@ typedef std::pair<unsigned int, unsigned int> Coords;
 struct WorldObject {
     bool has_mark = false;
     bool has_cube = false;
-    int stack_size = 0;
+    unsigned int stack_size = 0;
 };
 
 enum ORIENTATION {
@@ -49,8 +52,8 @@ public:
     virtual void turnLeft(int quarters);
     virtual void setMark(bool b);
     virtual bool setCube(bool b);
-    virtual bool pickup(int count);
-    virtual bool deposit(int count);
+    virtual bool pickup(unsigned int count);
+    virtual bool deposit(unsigned int count);
     virtual bool isWall();
     virtual bool isCube();
     virtual bool frontBlocked();
@@ -63,11 +66,20 @@ public:
     void dumpWorld();
     WorldState getState();
     virtual bool setState(WorldState &state);
+    bool saveFile(const QString &filename);
+    virtual bool loadFile(const QString &filename);
 
 protected:
     SignedCoords getForward();
     void updateFront();
     bool inBounds(SignedCoords &coords);
+
+    const std::map<ORIENTATION,QString> orientation_str = {
+        std::make_pair(ORIENT_NORTH, "north"),
+        std::make_pair(ORIENT_EAST, "east"),
+        std::make_pair(ORIENT_SOUTH, "south"),
+        std::make_pair(ORIENT_WEST, "west")
+    };
 
     WorldObject *front_obj;
     Size size;

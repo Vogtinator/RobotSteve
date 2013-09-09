@@ -210,7 +210,7 @@ void GLWorld::paintGL()
             brick->setZPosition(z);
 
             float brick_y = 0;
-            for(int height = 0; height < World::map[x][z].stack_size; height++, brick_y += 0.5)
+            for(unsigned int height = 0; height < World::map[x][z].stack_size; height++, brick_y += 0.5)
             {
                 brick->setYPosition(brick_y - 1.5);
                 brick->draw();
@@ -442,7 +442,7 @@ bool GLWorld::setCube(bool b)
     return true;
 }
 
-bool GLWorld::deposit(int count)
+bool GLWorld::deposit(unsigned int count)
 {
     if(!World::deposit(count))
         return false;
@@ -456,7 +456,7 @@ bool GLWorld::deposit(int count)
     return true;
 }
 
-bool GLWorld::pickup(int count)
+bool GLWorld::pickup(unsigned int count)
 {
     if(!World::pickup(count))
         return false;
@@ -545,6 +545,17 @@ void GLWorld::reset()
 bool GLWorld::setState(WorldState &state)
 {
     if(!World::setState(state))
+        return false;
+
+    updateAnimationTarget();
+    setAnimation(ANIM_STANDING);
+
+    return true;
+}
+
+bool GLWorld::loadFile(const QString &filename)
+{
+    if(!World::loadFile(filename))
         return false;
 
     updateAnimationTarget();
