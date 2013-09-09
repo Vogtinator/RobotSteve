@@ -123,7 +123,6 @@ public:
     bool executionFinished() { return execution_finished; }
     bool hitBreakpoint() { return hit_breakpoint; }
     QPixmap structureChart()  throw (SteveInterpreterException);
-    void setStructureChartFont(QFont font);
 
     //Conditions:
     bool condAlways(World *world, bool has_param, int param);
@@ -160,13 +159,15 @@ private:
     const QString &str(CONDITION cond);
 
     //Structure chart generation
+    void drawText(int x, int y, QPainter &painter, const QString &text);
+    int textWidth(const QString &text);
+    int textHeight();
     QPixmap structureChartBlock(const struct StructureBlock &sb);
     QPixmap structureChartIfBlock(const struct StructureBlock &sb);
     QPixmap structureChartOtherBlock(const struct StructureBlock &sb);
 
     //Independant
     World *world;
-    QFont structure_chart_font;
 
     //Const after construction
     QHash<KEYWORD, QString> keywords;

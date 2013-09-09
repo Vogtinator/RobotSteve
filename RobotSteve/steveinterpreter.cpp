@@ -30,10 +30,8 @@ static BlockKeywords blocks[] = {
     DEFAULT_BLOCK_KEYWORDS(NEW_COND)
 };
 
-SteveInterpreter::SteveInterpreter(World *world) : world{world}, structure_chart_font{"Monospace"}
+SteveInterpreter::SteveInterpreter(World *world) : world{world}
 {
-    structure_chart_font.setStyleHint(QFont::Monospace);
-
     keywords[KEYWORD_IF] = QObject::trUtf8("wenn");
     keywords[KEYWORD_NOT] = QObject::trUtf8("nicht");
     keywords[KEYWORD_THEN] = QObject::trUtf8("dann");
@@ -947,6 +945,82 @@ struct StructureBlock {
     QPixmap chart;
 };
 
+void SteveInterpreter::drawText(int x, int y, QPainter &painter, const QString &text)
+{
+    QStringList token = text.split(" ", QString::SkipEmptyParts);
+    QPen saved_pen = painter.pen();
+
+    static QFont normal{"Monospace"};
+    normal.setStyleHint(QFont::Monospace);
+    normal.setPointSize(9);
+
+    static QFont bold{normal};
+    bold.setWeight(QFont::Bold);
+
+    static QFontMetrics metrics_normal{normal};
+    static QFontMetrics metrics_bold{bold};
+
+    for(const QString &tok : token)
+    {
+        QFontMetrics *metrics = &metrics_bold;
+        painter.setFont(bold);
+        if(getKeyword(tok) != -1)
+            painter.setPen(QColor(0, 128, 0));
+        else if(getCondition(tok) != -1 || custom_conditions.contains(tok.toLower()))
+            painter.setPen(QColor(192,16, 112));
+        else if(getInstruction(tok) != -1 || custom_instructions.contains(tok.toLower()))
+            painter.setPen(QColor(128, 0, 0));
+        else
+        {
+            metrics = &metrics_normal;
+            painter.setFont(normal);
+            painter.setPen(QColor(0, 0, 0));
+        }
+
+        painter.drawText(x, y + metrics->ascent() + 2, tok);
+        x += metrics->width(tok) + metrics->width(' ');
+    }
+
+    painter.setPen(saved_pen);
+}
+
+int SteveInterpreter::textWidth(const QString &text)
+{
+    int width = 0;
+
+    QStringList token = text.split(" ", QString::SkipEmptyParts);
+
+    static QFont normal{"Monospace"};
+    normal.setStyleHint(QFont::Monospace);
+    normal.setPointSize(9);
+
+    static QFont bold{normal};
+    bold.setWeight(QFont::Bold);
+
+    static QFontMetrics metrics_normal{normal};
+    static QFontMetrics metrics_bold{bold};
+
+    for(const QString &tok : token)
+    {
+        QFontMetrics *metrics = &metrics_bold;
+        if(getKeyword(tok) == -1 && getCondition(tok) == -1 && getInstruction(tok) == -1 && !custom_conditions.contains(tok.toLower()) && !custom_instructions.contains(tok.toLower()))
+            metrics = &metrics_normal;
+
+        width += metrics->width(tok) + metrics->width(' ');
+    }
+    return width;
+}
+
+int SteveInterpreter::textHeight()
+{
+    static QFont normal{"Monospace"};
+    normal.setStyleHint(QFont::Monospace);
+    normal.setPointSize(9);
+
+    static QFontMetrics metrics_normal{normal};
+    return metrics_normal.height() + 2;
+}
+
 QPixmap SteveInterpreter::structureChart() throw (SteveInterpreterException)
 {
     if(!code_valid)
@@ -992,9 +1066,9 @@ QPixmap SteveInterpreter::structureChart() throw (SteveInterpreterException)
         pixmaps.append(structureChartBlock(block));
 
     //Calculate dimensions of pixmap
-    QFont title_font{structure_chart_font};
+    QFont title_font{"Monospace"};
+    title_font.setStyleHint(QFont::Monospace);
     title_font.setWeight(QFont::Bold);
-
     QFontMetrics metrics{title_font};
 
     int height = 0;
@@ -1022,7 +1096,7 @@ QPixmap SteveInterpreter::structureChart() throw (SteveInterpreterException)
     int x = 0;
     for(int i = 0; i < blocks.size(); i++)
     {
-        painter.drawText(x, metrics.height(), blocks[i].title);
+        painter.drawText(x, metrics.ascent(), blocks[i].title);
         painter.drawPixmap(x, metrics.height() * 2, pixmaps[i]);
 
         if(metrics.width(blocks[i].title) > pixmaps[i].width())
@@ -1043,7 +1117,6 @@ QPixmap SteveInterpreter::structureChartBlock(const StructureBlock &sb)
 
     QHash<int,QPixmap> child_pixmaps;
     QHash<int,StructureBlock> child_blocks;
-    QFontMetrics metrics{structure_chart_font};
 
     int width = 0, height = 0;
 
@@ -1083,6 +1156,7 @@ QPixmap SteveInterpreter::structureChartBlock(const StructureBlock &sb)
 
             child_blocks[child_start] = child_block;
             child_pixmaps[child_start] = structureChartIfBlock(child_block);
+
             height += child_pixmaps[child_start].height();
             if(child_pixmaps[child_start].width() > width)
                 width = child_pixmaps[child_start].width();
@@ -1109,8 +1183,8 @@ QPixmap SteveInterpreter::structureChartBlock(const StructureBlock &sb)
         }
         else //Normal text
         {
-            height += metrics.height();
-            int w = metrics.width(sb.code[line]);
+            height += textHeight();
+            int w = textWidth(sb.code[line]);
             if(w > width)
                 width = w;
         }
@@ -1119,7 +1193,6 @@ QPixmap SteveInterpreter::structureChartBlock(const StructureBlock &sb)
     QPixmap pixmap{width + 4, height + 4};
     pixmap.fill(Qt::white);
     QPainter painter{&pixmap};
-    painter.setFont(structure_chart_font);
 
     //Finally, render!
     int current_y = 2;
@@ -1134,13 +1207,12 @@ QPixmap SteveInterpreter::structureChartBlock(const StructureBlock &sb)
         {
             painter.drawPixmap(2, current_y, child_pixmaps[line]);
             current_y += child_pixmaps[line].height();
-            line += child_blocks[line].code.size();
+            line += child_blocks[line].code.size() - 1;
         }
         else
         {
-            //Increment before, y is at baseline
-            current_y += metrics.height();
-            painter.drawText(2, current_y - 5, sb.code[line]);
+            drawText(2, current_y, painter, sb.code[line]);
+            current_y += textHeight();
         }
     }
 
@@ -1184,37 +1256,37 @@ QPixmap SteveInterpreter::structureChartIfBlock(const StructureBlock &sb)
     int width = if_true.width() + if_false.width();
     int height = std::max(if_true.height(), if_false.height());
 
-    QFontMetrics metrics{structure_chart_font};
-    int header_height = 2*metrics.height();
-    int header_text_width = metrics.width(sb.code[0]);
+    int header_height = 2*textHeight();
+    int header_text_width = textWidth(sb.code[0]);
     if(width < header_text_width)
         width = header_text_width;
 
     QPixmap pixmap{width, height + header_height};
     pixmap.fill(Qt::white);
     QPainter painter{&pixmap};
-    painter.setFont(structure_chart_font);
 
-    //Draw the header
-    painter.drawText((width/2)-(header_text_width/2) + 2, metrics.height() - 5, sb.code[0]);
-    painter.drawRect(0, 0, width - 2, header_height - 2);
+    drawText((width/2)-(header_text_width/2) + 2, 0, painter, sb.code[0]);
+    painter.drawLine(0, header_height, width, header_height);
+
     if(if_true.width() > 0 && if_false.width() > 0)
     {
-        painter.drawLine(1, metrics.height(), if_true.width(), header_height - 2);
-        painter.drawLine(width, metrics.height(), if_true.width(), header_height - 2);
+        painter.drawLine(1, textHeight(), if_true.width(), header_height - 2);
+        painter.drawLine(width, textHeight(), if_true.width(), header_height - 2);
     }
     else if(if_true.width() > 0)
-        painter.drawLine(1, metrics.height(), width - 2, header_height - 2);
+        painter.drawLine(1, textHeight(), width - 2, header_height - 2);
     else
-        painter.drawLine(width, metrics.height(), 2, header_height - 2);
+        painter.drawLine(width, textHeight(), 2, header_height - 2);
 
     if(if_true.width() > 0)
-        painter.drawText(2, header_height - 5, QObject::trUtf8("W"));
+        drawText(2, header_height - textHeight(), painter, QObject::trUtf8("W"));
     if(if_false.width() > 0)
-        painter.drawText(width - metrics.width(QObject::trUtf8("F")) - 2, header_height - 5, QObject::trUtf8("F"));
+        drawText(width - textWidth(QObject::trUtf8("F")) - 2, header_height - textHeight(), painter, QObject::trUtf8("F"));
 
     painter.drawPixmap(0, header_height, if_true);
-    painter.drawPixmap(width - if_false.width(), header_height, if_false);
+    painter.drawPixmap(width - if_false.width() + 1, header_height, if_false);
+
+    painter.drawRect(0, 0, pixmap.width() - 1, pixmap.height() - 2);
 
     return pixmap;
 }
@@ -1239,27 +1311,27 @@ QPixmap SteveInterpreter::structureChartOtherBlock(const StructureBlock &sb)
     int width = block_pixmap.width();
     int height = block_pixmap.height();
 
-    QFontMetrics metrics{structure_chart_font};
     int intendation_width = 15;
 
-    if(width < metrics.width(sb.code[0]))
-        width = metrics.width(sb.code[0]);
-    else if(width < metrics.width(sb.code.last()))
-        width = metrics.width(sb.code.last());
+    if(width < textWidth(sb.code[0]))
+        width = textWidth(sb.code[0]);
+    else if(width < textWidth(sb.code.last()))
+        width = textWidth(sb.code.last());
 
-    QPixmap pixmap{width + intendation_width, height + 2*metrics.height()};
+    QPixmap pixmap{width + intendation_width, height + 2*textHeight()};
     pixmap.fill(Qt::white);
     QPainter painter{&pixmap};
-    painter.setFont(structure_chart_font);
 
-    painter.drawText(0, metrics.height() - 5, sb.code[0]);
+    drawText(2, 0, painter, sb.code[0]);
 
     //Strip the right border
-    painter.drawPixmap(intendation_width, metrics.height(), block_pixmap.width() - 2, block_pixmap.height(),
+    painter.drawPixmap(intendation_width, textHeight(), block_pixmap.width() - 2, block_pixmap.height(),
                        block_pixmap, 0, 0, block_pixmap.width() - 2, block_pixmap.height());
-    painter.drawRect(intendation_width, metrics.height(), width, block_pixmap.height() - 2);
+    painter.drawRect(intendation_width, textHeight(), width - 2, block_pixmap.height() - 2);
 
-    painter.drawText(0, pixmap.height() - 5, sb.code.last());
+    painter.drawRect(0, 0, pixmap.width() - 2, pixmap.height() - 2);
+
+    drawText(2, pixmap.height() - textHeight(), painter, sb.code.last());
 
     return pixmap;
 }

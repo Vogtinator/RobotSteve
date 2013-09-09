@@ -5,7 +5,6 @@ Array keyword_enum_name[KEYWORD_IF] = "KEYWORD_IF" erstellen + Hilfe einbinden: 
 Einstellungen für den Spieler, die Welt und Minecraft Texturenimport
 
 Später:
-Syntaxhervorhebung im Struktogramm
 Aktuelle Zeile im Struktogramm
 Selbstmord (Wand suchen, hochklettern und runterspringen)
 Tabs
