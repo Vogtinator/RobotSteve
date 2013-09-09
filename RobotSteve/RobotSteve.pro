@@ -53,5 +53,7 @@ desktop.path = /usr/share/applications
 desktop.files += RobotSteve.desktop
 icon.path = /usr/share/icons
 icon.files += RobotSteve.png
+mime.path = /usr/share/mime/packages
+mime.files = RobotSteve.xml
 
-INSTALLS += target desktop icon
+INSTALLS += target desktop icon mime

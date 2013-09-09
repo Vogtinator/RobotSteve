@@ -1,4 +1,7 @@
 #include <iostream>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QTextStream>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
@@ -57,6 +60,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&clock, SIGNAL(timeout()), this, SLOT(clockEvent()));
     connect(ui->viewSwitch, SIGNAL(toggled(bool)), this, SLOT(switchViews(bool)));
     connect(ui->codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
+    connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(open()));
+    connect(ui->actionSave, SIGNAL(triggered()), this, SLOT(save()));
 
     //Manual control
     connect(ui->buttonStep, SIGNAL(clicked()), this, SLOT(step()));
@@ -65,6 +70,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->buttonTurnLeft, SIGNAL(clicked()), this, SLOT(turnLeft()));
     connect(ui->buttonTurnRight, SIGNAL(clicked()), this, SLOT(turnRight()));
     connect(ui->buttonCube, SIGNAL(clicked()), this, SLOT(cube()));
+
+    if(QCoreApplication::argc() > 1)
+        loadFile(QCoreApplication::arguments()[1]);
 }
 
 MainWindow::~MainWindow()
@@ -291,6 +299,61 @@ void MainWindow::refreshButtons()
     ui->buttonCube->setEnabled(placeCube);
     ui->buttonTurnLeft->setDisabled(false);
     ui->buttonTurnRight->setDisabled(false);
+}
+
+void MainWindow::loadFile(QString path)
+{
+    QFile file{path};
+    QFileInfo file_info{file};
+
+    settings.setValue("lastOpenDir", file_info.absolutePath());
+
+    if(!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
+        return;
+    }
+
+    ui->codeEdit->setPlainText(file.readAll());
+
+    setCode();
+}
+
+void MainWindow::open()
+{
+    QString filename = QFileDialog::getOpenFileName(this, trUtf8("Programm öffnen"),
+                                                    settings.value("lastOpenDir", QDir::homePath()).toString(),
+                                                    trUtf8("Programme (*.steve);;Robot Karol Programme (*kdp);;Textdateien (*.txt);;Alle Dateien (*)"));
+
+    //Open dialog closed or cancelled
+    if(filename.isEmpty())
+        return;
+
+    loadFile(filename);
+}
+
+void MainWindow::save()
+{
+    QString filename = QFileDialog::getSaveFileName(this, trUtf8("Programm speichern"),
+                                                    settings.value("lastOpenDir", QDir::homePath()).toString(),
+                                                    trUtf8("Programme (*.steve);;Textdateien (*.txt);;Alle Dateien (*)"));
+
+    if(filename.isEmpty())
+        return;
+
+    QFile file{filename};
+    QFileInfo file_info{file};
+
+    settings.setValue("lastOpenDir", file_info.absolutePath());
+
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+    {
+        QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
+        return;
+    }
+
+    QTextStream file_stream{&file};
+    file_stream << ui->codeEdit->toPlainText();
 }
 
 //Manual control

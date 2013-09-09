@@ -6,6 +6,7 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QGraphicsView>
+#include <QSettings>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
@@ -35,6 +36,9 @@ public slots:
     void textChanged();
     void refreshButtons();
 
+    void open();
+    void save();
+
     //Manual control:
     void step();
     void turnLeft();
@@ -47,6 +51,7 @@ private:
     void handleError(SteveInterpreterException &e);
     void startExecution() throw (SteveInterpreterException);
     void setCode();
+    void loadFile(QString path);
 
     float speed_ms;
     bool automatic = false, code_changed = true;
@@ -61,6 +66,7 @@ private:
     SteveHighlighter *highlighter;
     QTextCharFormat current_line_format, error_format;
     WorldState saved_state;
+    QSettings settings;
 };
 
 #endif // MAINWINDOW_H

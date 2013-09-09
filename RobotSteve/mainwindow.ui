@@ -211,16 +211,16 @@
      <x>0</x>
      <y>0</y>
      <width>815</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuDatei">
     <property name="title">
      <string>Datei</string>
     </property>
-    <addaction name="actionLaden"/>
-    <addaction name="actionSpeichern"/>
-    <addaction name="actionBeenden"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuEinstellungen">
     <property name="title">
@@ -252,17 +252,17 @@
    <addaction name="actionReset"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <action name="actionLaden">
+  <action name="actionOpen">
    <property name="text">
     <string>Öffnen</string>
    </property>
   </action>
-  <action name="actionSpeichern">
+  <action name="actionSave">
    <property name="text">
     <string>Speichern</string>
    </property>
   </action>
-  <action name="actionBeenden">
+  <action name="actionQuit">
    <property name="text">
     <string>Beenden</string>
    </property>

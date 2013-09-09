@@ -1,10 +1,11 @@
 Bis Schulanfang:
-Laden + Speichern, Dateizuordnung
+Welt laden u. speichern
 Beispiele
 Array keyword_enum_name[KEYWORD_IF] = "KEYWORD_IF" erstellen + Hilfe einbinden: F1 zeigt Hilfe zu dem ausgewählten Wort
 Einstellungen für den Spieler, die Welt und Minecraft Texturenimport
 
 Später:
+Importieren von .kdw und .kdp (KEIN Export)
 Aktuelle Zeile im Struktogramm
 Selbstmord (Wand suchen, hochklettern und runterspringen)
 Tabs

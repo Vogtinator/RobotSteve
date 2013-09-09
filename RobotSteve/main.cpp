@@ -14,6 +14,10 @@ int main(int argc, char *argv[])
 
     try {
     QApplication a{argc, argv};
+    QCoreApplication::setOrganizationName("FDG AB");
+    QCoreApplication::setOrganizationDomain("fdg-ab.de");
+    QCoreApplication::setApplicationName("Robot Steve");
+
     MainWindow w;
     w.show();
 

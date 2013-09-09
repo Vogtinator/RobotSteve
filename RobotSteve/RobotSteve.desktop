@@ -6,4 +6,5 @@ Name=RobotSteve
 GenericName=Programmieren Lernen
 Terminal=false
 Type=Application
+MimeType=application/x-robotsteve-program;application/x-robotsteve-world
 Icon=RobotSteve
