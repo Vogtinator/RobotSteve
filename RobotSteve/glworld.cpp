@@ -1,7 +1,12 @@
+#include <cmath>
 #include <iostream>
 #include <QMouseEvent>
 
 #include "glworld.h"
+
+#ifndef M_PI
+#define M_PI		3.14159265358979323846
+#endif
 
 GLWorld::GLWorld(unsigned int width, unsigned int length, QWidget *parent) :
     QGLWidget{parent},
@@ -33,9 +38,7 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, QWidget *parent) :
     player_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(":/textures/char.png")));
     environment_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(":/textures/environment.png")));
 
-    double m_per_px = 0.0579;
-
-    static_assert(std::is_same<decltype(8 * m_per_px), decltype(m_per_px)>::value, "Your compiler is really bullshit!");
+    const double m_per_px = 0.0579;
 
     player_body = std::shared_ptr<GLBox>(new GLBox(8 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                             4 * m_per_px, 0 * m_per_px, 2 * m_per_px,
