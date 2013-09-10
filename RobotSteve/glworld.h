@@ -5,6 +5,7 @@
 #include <QGLWidget>
 #include <QTimer>
 #include <QHash>
+#include <QXmlStreamReader>
 
 #include "world.h"
 #include "glbox.h"
@@ -37,7 +38,7 @@ public:
     bool deposit(unsigned int count) override;
     bool pickup(unsigned int count) override;
     bool setState(WorldState &state) override;
-    bool loadFile(const QString &filename) override;
+    bool loadXMLStream(QXmlStreamReader &file_reader) override;
 
 protected:
     void paintGL();

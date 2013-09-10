@@ -72,6 +72,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->buttonTurnLeft, SIGNAL(clicked()), this, SLOT(turnLeft()));
     connect(ui->buttonTurnRight, SIGNAL(clicked()), this, SLOT(turnRight()));
     connect(ui->buttonCube, SIGNAL(clicked()), this, SLOT(cube()));
+    connect(ui->buttonMark, SIGNAL(clicked()), this, SLOT(mark()));
 
     if(QCoreApplication::argc() > 1)
     {
@@ -297,6 +298,7 @@ void MainWindow::refreshButtons()
         ui->buttonTurnLeft->setDisabled(true);
         ui->buttonTurnRight->setDisabled(true);
         ui->buttonCube->setDisabled(true);
+        ui->buttonMark->setDisabled(true);
 
         return;
     }
@@ -312,6 +314,7 @@ void MainWindow::refreshButtons()
     ui->buttonCube->setEnabled(placeCube);
     ui->buttonTurnLeft->setDisabled(false);
     ui->buttonTurnRight->setDisabled(false);
+    ui->buttonMark->setDisabled(false);
 }
 
 void MainWindow::loadFile(QString path)
@@ -470,4 +473,14 @@ void MainWindow::step()
     world.stepForward();
 
     refreshButtons();
+}
+
+void MainWindow::mark()
+{
+    //The user can't be really fast, so animations always on
+    world.setSpeed(2000);
+
+    world.setMark(!world.isMarked());
+
+    //Refresh not needed
 }

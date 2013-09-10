@@ -299,17 +299,18 @@ WorldState World::getState()
 }
 
 //TODO: If canceled midway, updateFront() should be called or state not saved at all
-bool World::loadFile(const QString &filename)
+bool World::loadXMLStream(QXmlStreamReader &file_reader)
 {
-    QFile file{filename};
-    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
-
-    QXmlStreamReader file_reader(&file);
     bool size_set, steve_set;
     while(!file_reader.atEnd())
     {
-        if(!file_reader.readNextStartElement())
+        if(!file_reader.readNext() == QXmlStreamReader::Invalid)
+            break;
+
+        if(file_reader.isEndElement() && file_reader.name() == "world")
+            break; //Finished
+
+        if(!file_reader.isStartElement())
             continue;
 
         if(file_reader.name().compare("world", Qt::CaseInsensitive) == 0)
@@ -417,6 +418,25 @@ bool World::loadFile(const QString &filename)
     updateFront();
 
     return size_set && steve_set;
+}
+
+
+bool World::loadFile(const QString &filename)
+{
+    QFile file{filename};
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+
+    QXmlStreamReader file_reader(&file);
+
+    return loadXMLStream(file_reader);
+}
+
+bool World::loadXML(const QString &xml)
+{
+    QXmlStreamReader file_reader{xml};
+
+    return loadXMLStream(file_reader);
 }
 
 bool World::saveFile(const QString &filename)

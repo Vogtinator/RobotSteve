@@ -1,10 +1,11 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include <QString>
 #include <vector>
 #include <map>
 #include <utility>
+#include <QString>
+#include <QXmlStreamReader>
 
 typedef std::pair<int,int> SignedCoords;
 typedef std::pair<unsigned int, unsigned int> Size;
@@ -67,7 +68,9 @@ public:
     WorldState getState();
     virtual bool setState(WorldState &state);
     bool saveFile(const QString &filename);
-    virtual bool loadFile(const QString &filename);
+    bool loadFile(const QString &filename);
+    bool loadXML(const QString &xml);
+    virtual bool loadXMLStream(QXmlStreamReader &file_reader);
 
 protected:
     SignedCoords getForward();
@@ -87,6 +90,7 @@ protected:
     SignedCoords front;
     ORIENTATION orientation = ORIENT_SOUTH;
     std::vector<std::vector<WorldObject> > map;
+
 };
 
 #endif // WORLD_H

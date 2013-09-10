@@ -10,5 +10,6 @@
         <file>rot_right.png</file>
         <file>step.png</file>
         <file>up.png</file>
+        <file>mark.png</file>
     </qresource>
 </RCC>

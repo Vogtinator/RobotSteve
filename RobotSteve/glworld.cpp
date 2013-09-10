@@ -553,9 +553,9 @@ bool GLWorld::setState(WorldState &state)
     return true;
 }
 
-bool GLWorld::loadFile(const QString &filename)
+bool GLWorld::loadXMLStream(QXmlStreamReader &file_reader)
 {
-    if(!World::loadFile(filename))
+    if(!World::loadXMLStream(file_reader))
         return false;
 
     updateAnimationTarget();

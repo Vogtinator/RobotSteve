@@ -48,6 +48,7 @@ public slots:
     void layDown();
     void pickUp();
     void cube();
+    void mark();
     
 private:
     void handleError(SteveInterpreterException &e);
