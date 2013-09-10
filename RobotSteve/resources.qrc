@@ -18,5 +18,7 @@
         <file>Examples/laufen.stworld</file>
         <file>Examples/laufen2.steve</file>
         <file>Examples/laufen2.stworld</file>
+        <file>Examples/treppe.steve</file>
+        <file>Examples/treppe.stworld</file>
     </qresource>
 </RCC>

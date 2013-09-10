@@ -1,0 +1,23 @@
+wiederhole immer
+	markesetzen
+
+	solange nicht wand tue
+		hinlegen
+		schritt
+	*solange
+
+	linksdrehen(2)
+
+	solange nicht marke tue
+		schritt
+	*solange
+
+	markelöschen
+	linksdrehen(2)
+
+	wenn wand dann 
+		beenden
+	*wenn
+
+	schritt
+*wiederhole

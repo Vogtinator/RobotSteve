@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<world width="3" length="25" max_height="25">
+    <steve x="0" y="0" orientation="south"/>
+</world>
