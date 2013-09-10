@@ -247,6 +247,11 @@ void GLWorld::resizeGL(int w, int h)
     glLoadIdentity();
 }
 
+void GLWorld::setPlayerTexture(const QString &filename)
+{
+    player_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(filename)));
+}
+
 inline float lin_terpolation(float from, float to, float x)
 {
     return from + (to-from)*x;

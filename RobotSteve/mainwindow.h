@@ -46,7 +46,10 @@ public slots:
     void saveWorld();
     void showWorldSettings();
     void resetWorld();
-    void showPlayerSettings();
+
+    //Menu "Player"
+    void loadTexture();
+    void loadDefaultTexture();
 
     //Manual control:
     void step();

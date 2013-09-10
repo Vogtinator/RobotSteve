@@ -245,10 +245,17 @@
     <addaction name="actionSettingsWorld"/>
     <addaction name="actionResetWorld"/>
     <addaction name="separator"/>
-    <addaction name="actionPlayerWorld"/>
+   </widget>
+   <widget class="QMenu" name="menuPlayer">
+    <property name="title">
+     <string>Spieler</string>
+    </property>
+    <addaction name="actionDefaultTexture"/>
+    <addaction name="actionLoadTexture"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuWorld"/>
+   <addaction name="menuPlayer"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="movable">
@@ -321,14 +328,19 @@
     <string>Einstellungen</string>
    </property>
   </action>
-  <action name="actionPlayerWorld">
-   <property name="text">
-    <string>Spieler</string>
-   </property>
-  </action>
   <action name="actionResetWorld">
    <property name="text">
     <string>Zurücksetzen</string>
+   </property>
+  </action>
+  <action name="actionDefaultTexture">
+   <property name="text">
+    <string>Standardaussehen</string>
+   </property>
+  </action>
+  <action name="actionLoadTexture">
+   <property name="text">
+    <string>Textur öffnen</string>
    </property>
   </action>
  </widget>

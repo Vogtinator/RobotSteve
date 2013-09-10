@@ -178,7 +178,7 @@ SignedCoords World::getForward()
     }
 }
 
-int World::getStackSize()
+unsigned int World::getStackSize()
 {
     if(frontBlocked())
         return 0; //No bricks in walls or cubes.

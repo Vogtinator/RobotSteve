@@ -59,7 +59,7 @@ public:
     virtual bool isWall();
     virtual bool isCube();
     virtual bool frontBlocked();
-    virtual int getStackSize();
+    virtual unsigned int getStackSize();
     virtual bool isMarked();
 
     Size getSize() { return size; }

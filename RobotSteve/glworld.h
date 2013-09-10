@@ -39,6 +39,7 @@ public:
     bool pickup(unsigned int count) override;
     bool setState(WorldState &state) override;
     bool loadXMLStream(QXmlStreamReader &file_reader) override;
+    void setPlayerTexture(const QString &filename);
 
 protected:
     void paintGL();

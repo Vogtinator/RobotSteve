@@ -70,7 +70,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(quit()));
     connect(ui->actionSettingsWorld, SIGNAL(triggered()), this, SLOT(showWorldSettings()));
     connect(ui->actionResetWorld, SIGNAL(triggered()), this, SLOT(resetWorld()));
-    connect(ui->actionPlayerWorld, SIGNAL(triggered()), this, SLOT(showPlayerSettings()));
+    connect(ui->actionDefaultTexture, SIGNAL(triggered()), this, SLOT(loadDefaultTexture()));
+    connect(ui->actionLoadTexture, SIGNAL(triggered()), this, SLOT(loadTexture()));
 
     //Manual control
     connect(ui->buttonStep, SIGNAL(clicked()), this, SLOT(step()));
@@ -80,6 +81,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->buttonTurnRight, SIGNAL(clicked()), this, SLOT(turnRight()));
     connect(ui->buttonCube, SIGNAL(clicked()), this, SLOT(cube()));
     connect(ui->buttonMark, SIGNAL(clicked()), this, SLOT(mark()));
+
+    QFile player_texture{settings.value("playerTexture", ":/textures/char.png").toString()};
+    if(!player_texture.exists())
+        loadDefaultTexture();
+
+    world.setPlayerTexture(settings.value("playerTexture", ":/textures/char.png").toString());
 
     if(QCoreApplication::arguments().size() > 1)
     {
@@ -459,11 +466,6 @@ void MainWindow::resetWorld()
     world.reset();
 }
 
-void MainWindow::showPlayerSettings()
-{
-    //TODO: Player settings
-}
-
 void MainWindow::quit()
 {
     if(!code_saved)
@@ -474,6 +476,32 @@ void MainWindow::quit()
     }
 
     this->close();
+}
+
+void MainWindow::loadDefaultTexture()
+{
+    settings.setValue("playerTexture", ":/textures/char.png");
+
+    world.setPlayerTexture(settings.value("playerTexture", ":/textures/char.png").toString());
+}
+
+void MainWindow::loadTexture()
+{
+    QString filename = QFileDialog::getOpenFileName(this, trUtf8("Textur Öffnen"),
+                                                    settings.value("lastOpenSkinDir", QDir::homePath()).toString(),
+                                                    trUtf8("Textur (*.png)"));
+
+    //Open dialog closed or cancelled
+    if(filename.isEmpty())
+        return;
+
+    QFileInfo file_info{filename};
+
+    settings.setValue("lastOpenSkinDir", file_info.absolutePath());
+
+    settings.setValue("playerTexture", filename);
+
+    world.setPlayerTexture(settings.value("playerTexture", ":/textures/char.png").toString());
 }
 
 //Manual control

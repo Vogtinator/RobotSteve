@@ -746,7 +746,7 @@ bool SteveInterpreter::isBrick(World *world, bool has_param, int param)
     if(!has_param)
         return world->getStackSize() > 0;
 
-    return world->getStackSize() == param;
+    return world->getStackSize() == static_cast<unsigned int>(param);
 }
 
 bool SteveInterpreter::isMarked(World *world, bool has_param, int param)
