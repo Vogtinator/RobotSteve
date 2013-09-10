@@ -439,6 +439,7 @@ bool World::saveFile(const QString &filename)
     file_writer.writeAttribute("x", QString("%1").arg(steve.first));
     file_writer.writeAttribute("y", QString("%1").arg(steve.second));
     file_writer.writeAttribute("orientation", orientation_str.at(orientation));
+    file_writer.writeEndElement();
 
     //Write elements
     for(unsigned int x = 0; x < size.first; x++)
