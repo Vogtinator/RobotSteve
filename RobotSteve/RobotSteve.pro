@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     gldrawable.cpp \
     glquad.cpp \
     glworld.cpp \
-    stevehighlighter.cpp
+    stevehighlighter.cpp \
+    examplesdialog.cpp
 
 HEADERS  += mainwindow.h \
     world.h \
@@ -30,9 +31,11 @@ HEADERS  += mainwindow.h \
     glbox.h \
     glquad.h \
     glworld.h \
-    stevehighlighter.h
+    stevehighlighter.h \
+    examplesdialog.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    examplesdialog.ui
 
 RESOURCES += \
     resources.qrc
@@ -46,7 +49,12 @@ OTHER_FILES += \
     environment.png \
     char.png \
     RobotSteve.png \
-    license.txt
+    license.txt \
+    Examples.xml \
+    Examples/laufen.steve \
+    Examples/laufen.stworld \
+    Examples/laufen2.steve \
+    Examples/laufen2.stworld
 
 target.path = /usr/bin
 desktop.path = /usr/share/applications

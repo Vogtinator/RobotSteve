@@ -12,4 +12,11 @@
         <file>up.png</file>
         <file>mark.png</file>
     </qresource>
+    <qresource prefix="/examples">
+        <file>Examples.xml</file>
+        <file>Examples/laufen.steve</file>
+        <file>Examples/laufen.stworld</file>
+        <file>Examples/laufen2.steve</file>
+        <file>Examples/laufen2.stworld</file>
+    </qresource>
 </RCC>

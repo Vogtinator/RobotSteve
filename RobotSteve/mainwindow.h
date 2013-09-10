@@ -38,6 +38,8 @@ public slots:
 
     void open();
     void save();
+    void showExamples();
+    void loadExample(QString name, QString filename);
     void openWorld();
     void saveWorld();
 

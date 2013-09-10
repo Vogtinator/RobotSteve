@@ -1,0 +1,15 @@
+wiederhole immer
+    solange nicht wand tue
+        schritt
+    *solange
+    linksdrehen
+    schritt
+    linksdrehen
+    solange nicht wand tue
+        schritt
+    *solange
+    rechtsdrehen
+    schritt
+    rechtsdrehen
+    schritt
+*wiederhole

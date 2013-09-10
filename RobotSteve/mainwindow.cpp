@@ -2,6 +2,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>
+#include <examplesdialog.h>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
@@ -64,6 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSave, SIGNAL(triggered()), this, SLOT(save()));
     connect(ui->actionSaveWorld, SIGNAL(triggered()), this, SLOT(saveWorld()));
     connect(ui->actionLoadWorld, SIGNAL(triggered()), this, SLOT(openWorld()));
+    connect(ui->actionExamples, SIGNAL(triggered()), this, SLOT(showExamples()));
 
     //Manual control
     connect(ui->buttonStep, SIGNAL(clicked()), this, SLOT(step()));
@@ -409,6 +411,29 @@ void MainWindow::saveWorld()
 
      if(!world.saveFile(filename))
          QMessageBox::critical(this, trUtf8("Fehler beim Speichern"), trUtf8("Die Datei '%1' konnte nicht gespeichert werden!").arg(file_info.fileName()));
+}
+
+void MainWindow::showExamples()
+{
+    ExamplesDialog examples_dialog;
+
+    connect(&examples_dialog, SIGNAL(exampleChosen(QString,QString)), this, SLOT(loadExample(QString,QString)));
+
+    examples_dialog.show();
+    examples_dialog.exec();
+}
+
+void MainWindow::loadExample(QString name, QString filename)
+{
+    Q_UNUSED(name); //Will be used for tabs later.
+
+    if(!world.loadFile(QString(":/examples/Examples/%1.stworld").arg(filename)))
+    {
+        QMessageBox::critical(this, trUtf8("Fehler beim Laden"), trUtf8("Das Beispiel konnte nicht geladen werden!"));
+        return;
+    }
+
+    loadFile(QString(":/examples/Examples/%1.steve").arg(filename));
 }
 
 //Manual control
