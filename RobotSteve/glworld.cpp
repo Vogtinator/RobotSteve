@@ -8,9 +8,9 @@
 #define M_PI		3.14159265358979323846
 #endif
 
-GLWorld::GLWorld(unsigned int width, unsigned int length, QWidget *parent) :
+GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_height, QWidget *parent) :
     QGLWidget{parent},
-    World{width, length},
+    World{width, length, max_height},
     camera_rotX{-30},
     camera_rotY{15},
     camera_dist{5}

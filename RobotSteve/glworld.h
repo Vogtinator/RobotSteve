@@ -27,7 +27,7 @@ class GLWorld : public QGLWidget, public World
 {
     Q_OBJECT
 public:
-    explicit GLWorld(unsigned int width, unsigned int length, QWidget *parent = 0);
+    explicit GLWorld(unsigned int width, unsigned int length, unsigned int max_height, QWidget *parent = 0);
 
     void reset() override;
     bool stepForward() override;

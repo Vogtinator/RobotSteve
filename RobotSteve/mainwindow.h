@@ -25,23 +25,28 @@ public:
     ~MainWindow();
 
 public slots:
+
+    //Control of execution
     void runCode();
     void codeStep();
     void reset();
     void pauseExecution();
     void stopExecution();
-    void setSpeed(int ms);
     void clockEvent();
-    void switchViews(bool which);
-    void textChanged();
-    void refreshButtons();
+    void setSpeed(int ms);
 
+    //Menu "File"
     void open();
     void save();
     void showExamples();
-    void loadExample(QString name, QString filename);
+    void quit();
+
+    //Menu "World"
     void openWorld();
     void saveWorld();
+    void showWorldSettings();
+    void resetWorld();
+    void showPlayerSettings();
 
     //Manual control:
     void step();
@@ -51,6 +56,12 @@ public slots:
     void pickUp();
     void cube();
     void mark();
+
+    //Other stuff
+    void switchViews(bool which);
+    void textChanged();
+    void refreshButtons();
+    void loadExample(QString name, QString filename);
     
 private:
     void handleError(SteveInterpreterException &e);
@@ -59,7 +70,7 @@ private:
     void loadFile(QString path);
 
     float speed_ms;
-    bool automatic = false, code_changed = true;
+    bool automatic = false, code_changed = true, code_saved = false;
     QTimer clock;
     bool execution_started = false;
     Ui::MainWindow *ui;

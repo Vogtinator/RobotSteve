@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     glquad.cpp \
     glworld.cpp \
     stevehighlighter.cpp \
-    examplesdialog.cpp
+    examplesdialog.cpp \
+    worlddialog.cpp
 
 HEADERS  += mainwindow.h \
     world.h \
@@ -32,10 +33,12 @@ HEADERS  += mainwindow.h \
     glquad.h \
     glworld.h \
     stevehighlighter.h \
-    examplesdialog.h
+    examplesdialog.h \
+    worlddialog.h
 
 FORMS    += mainwindow.ui \
-    examplesdialog.ui
+    examplesdialog.ui \
+    worlddialog.ui
 
 RESOURCES += \
     resources.qrc

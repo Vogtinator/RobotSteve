@@ -5,6 +5,9 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
+constexpr Size World::maximum_size;
+constexpr Size World::minimum_size;
+
 SignedCoords operator+(const Coords& left, const SignedCoords& right)
 {
     return {static_cast<int>(left.first + right.first), static_cast<int>(left.second + right.second)};
@@ -15,29 +18,27 @@ SignedCoords operator+(const SignedCoords& left, const Coords& right)
     return {static_cast<int>(left.first + right.first), static_cast<int>(left.second + right.second)};
 }
 
-World::World(unsigned int width, unsigned int length)
-    : front_obj{0}, size{width, length}
+World::World(unsigned int width, unsigned int length, unsigned int max_height)
+    : front_obj{0}, size{width, length}, max_height{max_height}
 {
     if(!resize(width, length))
         throw std::string("Invalid world size!");
-
-    reset();
 }
 
 bool World::resize(unsigned int width, unsigned int length)
 {
-    if(width > 100 || length > 100 || width < 3 || length < 3)
+    if(width > maximum_size.first || length > maximum_size.second || width < 3 || length < 3)
         return false;
 
     map.resize(width);
     for(unsigned int x = 0; x < width; x++)
         map[x].resize(length);
 
-    if(steve.first >= width || steve.second >= length)
-        steve.first = steve.second = 0;
-
     size.first = width;
     size.second = length;
+
+    //We don't want Steve standing in a cube
+    reset();
 
     updateFront();
 
@@ -192,10 +193,9 @@ bool World::deposit(unsigned int count)
 
     front_obj->stack_size += count;
 
-    //TODO: Make changeable
-    if(count > 10)
+    if(front_obj->stack_size > max_height)
     {
-        front_obj->stack_size = 10;
+        front_obj->stack_size = max_height;
         return false;
     }
 
@@ -295,7 +295,7 @@ bool World::setState(WorldState &state)
 
 WorldState World::getState()
 {
-    return {steve, size, orientation, map};
+    return {steve, size, orientation, max_height, map};
 }
 
 //TODO: If canceled midway, updateFront() should be called or state not saved at all
@@ -327,8 +327,17 @@ bool World::loadXMLStream(QXmlStreamReader &file_reader)
             if(length_str.isEmpty() || !ok)
                     return false;
 
+            QString max_height_str = attributes.value("max_height").toString();
+            unsigned int max_height = max_height_str.toUInt(&ok);
+            if(max_height_str.isEmpty())
+                max_height = 10;
+            else if(!ok)
+                return false;
+
             if(!resize(width, length))
                 return false;
+
+            this->max_height = max_height;
 
             reset();
 
@@ -453,6 +462,7 @@ bool World::saveFile(const QString &filename)
     file_writer.writeStartElement("world");
     file_writer.writeAttribute("width", QString("%1").arg(size.first));
     file_writer.writeAttribute("length", QString("%1").arg(size.second));
+    file_writer.writeAttribute("max_height", QString("%1").arg(max_height));
 
     //Write steve's position and orientation
     file_writer.writeStartElement("steve");
@@ -495,4 +505,22 @@ bool World::saveFile(const QString &filename)
     file_writer.writeEndDocument();
 
     return !file_writer.hasError();
+}
+
+void World::setMaxHeight(unsigned int max_height)
+{
+    //NEVER!
+    if(max_height > 100)
+        return;
+
+    this->max_height = max_height;
+
+    for(unsigned int x = 0; x < size.first; x++)
+        for(unsigned int y = 0; y < size.second; y++)
+        {
+            WorldObject *obj = &map[x][y];
+
+            if(obj->stack_size > max_height)
+                obj->stack_size = max_height;
+        }
 }

@@ -26,12 +26,13 @@ enum ORIENTATION {
 
 struct WorldState {
     WorldState() {}
-    WorldState(Coords &steve, Size &size, ORIENTATION &orientation, std::vector<std::vector<WorldObject> > &map)
-        : steve{steve}, size{size}, orientation{orientation}, map{map} {}
+    WorldState(Coords &steve, Size &size, ORIENTATION &orientation, unsigned int max_height, std::vector<std::vector<WorldObject> > &map)
+        : steve{steve}, size{size}, orientation{orientation}, max_height{max_height}, map{map} {}
 
     Coords steve;
     Size size;
     ORIENTATION orientation;
+    unsigned int max_height;
     std::vector<std::vector<WorldObject> > map;
 };
 
@@ -44,7 +45,7 @@ Coords operator/(const Coords& left, const float o);
 class World
 {
 public:
-    World(unsigned int width, unsigned int length);
+    World(unsigned int width, unsigned int length, unsigned int max_height);
 
     virtual void reset();
     virtual bool resize(unsigned int width, unsigned int length);
@@ -61,9 +62,12 @@ public:
     virtual int getStackSize();
     virtual bool isMarked();
 
+    Size getSize() { return size; }
     ORIENTATION getOrientation() { return orientation; }
     int getX() { return steve.first; }
     int getY() { return steve.second; }
+    unsigned int getMaxHeight() { return max_height; }
+    void setMaxHeight(unsigned int max_height);
     void dumpWorld();
     WorldState getState();
     virtual bool setState(WorldState &state);
@@ -71,6 +75,9 @@ public:
     bool loadFile(const QString &filename);
     bool loadXML(const QString &xml);
     virtual bool loadXMLStream(QXmlStreamReader &file_reader);
+
+
+    static constexpr Size maximum_size = {25, 25}, minimum_size = {3, 3};
 
 protected:
     SignedCoords getForward();
@@ -90,7 +97,7 @@ protected:
     SignedCoords front;
     ORIENTATION orientation = ORIENT_SOUTH;
     std::vector<std::vector<WorldObject> > map;
-
+    unsigned int max_height;
 };
 
 #endif // WORLD_H

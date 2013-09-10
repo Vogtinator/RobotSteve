@@ -225,27 +225,30 @@
      <height>22</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuDatei">
+   <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>Datei</string>
+     <string>Programm</string>
     </property>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
     <addaction name="actionExamples"/>
     <addaction name="separator"/>
-    <addaction name="actionSaveWorld"/>
-    <addaction name="actionLoadWorld"/>
-    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
-   <widget class="QMenu" name="menuEinstellungen">
+   <widget class="QMenu" name="menuWorld">
     <property name="title">
-     <string>Darstellung</string>
+     <string>Welt</string>
     </property>
-    <addaction name="actionSchauspieler_ausw_hlen"/>
+    <addaction name="actionLoadWorld"/>
+    <addaction name="actionSaveWorld"/>
+    <addaction name="separator"/>
+    <addaction name="actionSettingsWorld"/>
+    <addaction name="actionResetWorld"/>
+    <addaction name="separator"/>
+    <addaction name="actionPlayerWorld"/>
    </widget>
-   <addaction name="menuDatei"/>
-   <addaction name="menuEinstellungen"/>
+   <addaction name="menuFile"/>
+   <addaction name="menuWorld"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="movable">
@@ -283,35 +286,6 @@
     <string>Beenden</string>
    </property>
   </action>
-  <action name="actionSchauspieler_ausw_hlen">
-   <property name="text">
-    <string>Schauspieler</string>
-   </property>
-  </action>
-  <action name="actionHintergrundfarbe">
-   <property name="text">
-    <string>Hintergrundfarbe</string>
-   </property>
-  </action>
-  <action name="actionGitter">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Gitter</string>
-   </property>
-   <property name="toolTip">
-    <string>Gitter</string>
-   </property>
-  </action>
-  <action name="actionAutomatisch_einr_cken">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Automatisch einrücken</string>
-   </property>
-  </action>
   <action name="actionStarten">
    <property name="text">
     <string>Starten</string>
@@ -329,17 +303,32 @@
   </action>
   <action name="actionSaveWorld">
    <property name="text">
-    <string>Welt speichern</string>
+    <string>Speichern</string>
    </property>
   </action>
   <action name="actionLoadWorld">
    <property name="text">
-    <string>Welt laden</string>
+    <string>Öffnen</string>
    </property>
   </action>
   <action name="actionExamples">
    <property name="text">
     <string>Beispiele</string>
+   </property>
+  </action>
+  <action name="actionSettingsWorld">
+   <property name="text">
+    <string>Einstellungen</string>
+   </property>
+  </action>
+  <action name="actionPlayerWorld">
+   <property name="text">
+    <string>Spieler</string>
+   </property>
+  </action>
+  <action name="actionResetWorld">
+   <property name="text">
+    <string>Zurücksetzen</string>
    </property>
   </action>
  </widget>

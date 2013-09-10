@@ -2,17 +2,18 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>
-#include <examplesdialog.h>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "examplesdialog.h"
+#include "worlddialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow{parent},
     ui{new Ui::MainWindow},
-    world{5, 5, this},
+    world{5, 5, 5, this},
     interpreter{&world}
 {
     //UI
@@ -66,6 +67,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSaveWorld, SIGNAL(triggered()), this, SLOT(saveWorld()));
     connect(ui->actionLoadWorld, SIGNAL(triggered()), this, SLOT(openWorld()));
     connect(ui->actionExamples, SIGNAL(triggered()), this, SLOT(showExamples()));
+    connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(quit()));
+    connect(ui->actionSettingsWorld, SIGNAL(triggered()), this, SLOT(showWorldSettings()));
+    connect(ui->actionResetWorld, SIGNAL(triggered()), this, SLOT(resetWorld()));
+    connect(ui->actionPlayerWorld, SIGNAL(triggered()), this, SLOT(showPlayerSettings()));
 
     //Manual control
     connect(ui->buttonStep, SIGNAL(clicked()), this, SLOT(step()));
@@ -76,7 +81,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->buttonCube, SIGNAL(clicked()), this, SLOT(cube()));
     connect(ui->buttonMark, SIGNAL(clicked()), this, SLOT(mark()));
 
-    if(QCoreApplication::argc() > 1)
+    if(QCoreApplication::arguments().size() > 1)
     {
         QFileInfo file_info{QCoreApplication::arguments()[1]};
 
@@ -204,6 +209,7 @@ void MainWindow::textChanged()
     //If user changes the code, the highlighting will no longer be valid
     highlighter->resetHighlight();
     code_changed = true;
+    code_saved = false;
 }
 
 //Wait for interruption or program end
@@ -312,7 +318,7 @@ void MainWindow::refreshButtons()
 
     ui->buttonStep->setDisabled(front_blocked);
     ui->buttonPickUp->setEnabled(brick);
-    ui->buttonLayDown->setDisabled(front_blocked);
+    ui->buttonLayDown->setEnabled(!front_blocked && world.getStackSize() < world.getMaxHeight());
     ui->buttonCube->setEnabled(placeCube);
     ui->buttonTurnLeft->setDisabled(false);
     ui->buttonTurnRight->setDisabled(false);
@@ -374,6 +380,8 @@ void MainWindow::save()
 
     QTextStream file_stream{&file};
     file_stream << ui->codeEdit->toPlainText();
+
+    code_saved = true;
 }
 
 void MainWindow::openWorld()
@@ -415,7 +423,7 @@ void MainWindow::saveWorld()
 
 void MainWindow::showExamples()
 {
-    ExamplesDialog examples_dialog;
+    ExamplesDialog examples_dialog{this};
 
     connect(&examples_dialog, SIGNAL(exampleChosen(QString,QString)), this, SLOT(loadExample(QString,QString)));
 
@@ -434,6 +442,38 @@ void MainWindow::loadExample(QString name, QString filename)
     }
 
     loadFile(QString(":/examples/Examples/%1.steve").arg(filename));
+}
+
+void MainWindow::showWorldSettings()
+{
+    WorldDialog world_dialog{&world, this};
+
+    world_dialog.show();
+    world_dialog.exec();
+
+    refreshButtons();
+}
+
+void MainWindow::resetWorld()
+{
+    world.reset();
+}
+
+void MainWindow::showPlayerSettings()
+{
+    //TODO: Player settings
+}
+
+void MainWindow::quit()
+{
+    if(!code_saved)
+    {
+        if(QMessageBox::warning(this, trUtf8("Wirklich beenden?"), trUtf8("Das Programm wurde noch nicht gespeichert.\nSoll Robot Steve wirklich beendet werden?"), QMessageBox::Yes, QMessageBox::No)
+                == QMessageBox::No)
+            return;
+    }
+
+    this->close();
 }
 
 //Manual control
