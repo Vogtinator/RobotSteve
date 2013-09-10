@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info" type="text/plain">
+	<mime-type type="application/x-robotsteve-program">
+		<comment>Robot Steve Programm</comment>
+		<icon name="RobotSteve"/>
+		<glob pattern="*.steve"/>
+	</mime-type>
+	<mime-type type="application/x-robotsteve-world">
+		<comment>Robot Steve Welt</comment>
+		<icon name="RobotSteve"/>
+		<glob pattern="*.stworld"/>
+	</mime-type>
+</mime-info>
