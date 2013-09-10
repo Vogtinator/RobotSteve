@@ -49,6 +49,8 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
     player_body->setYRotation(player_rotY_from = 180);
     player_body->setYPosition(-1);
 
+    //TODO: Mirror right arm + leg
+
     player_arm_left = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                 2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
                                 player_atlas->getArea(44, 20, 4, 12), player_atlas->getArea(52, 20, 4, 12),
@@ -452,11 +454,16 @@ bool GLWorld::deposit(unsigned int count)
     if(!World::deposit(count))
         return false;
 
+    unsigned int here = map[steve.first][steve.second].stack_size;
     bend_pos_y = static_cast<float>(getStackSize()) * 0.5 - 2.0;
-    if(bend_pos_y < 0)
-        setAnimation(ANIM_BEND);
-    else
+
+    int diff = getStackSize();
+    diff -= here;
+
+    if(diff > 3)
         setAnimation(ANIM_DEPOSIT_FLY);
+    else
+        setAnimation(ANIM_BEND);
 
     return true;
 }
@@ -466,11 +473,16 @@ bool GLWorld::pickup(unsigned int count)
     if(!World::pickup(count))
         return false;
 
+    unsigned int here = map[steve.first][steve.second].stack_size;
     bend_pos_y = static_cast<float>(getStackSize()) * 0.5 - 2.0;
-    if(bend_pos_y < 0)
-        setAnimation(ANIM_BEND);
-    else
+
+    int diff = getStackSize();
+    diff -= here;
+
+    if(diff > 3)
         setAnimation(ANIM_DEPOSIT_FLY);
+    else
+        setAnimation(ANIM_BEND);
 
     return true;
 }
