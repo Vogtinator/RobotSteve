@@ -13,7 +13,7 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
     World{width, length, max_height},
     camera_rotX{-30},
     camera_rotY{15},
-    camera_dist{5}
+    camera_dist{8}
 {
     anim_ticks.insert(ANIM_STANDING, 1);
     anim_ticks.insert(ANIM_STEP, 100);
@@ -244,9 +244,11 @@ void GLWorld::resizeGL(int w, int h)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-1, 1, -1, 1, 1, 100);
+    double height = (static_cast<double>(h)/w);
+    glFrustum(-1, 1, -height, height, 2, 100);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
 }
 
 void GLWorld::setPlayerTexture(const QString &filename)

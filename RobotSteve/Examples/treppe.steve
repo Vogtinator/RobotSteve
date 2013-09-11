@@ -1,14 +1,14 @@
 wiederhole immer
 	markesetzen
 
-	solange nicht wand tue
+	solange nicht wand
 		hinlegen
 		schritt
 	*solange
 
 	linksdrehen(2)
 
-	solange nicht marke tue
+	solange nicht marke
 		schritt
 	*solange
 

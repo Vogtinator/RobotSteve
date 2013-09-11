@@ -71,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionSaveWorld, SIGNAL(triggered()), this, SLOT(saveWorld()));
     connect(ui->actionLoadWorld, SIGNAL(triggered()), this, SLOT(openWorld()));
     connect(ui->actionExamples, SIGNAL(triggered()), this, SLOT(showExamples()));
+    connect(ui->actionHideCode, SIGNAL(toggled(bool)), &codeEdit, SLOT(setHidden(bool)));
     connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionSettingsWorld, SIGNAL(triggered()), this, SLOT(showWorldSettings()));
     connect(ui->actionResetWorld, SIGNAL(triggered()), this, SLOT(resetWorld()));
@@ -162,7 +163,16 @@ void MainWindow::clockEvent()
 {
     try {
         startExecution();
+    }
+    catch (SteveInterpreterException &e)
+    {
+        reset();
+        handleError(e);
 
+        return;
+    }
+
+    try{
         if(automatic)
             clock.start(speed_ms);
 
@@ -185,7 +195,7 @@ void MainWindow::clockEvent()
     }
     catch (SteveInterpreterException &e)
     {
-        reset();
+        stopExecution();
         handleError(e);
     }
 }
@@ -450,6 +460,9 @@ void MainWindow::loadExample(QString name, QString filename)
     }
 
     loadFile(QString(":/examples/Examples/%1.steve").arg(filename));
+
+    code_saved = true;
+    code_changed = false;
 }
 
 void MainWindow::showWorldSettings()

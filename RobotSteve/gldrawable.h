@@ -13,14 +13,12 @@ struct TextureAtlasEntry {
 class TextureAtlas {
 public:
     TextureAtlas(QGLWidget &parent, QPixmap &&pixmap);
-    ~TextureAtlas();
     TextureAtlasEntry getArea(int x, int y, int w, int h);
     void bind();
 
 private:
     QGLWidget *parent;
     QPixmap pixmap;
-    int w, h;
 };
 
 class GLDrawable

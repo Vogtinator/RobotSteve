@@ -219,6 +219,7 @@
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
     <addaction name="actionExamples"/>
+    <addaction name="actionHideCode"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
@@ -328,6 +329,14 @@
   <action name="actionLoadTexture">
    <property name="text">
     <string>Textur öffnen</string>
+   </property>
+  </action>
+  <action name="actionHideCode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Code Verstecken</string>
    </property>
   </action>
  </widget>

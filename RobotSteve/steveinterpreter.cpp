@@ -997,11 +997,18 @@ void SteveInterpreter::drawText(int x, int y, QPainter &painter, const QString &
     {
         QFontMetrics *metrics = &metrics_bold;
         painter.setFont(bold);
-        if(getKeyword(tok) != -1)
+
+        //Also highlight things with arguments
+        QString t = tok;
+        QRegExp parameter_regexp("^((\\w|\\d)+)(\\((\\d+)\\))?$");
+        if(parameter_regexp.indexIn(tok) != -1)
+            t = parameter_regexp.cap(1);
+
+        if(getKeyword(t) != -1)
             painter.setPen(QColor(0, 128, 0));
-        else if(getCondition(tok) != -1 || custom_conditions.contains(tok.toLower()))
+        else if(getCondition(t) != -1 || custom_conditions.contains(t.toLower()))
             painter.setPen(QColor(192,16, 112));
-        else if(getInstruction(tok) != -1 || custom_instructions.contains(tok.toLower()))
+        else if(getInstruction(t) != -1 || custom_instructions.contains(t.toLower()))
             painter.setPen(QColor(128, 0, 0));
         else
         {

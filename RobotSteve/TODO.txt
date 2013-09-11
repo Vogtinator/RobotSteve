@@ -7,3 +7,5 @@ Menü "Hilfe"
 Vergleiche: Ziegel > 5 oder Ziegel < 5
 Vielleicht andere Syntax: "vorne = wand" oder "rechts = ziegel"
 Stack Backtrace
+Strg+S
+Struktogramm auch Parameter hervorheben

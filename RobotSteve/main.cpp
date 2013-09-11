@@ -6,7 +6,7 @@
 #include "steveinterpreter.h"
 
 int main(int argc, char *argv[])
-{
+{   
 #if QT_VERSION < QT_VERSION_CHECK(5,0,0)
         QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
         QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
@@ -17,6 +17,13 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("FDG AB");
     QCoreApplication::setOrganizationDomain("fdg-ab.de");
     QCoreApplication::setApplicationName("Robot Steve");
+
+    if(QCoreApplication::arguments().size() == 2 && QCoreApplication::arguments()[1].compare("--version", Qt::CaseInsensitive) == 0)
+    {
+        std::cout << "Robot Steve 0.9" << std::endl;
+
+        return 0;
+    }
 
     MainWindow w;
     w.show();
@@ -38,4 +45,6 @@ int main(int argc, char *argv[])
     catch (...) {
         std::cerr << "Umm, not good. Bye :-/" << std::endl;
     }
+
+    return 1;
 }

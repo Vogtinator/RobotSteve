@@ -1,11 +1,11 @@
 wiederhole immer
-    solange nicht wand tue
+    solange nicht wand
         schritt
     *solange
     linksdrehen
     schritt
     linksdrehen
-    solange nicht wand tue
+    solange nicht wand
         schritt
     *solange
     rechtsdrehen
