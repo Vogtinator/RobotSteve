@@ -25,3 +25,4 @@ make INSTALL_ROOT=%{buildroot} install
 %{_bindir}/RobotSteve
 %{_datadir}/applications/RobotSteve.desktop
 %{_datadir}/icons/RobotSteve.png
+%{_datadir}/mime/packages/RobotSteve.xml
