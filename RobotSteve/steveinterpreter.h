@@ -55,50 +55,6 @@ private:
     bool has_param;
 };
 
-enum KEYWORD {
-    KEYWORD_IF,
-    KEYWORD_NOT,
-    KEYWORD_THEN,
-    KEYWORD_ELSE,
-    KEYWORD_IF_END,
-    KEYWORD_REPEAT,
-    KEYWORD_TIMES,
-    KEYWORD_REPEAT_END,
-    KEYWORD_WHILE,
-    KEYWORD_DO,
-    KEYWORD_WHILE_END,
-    KEYWORD_NEW_INSTR,
-    KEYWORD_NEW_INSTR_END,
-    KEYWORD_NEW_COND,
-    KEYWORD_NEW_COND_END
-};
-
-enum INSTRUCTION {
-    INSTR_STEP,
-    INSTR_TURNLEFT,
-    INSTR_TURNRIGHT,
-    INSTR_PUTDOWN,
-    INSTR_PICKUP,
-    INSTR_MARK,
-    INSTR_UNMARK,
-    INSTR_QUIT,
-    INSTR_TRUE,
-    INSTR_FALSE,
-    INSTR_BREAK
-};
-
-enum CONDITION {
-    COND_ALWAYS,
-    COND_WALL,
-    COND_CUBE,
-    COND_BRICK,
-    COND_MARKED,
-    COND_NORTH,
-    COND_EAST,
-    COND_SOUTH,
-    COND_WEST
-};
-
 enum BLOCK {
     BLOCK_IF, BLOCK_ELSE,
     BLOCK_REPEAT,
@@ -107,9 +63,16 @@ enum BLOCK {
     BLOCK_NEW_COND
 };
 
-class SteveInterpreter
+class SteveInterpreter : public QObject
 {
+    Q_OBJECT
+
+    Q_ENUMS(KEYWORD)
+    Q_ENUMS(INSTRUCTION)
+    Q_ENUMS(CONDITION)
+
     friend class SteveHighlighter;
+    friend class SteveEdit;
 
 public:
     SteveInterpreter(World *world);
@@ -144,6 +107,50 @@ public:
     bool mark(World *world, bool has_param, int param);
     bool unmark(World *world, bool has_param, int param);
     bool breakpoint(World *world, bool has_param, int param);
+
+    enum KEYWORD {
+        KEYWORD_IF,
+        KEYWORD_NOT,
+        KEYWORD_THEN,
+        KEYWORD_ELSE,
+        KEYWORD_IF_END,
+        KEYWORD_REPEAT,
+        KEYWORD_TIMES,
+        KEYWORD_REPEAT_END,
+        KEYWORD_WHILE,
+        KEYWORD_BREAK,
+        KEYWORD_WHILE_END,
+        KEYWORD_NEW_INSTR,
+        KEYWORD_NEW_INSTR_END,
+        KEYWORD_NEW_COND,
+        KEYWORD_NEW_COND_END
+    };
+
+    enum INSTRUCTION {
+        INSTR_STEP,
+        INSTR_TURNLEFT,
+        INSTR_TURNRIGHT,
+        INSTR_PUTDOWN,
+        INSTR_PICKUP,
+        INSTR_MARK,
+        INSTR_UNMARK,
+        INSTR_QUIT,
+        INSTR_TRUE,
+        INSTR_FALSE,
+        INSTR_BREAKPOINT,
+    };
+
+    enum CONDITION {
+        COND_ALWAYS,
+        COND_WALL,
+        COND_CUBE,
+        COND_BRICK,
+        COND_MARKED,
+        COND_NORTH,
+        COND_EAST,
+        COND_SOUTH,
+        COND_WEST
+    };
 
 private:
     void findAndThrowMissingBegin(int line, BLOCK block, const QString &affected = "") throw (SteveInterpreterException);

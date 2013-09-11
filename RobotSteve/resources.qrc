@@ -21,4 +21,7 @@
         <file>Examples/treppe.steve</file>
         <file>Examples/treppe.stworld</file>
     </qresource>
+    <qresource prefix="/help">
+        <file>help.xml</file>
+    </qresource>
 </RCC>

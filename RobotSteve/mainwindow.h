@@ -11,6 +11,7 @@
 #include "glworld.h"
 #include "steveinterpreter.h"
 #include "stevehighlighter.h"
+#include "steveedit.h"
 
 namespace Ui {
 class MainWindow;
@@ -39,7 +40,6 @@ public slots:
     void open();
     void save();
     void showExamples();
-    void quit();
 
     //Menu "World"
     void openWorld();
@@ -65,15 +65,19 @@ public slots:
     void textChanged();
     void refreshButtons();
     void loadExample(QString name, QString filename);
+
+protected:
+    void closeEvent(QCloseEvent *e);
     
 private:
     void handleError(SteveInterpreterException &e);
-    void startExecution() throw (SteveInterpreterException);
-    void setCode();
+    bool startExecution() throw (SteveInterpreterException);
+    void setCode() throw (SteveInterpreterException);
     void loadFile(QString path);
+    void showMessage(const QString &msg);
 
     float speed_ms;
-    bool automatic = false, code_changed = true, code_saved = false;
+    bool automatic = false, code_changed = true, code_saved = true;
     QTimer clock;
     bool execution_started = false;
     Ui::MainWindow *ui;
@@ -86,6 +90,7 @@ private:
     QTextCharFormat current_line_format, error_format;
     WorldState saved_state;
     QSettings settings;
+    SteveEdit codeEdit;
 };
 
 #endif // MAINWINDOW_H

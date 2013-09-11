@@ -56,6 +56,11 @@ ExamplesDialog::ExamplesDialog(QWidget *parent) :
 
     if(error)
         QMessageBox::critical(this, trUtf8("Fehler beim Laden"), trUtf8("Die Beispiele konnten nicht geladen werden!"));
+    else if(examples.size() > 0)
+    {
+        ui->examplesList->setCurrentRow(0);
+        exampleClicked(ui->examplesList->currentIndex());
+    }
 
     connect(ui->examplesList, SIGNAL(clicked(QModelIndex)), this, SLOT(exampleClicked(QModelIndex)));
     connect(ui->examplesList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(exampleDoubleClicked(QModelIndex)));
@@ -68,37 +73,23 @@ ExamplesDialog::~ExamplesDialog()
 
 void ExamplesDialog::exampleClicked(QModelIndex index)
 {
-    Q_UNUSED(index);
-
-    const Example *example{0};
-    for(auto& i : examples)
-    {
-        if(i.name == ui->examplesList->currentItem()->text())
-            example = &i;
-    }
-
-    if(example == 0)
+    if(index.row() > examples.size())
         return;
 
-    ui->titleLabel->setText(example->name);
-    ui->descriptionLabel->setText(example->description);
+    const Example &example = examples[index.row()];
+
+    ui->titleLabel->setText(example.name);
+    ui->descriptionLabel->setText(example.description);
 }
 
 void ExamplesDialog::exampleDoubleClicked(QModelIndex index)
 {
-    Q_UNUSED(index);
-
-    const Example *example{0};
-    for(auto& i : examples)
-    {
-        if(i.name == ui->examplesList->currentItem()->text())
-            example = &i;
-    }
-
-    if(example == 0)
+    if(index.row() > examples.size())
         return;
 
-    emit exampleChosen(example->name, example->filename);
+    const Example &example = examples[index.row()];
+
+    emit exampleChosen(example.name, example.filename);
 
     this->close();
 }

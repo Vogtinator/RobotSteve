@@ -11,14 +11,15 @@
 
 #include "steveinterpreter.h"
 
-#define DEFAULT_BLOCK_KEYWORDS(name) { .begin = KEYWORD_##name, \
-        .end = KEYWORD_##name##_END, \
+
+#define DEFAULT_BLOCK_KEYWORDS(name) { .begin = SteveInterpreter::KEYWORD_##name, \
+        .end = SteveInterpreter::KEYWORD_##name##_END, \
         .type = BLOCK_##name, \
     }
 
 struct BlockKeywords {
-    KEYWORD begin;
-    KEYWORD end;
+    SteveInterpreter::KEYWORD begin;
+    SteveInterpreter::KEYWORD end;
     BLOCK type;
 };
 
@@ -39,9 +40,9 @@ SteveInterpreter::SteveInterpreter(World *world) : world{world}
     keywords[KEYWORD_REPEAT] = QObject::trUtf8("wiederhole");
     keywords[KEYWORD_TIMES] = QObject::trUtf8("mal");
     keywords[KEYWORD_WHILE] = QObject::trUtf8("solange");
-    keywords[KEYWORD_DO] = QObject::trUtf8("tue");
     keywords[KEYWORD_NEW_INSTR] = QObject::trUtf8("anweisung");
     keywords[KEYWORD_NEW_COND] = QObject::trUtf8("bedingung");
+    keywords[KEYWORD_BREAK] = QObject::trUtf8("abbruch");
 
     keywords[KEYWORD_IF_END] = "*" + keywords[KEYWORD_IF];
     keywords[KEYWORD_REPEAT_END] = "*" + keywords[KEYWORD_REPEAT];
@@ -59,7 +60,7 @@ SteveInterpreter::SteveInterpreter(World *world) : world{world}
     instructions[INSTR_QUIT] = QObject::trUtf8("beenden");
     instructions[INSTR_TRUE] = QObject::trUtf8("wahr");
     instructions[INSTR_FALSE] = QObject::trUtf8("falsch");
-    instructions[INSTR_BREAK] = QObject::trUtf8("stop");
+    instructions[INSTR_BREAKPOINT] = QObject::trUtf8("stop");
 
     conditions[COND_ALWAYS] = QObject::trUtf8("immer");
     conditions[COND_WALL] = QObject::trUtf8("wand");
@@ -88,7 +89,7 @@ SteveInterpreter::SteveInterpreter(World *world) : world{world}
     instruction_functions[INSTR_PICKUP] = SteveFunction(this, &SteveInterpreter::pickup, true);
     instruction_functions[INSTR_MARK] = SteveFunction(this, &SteveInterpreter::mark, false);
     instruction_functions[INSTR_UNMARK] = SteveFunction(this, &SteveInterpreter::unmark, false);
-    instruction_functions[INSTR_BREAK] = SteveFunction(this, &SteveInterpreter::breakpoint, false);
+    instruction_functions[INSTR_BREAKPOINT] = SteveFunction(this, &SteveInterpreter::breakpoint, false);
 }
 
 void SteveInterpreter::findAndThrowMissingBegin(int line, BLOCK block, const QString &affected) throw (SteveInterpreterException)
@@ -133,8 +134,33 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
         if(keyword == -1)
             continue; //Not a keyword, ignore for now
 
-        //Special case, KEYWORD_ELSE has to be trated seperately
-        if(keyword == KEYWORD_ELSE)
+        if(keyword == KEYWORD_BREAK)
+        {
+            int line = -1;
+            BLOCK type;
+
+            for(int i = 0; i < block_types.size(); i++)
+            {
+                BLOCK b = block_types.at(block_types.size() - 1 - i);
+                if(b == BLOCK_REPEAT || b == BLOCK_WHILE || b == BLOCK_NEW_INSTR)
+                {
+                    line = branch_entrys.at(branch_entrys.size() - 1 - i);
+                    type = b;
+
+                    break;
+                }
+            }
+
+            //No REPEAT, WHILE or NEW_INSTR found
+            if(line == -1)
+                throw SteveInterpreterException(QObject::trUtf8("%1 nur in %2, %3 und %4s-Blöcken erlaubt.").arg(str(KEYWORD_BREAK)).arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_REPEAT)).arg(str(KEYWORD_NEW_INSTR)), current_line);
+
+            if(type == BLOCK_REPEAT || type == BLOCK_WHILE)
+                branches[current_line] = line + 1;
+            else
+                branches[current_line] = line;
+        }
+        else if(keyword == KEYWORD_ELSE)
         {
             if(!branch_entrys.size())
                 throw SteveInterpreterException{QObject::trUtf8("Es fehlt ein %1.").arg(str(KEYWORD_IF_END)), current_line, str(KEYWORD_ELSE)};
@@ -590,11 +616,11 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
         case KEYWORD_WHILE:
         {
-            if(!(line.size() == 3 && match(line[2], KEYWORD_DO)) &&
-                    !(line.size() == 4 && match(line[1], KEYWORD_NOT) && match(line[3], KEYWORD_DO)))
-                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1 [%2] [bedingung] %3").arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_NOT)).arg(str(KEYWORD_DO)), current_line);
+            if(!(line.size() == 2) &&
+                    !(line.size() == 3 && match(line[1], KEYWORD_NOT)))
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1 [%2] [bedingung]").arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_NOT)), current_line);
 
-            bool inverted = line.size() == 4;
+            bool inverted = line.size() == 3;
 
             bool result;
             if(coming_from_condition)
@@ -645,6 +671,13 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             if(custom_condition_return_stack.size() == 0)
                 throw SteveInterpreterException(QObject::trUtf8("WTF #9"), current_line);
 
+            return;
+
+        case KEYWORD_BREAK:
+            if(line.size() != 1)
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1").arg(str(KEYWORD_BREAK)), current_line);
+
+            current_line = branches[current_line];
             return;
 
         default:
@@ -877,7 +910,7 @@ bool SteveInterpreter::breakpoint(World *world, bool has_param, int param)
 }
 
 //Other private functions
-KEYWORD SteveInterpreter::getKeyword(QString string)
+SteveInterpreter::KEYWORD SteveInterpreter::getKeyword(QString string)
 {
     for(auto i : keywords.keys())
     {
@@ -885,10 +918,10 @@ KEYWORD SteveInterpreter::getKeyword(QString string)
             return i;
     }
 
-    return static_cast<KEYWORD>(-1);
+    return static_cast<SteveInterpreter::KEYWORD>(-1);
 }
 
-INSTRUCTION SteveInterpreter::getInstruction(QString string)
+SteveInterpreter::INSTRUCTION SteveInterpreter::getInstruction(QString string)
 {
     for(auto i : instructions.keys())
     {
@@ -896,10 +929,10 @@ INSTRUCTION SteveInterpreter::getInstruction(QString string)
             return i;
     }
 
-    return static_cast<INSTRUCTION>(-1);
+    return static_cast<SteveInterpreter::INSTRUCTION>(-1);
 }
 
-CONDITION SteveInterpreter::getCondition(QString string)
+SteveInterpreter::CONDITION SteveInterpreter::getCondition(QString string)
 {
     for(auto i : conditions.keys())
     {
@@ -907,7 +940,7 @@ CONDITION SteveInterpreter::getCondition(QString string)
             return i;
     }
 
-    return static_cast<CONDITION>(-1);
+    return static_cast<SteveInterpreter::CONDITION>(-1);
 }
 
 bool SteveInterpreter::isComment(const QString &s)

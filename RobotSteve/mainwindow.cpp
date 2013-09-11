@@ -2,6 +2,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTextStream>
+#include <QLabel>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
@@ -14,10 +15,13 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow{parent},
     ui{new Ui::MainWindow},
     world{5, 5, 5, this},
-    interpreter{&world}
+    interpreter{&world},
+    codeEdit{&interpreter, this}
 {
     //UI
     ui->setupUi(this);
+    codeEdit.setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    ui->editFrame->addWidget(&codeEdit);
     ui->viewFrame->addWidget(&world);
     ui->chart_view->setScene(&chart_scene);
     switchViews(false);
@@ -34,9 +38,9 @@ MainWindow::MainWindow(QWidget *parent) :
     font.setStyleHint(QFont::Monospace);
     font.setFixedPitch(true);
     font.setPointSize(10);
-    ui->codeEdit->setFont(font);
+    codeEdit.setFont(font);
     QFontMetrics metrics{font};
-    ui->codeEdit->setTabStopWidth(4 * metrics.width(' '));
+    codeEdit.setTabStopWidth(4 * metrics.width(' '));
 
     //Syntax highlighting
     error_format.setForeground(Qt::white);
@@ -47,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
     current_line_format.setBackground(Qt::yellow);
     current_line_format.setFontWeight(QFont::Bold);
 
-    highlighter = new SteveHighlighter{ui->codeEdit, &interpreter};
+    highlighter = new SteveHighlighter{&codeEdit, &interpreter};
 
     //Miscellaneous
     clock.setSingleShot(true);
@@ -61,13 +65,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(speed_slider, SIGNAL(sliderMoved(int)), this, SLOT(setSpeed(int)));
     connect(&clock, SIGNAL(timeout()), this, SLOT(clockEvent()));
     connect(ui->viewSwitch, SIGNAL(toggled(bool)), this, SLOT(switchViews(bool)));
-    connect(ui->codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
+    connect(&codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
     connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(open()));
     connect(ui->actionSave, SIGNAL(triggered()), this, SLOT(save()));
     connect(ui->actionSaveWorld, SIGNAL(triggered()), this, SLOT(saveWorld()));
     connect(ui->actionLoadWorld, SIGNAL(triggered()), this, SLOT(openWorld()));
     connect(ui->actionExamples, SIGNAL(triggered()), this, SLOT(showExamples()));
-    connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(quit()));
+    connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->actionSettingsWorld, SIGNAL(triggered()), this, SLOT(showWorldSettings()));
     connect(ui->actionResetWorld, SIGNAL(triggered()), this, SLOT(resetWorld()));
     connect(ui->actionDefaultTexture, SIGNAL(triggered()), this, SLOT(loadDefaultTexture()));
@@ -106,7 +110,7 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     //Slight hack prevents crashing on destruct
-    ui->codeEdit->blockSignals(true);
+    codeEdit.blockSignals(true);
     delete ui;
     delete highlighter;
 }
@@ -143,7 +147,7 @@ void MainWindow::codeStep()
 void MainWindow::handleError(SteveInterpreterException &e)
 {
     std::cerr << e.what() << std::endl;
-    ui->statusBar->showMessage(e.what());
+    showMessage(e.what());
 
     highlighter->highlight(e.getLine(), error_format, e.getAffected());
 }
@@ -181,7 +185,7 @@ void MainWindow::clockEvent()
     }
     catch (SteveInterpreterException &e)
     {
-        stopExecution();
+        reset();
         handleError(e);
     }
 }
@@ -220,24 +224,27 @@ void MainWindow::textChanged()
 }
 
 //Wait for interruption or program end
-void MainWindow::startExecution() throw (SteveInterpreterException)
+bool MainWindow::startExecution() throw (SteveInterpreterException)
 {
     if(execution_started)
-        return;
+        return true;
 
-    execution_started = true;
-    ui->codeEdit->setReadOnly(true);
+    codeEdit.setReadOnly(true);
     if(code_changed)
         setCode();
+
+    execution_started = true;
 
     saved_state = world.getState();
 
     refreshButtons();
 
     if(automatic)
-        ui->statusBar->showMessage(QApplication::trUtf8("Programm läuft"));
+        showMessage(QApplication::trUtf8("Programm läuft"));
     else
-        ui->statusBar->showMessage(QApplication::trUtf8("Programm pausiert"));
+        showMessage(QApplication::trUtf8("Programm pausiert"));
+
+    return true;
 }
 
 void MainWindow::pauseExecution()
@@ -245,7 +252,7 @@ void MainWindow::pauseExecution()
     clock.stop();
     automatic = false;
 
-    ui->statusBar->showMessage(QApplication::trUtf8("Programm pausiert"));
+    showMessage(QApplication::trUtf8("Programm pausiert"));
     ui->actionStarten->setText(QApplication::trUtf8("Starten"));
     ui->actionSchritt->setEnabled(true);
 
@@ -258,9 +265,9 @@ void MainWindow::stopExecution()
     clock.stop();
     highlighter->resetHighlight();
 
-    ui->codeEdit->setReadOnly(false);
+    codeEdit.setReadOnly(false);
 
-    ui->statusBar->showMessage(QApplication::trUtf8("Programm beendet"));
+    showMessage(QApplication::trUtf8("Programm beendet"));
 
     ui->actionSchritt->setDisabled(true);
     ui->actionStarten->setDisabled(true);
@@ -284,23 +291,17 @@ void MainWindow::reset()
     refreshButtons();
 }
 
-void MainWindow::setCode()
+void MainWindow::setCode() throw (SteveInterpreterException)
 {
-    try {
-        ui->statusBar->showMessage(QApplication::trUtf8("Parsen.."));
+    showMessage(QApplication::trUtf8("Parsen.."));
 
-        code = ui->codeEdit->toPlainText().split("\n");
-        interpreter.setCode(code);
-        interpreter.reset();
+    code = codeEdit.toPlainText().split("\n");
+    interpreter.setCode(code);
+    interpreter.reset();
 
-        code_changed = false;
+    code_changed = false;
 
-        ui->statusBar->showMessage(QApplication::trUtf8("Geparst!"));
-    }
-    catch (SteveInterpreterException &e)
-    {
-        handleError(e);
-    }
+    showMessage(QApplication::trUtf8("Geparst!"));
 }
 
 void MainWindow::refreshButtons()
@@ -343,7 +344,7 @@ void MainWindow::loadFile(QString path)
         return;
     }
 
-    ui->codeEdit->setPlainText(file.readAll());
+    codeEdit.setPlainText(file.readAll());
 
     setCode();
 }
@@ -386,7 +387,7 @@ void MainWindow::save()
     }
 
     QTextStream file_stream{&file};
-    file_stream << ui->codeEdit->toPlainText();
+    file_stream << codeEdit.toPlainText();
 
     code_saved = true;
 }
@@ -466,18 +467,6 @@ void MainWindow::resetWorld()
     world.reset();
 }
 
-void MainWindow::quit()
-{
-    if(!code_saved)
-    {
-        if(QMessageBox::warning(this, trUtf8("Wirklich beenden?"), trUtf8("Das Programm wurde noch nicht gespeichert.\nSoll Robot Steve wirklich beendet werden?"), QMessageBox::Yes, QMessageBox::No)
-                == QMessageBox::No)
-            return;
-    }
-
-    this->close();
-}
-
 void MainWindow::loadDefaultTexture()
 {
     settings.setValue("playerTexture", ":/textures/char.png");
@@ -502,6 +491,35 @@ void MainWindow::loadTexture()
     settings.setValue("playerTexture", filename);
 
     world.setPlayerTexture(settings.value("playerTexture", ":/textures/char.png").toString());
+}
+
+void MainWindow::showMessage(const QString &msg)
+{
+    static QWidget* lastWidget = 0;
+
+    if(lastWidget != 0)
+    {
+        ui->statusBar->removeWidget(lastWidget);
+        delete lastWidget;
+    }
+
+    lastWidget = new QLabel(msg);
+    ui->statusBar->addWidget(lastWidget);
+}
+
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+    if(!code_saved)
+    {
+        if(QMessageBox::warning(this, trUtf8("Wirklich beenden?"), trUtf8("Das Programm wurde noch nicht gespeichert.\nSoll Robot Steve wirklich beendet werden?"), QMessageBox::Yes, QMessageBox::No)
+                == QMessageBox::No)
+        {
+            e->ignore();
+            return;
+        }
+    }
+
+    e->accept();
 }
 
 //Manual control

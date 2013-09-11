@@ -23,7 +23,8 @@ SOURCES += main.cpp\
     glworld.cpp \
     stevehighlighter.cpp \
     examplesdialog.cpp \
-    worlddialog.cpp
+    worlddialog.cpp \
+    steveedit.cpp
 
 HEADERS  += mainwindow.h \
     world.h \
@@ -34,7 +35,8 @@ HEADERS  += mainwindow.h \
     glworld.h \
     stevehighlighter.h \
     examplesdialog.h \
-    worlddialog.h
+    worlddialog.h \
+    steveedit.h
 
 FORMS    += mainwindow.ui \
     examplesdialog.ui \

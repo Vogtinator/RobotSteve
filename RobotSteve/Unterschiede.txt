@@ -11,3 +11,5 @@ Unterschiede zu Robot Karol:
 9. Maximale Stapelhöhe fest auf 10
 10. Maximale Weltgröße 25x25
 11. Anweisung "stop" pausiert das Programm, gut zum Debuggen
+12. "abbruch"
+13. Kein "tue" bei "solange"

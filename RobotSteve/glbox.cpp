@@ -1,5 +1,4 @@
 #include <qgl.h>
-#include <QDebug>
 
 #include "glbox.h"
 

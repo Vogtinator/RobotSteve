@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<help>
+<keyword name="KEYWORD_NOT">Syntax:
+wenn nicht [bedingung] dann
+solange nicht [bedingung]
+wiederhole solange nicht [bedingung]
+
+Beispiel:
+solange nicht wand
+	schritt
+*solange</keyword>
+<keyword name="KEYWORD_IF;KEYWORD_THEN;KEYWORD_ELSE;KEYWORD_IF_END">Syntax:
+wenn (nicht) [bedingung] dann
+[Befehle]
+(sonst
+[Befehle])
+*wenn
+
+Beispiel:
+wenn nicht wand dann
+	schritt
+sonst
+	linksdrehen(2)
+*wenn</keyword>
+<keyword name="KEYWORD_REPEAT;KEYWORD_TIMES;KEYWORD_REPEAT_END">Syntax:
+wiederhole [nr] mal
+wiederhole solange (nicht) [bedingung]
+
+*wiederhole
+
+Beispiel:
+wiederhole solange nicht wand
+	schritt
+*wiederhole</keyword>
+<keyword name="KEYWORD_WHILE;KEYWORD_WHILE_END">Syntax:
+wiederhole solange (nicht) [bedingung]
+[Befehle]
+*wiederhole
+
+solange (nicht) [bedingung]
+[Befehle]
+*solange
+</keyword>
+<keyword name="KEYWORD_NEW_INSTR;KEYWORD_NEW_INSTR_END">Definiert eine neue Anweisung.
+Kann z.B. an Stelle von "schritt" verwendet werden.
+
+Syntax:
+anweisung [Name]
+[Befehle]
+*anweisung
+
+Beispiel:
+anweisung biszurwand
+	solange nicht wand
+		schritt
+	*solange
+*anweisung
+</keyword>
+<keyword name="KEYWORD_NEW_COND;KEYWORD_NEW_COND_END">Definiert eine neue Bedingung.
+Kann z.B. an Stelle von "wand" verwendet werden.
+
+Syntax:
+bedingung [Name]
+[Befehle]
+*bedingung
+
+Beispiel:
+anweisung vornemarke
+	wenn wand dann
+		falsch
+	sonst
+		schritt
+		wenn marke dann
+			wahr
+		sonst
+			falsch
+		*wenn
+		linksdrehen(2)
+		schritt
+		linksdrehen(2)
+	*wenn
+*bedingung
+</keyword>
+<keyword name="KEYWORD_BREAK">Beendet eine Schleife sofort.
+
+Beispiel:
+wiederhole immer
+	wenn wand dann
+		abbruch
+	*wenn
+	
+	schritt
+*wiederhole
+</keyword>
+
+<instruction name="INSTR_STEP">Steve macht einen Schritt nach vorne.
+Allerdings auch, wenn vor ihm ein Würfel oder eine Wand steht.
+Man kann auch einen Parameter übergeben:
+Mit schritt(2) macht Steve 2 Schritte.</instruction>
+<instruction name="INSTR_TURNLEFT">Steve dreht sich um 90° nach links.
+Man kann auch einen Parameter übergeben:
+Mit linksdrehen(2) dreht sich Steve um.</instruction>
+<instruction name="INSTR_TURNRIGHT">Steve dreht sich um 90° nach rechts.
+Man kann auch einen Parameter übergeben:
+Mit rechtsdrehen(2) dreht sich Steve um.</instruction>
+<instruction name="INSTR_PUTDOWN">Steve legt einen Stein vor sich hin.
+Man kann auch einen Parameter übergeben:
+Mit hinlegen(2) legt Steve 2 Steine vor sich hin.</instruction>
+<instruction name="INSTR_PICKUP">Steve hebt einen Stein vor sich auf.
+Man kann auch einen Parameter übergeben:
+Mit aufheben(2) hebt Steve 2 Steine vor sich auf.</instruction>
+<instruction name="INSTR_MARK">Steve markiert seinen Standort.</instruction>
+<instruction name="INSTR_UNMARK">Steve entfernt die Markierung, auf der er steht.</instruction>
+<instruction name="INSTR_QUIT">Das Programm wird sofort beendet.</instruction>
+<instruction name="INSTR_TRUE">Funktioniert nur in einer Bedingung.
+Der Rückgabewert wird auf wahr gesetzt.</instruction>
+<instruction name="INSTR_FALSE">Funktioniert nur in einer Bedingung.
+Der Rückgabewert wird auf falsch gesetzt.</instruction>
+<instruction name="INSTR_BREAKPOINT">Wenn das Programm automatisch läuft, wird es hier pausiert</instruction>
+
+<condition name="COND_ALWAYS">Gibt immer wahr zurück. "nicht immer" gibt immer falsch zurück.</condition>
+<condition name="COND_WALL">Gibt wahr zurück, wenn Steve vor einem Würfel oder einer Wand steht</condition>
+<condition name="COND_CUBE">Gibt wahr zurück, wenn Steve vor einem Würfel steht.</condition>
+<condition name="COND_BRICK">Gibt wahr zurück, wenn Steve vor einem Stapel steht.
+Man kann auch einen Parameter übergeben: 
+ziegel(1) gibt nur wahr zurück, wenn der Stapel vor Steve genau 1 Stein hoch ist.</condition>
+<condition name="COND_MARKED">Gibt wahr zurück, wenn Steve auf einer Markierung ist</condition>
+<condition name="COND_NORTH;COND_EAST;COND_SOUTH;COND_WEST">Gibt wahr zurück, wenn Steve in diese Richtung schaut.</condition>
+</help>
