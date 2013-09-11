@@ -98,7 +98,8 @@ MainWindow::MainWindow(QWidget *parent) :
         QFileInfo file_info{QCoreApplication::arguments()[1]};
 
         //Load world
-        if(file_info.completeSuffix().compare("stworld", Qt::CaseInsensitive))
+        //TODO: Load both by arguments
+        if(file_info.completeSuffix().compare("stworld", Qt::CaseInsensitive) == 0)
         {
             if(!world.loadFile(file_info.absoluteFilePath()))
                 QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
