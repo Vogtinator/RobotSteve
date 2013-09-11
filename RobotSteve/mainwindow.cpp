@@ -16,7 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui{new Ui::MainWindow},
     world{5, 5, 5, this},
     interpreter{&world},
-    codeEdit{&interpreter, this}
+    codeEdit{&interpreter, this},
+    save_shortcut(QKeySequence("Ctrl+S"), this)
 {
     //UI
     ui->setupUi(this);
@@ -67,7 +68,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->viewSwitch, SIGNAL(toggled(bool)), this, SLOT(switchViews(bool)));
     connect(&codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
     connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(open()));
-    connect(ui->actionSave, SIGNAL(triggered()), this, SLOT(save()));
+    connect(ui->actionSaveDirect, SIGNAL(triggered()), this, SLOT(saveDirect()));
+    connect(&save_shortcut, SIGNAL(activated()), this, SLOT(saveDirect()));
+    connect(ui->actionSaveAs, SIGNAL(triggered()), this, SLOT(save()));
     connect(ui->actionSaveWorld, SIGNAL(triggered()), this, SLOT(saveWorld()));
     connect(ui->actionLoadWorld, SIGNAL(triggered()), this, SLOT(openWorld()));
     connect(ui->actionExamples, SIGNAL(triggered()), this, SLOT(showExamples()));
@@ -107,6 +110,8 @@ MainWindow::MainWindow(QWidget *parent) :
         else //Load program
             loadFile(file_info.absoluteFilePath());
     }
+
+    showMessage(trUtf8("Hallo!"));
 }
 
 MainWindow::~MainWindow()
@@ -326,6 +331,11 @@ void MainWindow::refreshButtons()
         ui->buttonTurnRight->setDisabled(true);
         ui->buttonCube->setDisabled(true);
         ui->buttonMark->setDisabled(true);
+        ui->actionLoadWorld->setDisabled(true);
+        ui->actionSettingsWorld->setDisabled(true);
+        ui->actionResetWorld->setDisabled(true);
+        ui->actionOpen->setDisabled(true);
+        ui->actionExamples->setDisabled(true);
 
         return;
     }
@@ -342,6 +352,11 @@ void MainWindow::refreshButtons()
     ui->buttonTurnLeft->setDisabled(false);
     ui->buttonTurnRight->setDisabled(false);
     ui->buttonMark->setDisabled(false);
+    ui->actionLoadWorld->setDisabled(false);
+    ui->actionSettingsWorld->setDisabled(false);
+    ui->actionResetWorld->setDisabled(false);
+    ui->actionOpen->setDisabled(false);
+    ui->actionExamples->setDisabled(false);
 }
 
 void MainWindow::loadFile(QString path)
@@ -370,11 +385,36 @@ void MainWindow::open()
     if(filename.isEmpty())
         return;
 
+    save_file_name = filename;
+    ui->actionSaveDirect->setDisabled(false);
+
     QFileInfo file_info{filename};
 
     settings.setValue("lastOpenDir", file_info.absolutePath());
 
     loadFile(filename);
+}
+
+void MainWindow::saveDirect()
+{
+    if(save_file_name.isEmpty())
+        return;
+
+    QFile file{save_file_name};
+    QFileInfo file_info{file};
+
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+    {
+        QMessageBox::critical(this, trUtf8("Fehler beim Speichern"), trUtf8("Die Datei '%1' konnte nicht gespeichert werden!").arg(file_info.fileName()));
+        return;
+    }
+
+    QTextStream file_stream{&file};
+    file_stream << codeEdit.toPlainText();
+
+    code_saved = true;
+
+    showMessage(trUtf8("Gespeichert als '%1'!").arg(file_info.fileName()));
 }
 
 void MainWindow::save()
@@ -390,6 +430,8 @@ void MainWindow::save()
     QFileInfo file_info{file};
 
     settings.setValue("lastOpenDir", file_info.absolutePath());
+    save_file_name = filename;
+    ui->actionSaveDirect->setDisabled(false);
 
     if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
     {
@@ -401,6 +443,8 @@ void MainWindow::save()
     file_stream << codeEdit.toPlainText();
 
     code_saved = true;
+
+    showMessage(trUtf8("Gespeichert als '%1'!").arg(file_info.fileName()));
 }
 
 void MainWindow::openWorld()

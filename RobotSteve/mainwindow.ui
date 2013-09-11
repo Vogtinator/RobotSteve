@@ -217,7 +217,8 @@
      <string>Programm</string>
     </property>
     <addaction name="actionOpen"/>
-    <addaction name="actionSave"/>
+    <addaction name="actionSaveDirect"/>
+    <addaction name="actionSaveAs"/>
     <addaction name="actionExamples"/>
     <addaction name="actionHideCode"/>
     <addaction name="separator"/>
@@ -271,9 +272,9 @@
     <string>Öffnen</string>
    </property>
   </action>
-  <action name="actionSave">
+  <action name="actionSaveAs">
    <property name="text">
-    <string>Speichern</string>
+    <string>Speichern als..</string>
    </property>
   </action>
   <action name="actionQuit">
@@ -337,6 +338,14 @@
    </property>
    <property name="text">
     <string>Code Verstecken</string>
+   </property>
+  </action>
+  <action name="actionSaveDirect">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Speichern</string>
    </property>
   </action>
  </widget>

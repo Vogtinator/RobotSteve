@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QGraphicsView>
 #include <QSettings>
+#include <QShortcut>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
@@ -38,6 +39,7 @@ public slots:
 
     //Menu "File"
     void open();
+    void saveDirect();
     void save();
     void showExamples();
 
@@ -78,6 +80,7 @@ private:
 
     float speed_ms;
     bool automatic = false, code_changed = true, code_saved = true;
+    QString save_file_name;
     QTimer clock;
     bool execution_started = false;
     Ui::MainWindow *ui;
@@ -91,6 +94,7 @@ private:
     WorldState saved_state;
     QSettings settings;
     SteveEdit codeEdit;
+    QShortcut save_shortcut;
 };
 
 #endif // MAINWINDOW_H
