@@ -161,11 +161,11 @@ void GLWorld::paintGL()
 
     float radX = camera_rotX*(M_PI/180), radY = camera_rotY*(M_PI/180), cosradX = cos(radX);
 
-    double camerax = camera_dist*(sin(radY) * cosradX) + World::size.first/2;
-    double cameray = camera_dist*sin(radX-M_PI);
-    double cameraz = camera_dist*(cos(radY) * cosradX) + World::size.second/2;
+    double camera_x = camera_dist*(sin(radY) * cosradX) + World::size.first/2;
+    double camera_y = camera_dist*sin(radX-M_PI);
+    double camera_z = camera_dist*(cos(radY) * cosradX) + World::size.second/2;
 
-    glTranslated(-camerax, -cameray, -cameraz);
+    glTranslated(-camera_x, -camera_y, -camera_z);
 
     environment_atlas->bind();
 
@@ -245,7 +245,7 @@ void GLWorld::resizeGL(int w, int h)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     double height = (static_cast<double>(h)/w);
-    glFrustum(-1, 1, -height, height, 2, 100);
+    glFrustum(-1, 1, -height, height, 1, 100);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 

@@ -40,9 +40,10 @@ SteveInterpreter::SteveInterpreter(World *world) : world{world}
     keywords[KEYWORD_REPEAT] = QObject::trUtf8("wiederhole");
     keywords[KEYWORD_TIMES] = QObject::trUtf8("mal");
     keywords[KEYWORD_WHILE] = QObject::trUtf8("solange");
+    keywords[KEYWORD_BREAK] = QObject::trUtf8("abbruch");
+    keywords[KEYWORD_CONTINUE] = QObject::trUtf8("weiter");
     keywords[KEYWORD_NEW_INSTR] = QObject::trUtf8("anweisung");
     keywords[KEYWORD_NEW_COND] = QObject::trUtf8("bedingung");
-    keywords[KEYWORD_BREAK] = QObject::trUtf8("abbruch");
 
     keywords[KEYWORD_IF_END] = "*" + keywords[KEYWORD_IF];
     keywords[KEYWORD_REPEAT_END] = "*" + keywords[KEYWORD_REPEAT];
@@ -134,7 +135,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
         if(keyword == -1)
             continue; //Not a keyword, ignore for now
 
-        if(keyword == KEYWORD_BREAK)
+        if(keyword == KEYWORD_BREAK || keyword == KEYWORD_CONTINUE)
         {
             int line = -1;
             BLOCK type;
@@ -142,7 +143,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
             for(int i = 0; i < block_types.size(); i++)
             {
                 BLOCK b = block_types.at(block_types.size() - 1 - i);
-                if(b == BLOCK_REPEAT || b == BLOCK_WHILE || b == BLOCK_NEW_INSTR)
+                if(b == BLOCK_REPEAT || b == BLOCK_WHILE || (b == BLOCK_NEW_INSTR && keyword == KEYWORD_BREAK))
                 {
                     line = branch_entrys.at(branch_entrys.size() - 1 - i);
                     type = b;
@@ -153,12 +154,15 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
 
             //No REPEAT, WHILE or NEW_INSTR found
             if(line == -1)
-                throw SteveInterpreterException(QObject::trUtf8("%1 nur in %2, %3 und %4s-Blöcken erlaubt.").arg(str(KEYWORD_BREAK)).arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_REPEAT)).arg(str(KEYWORD_NEW_INSTR)), current_line);
+                throw SteveInterpreterException(QObject::trUtf8("%1 nur in %2, %3 und %4s-Blöcken erlaubt.").arg(str(keyword)).arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_REPEAT)).arg(str(KEYWORD_NEW_INSTR)), current_line);
 
             if(type == BLOCK_REPEAT || type == BLOCK_WHILE)
-                branches[current_line] = line + 1;
-            else
                 branches[current_line] = line;
+            else
+                branches[current_line] = line - 1;
+
+            if(keyword == KEYWORD_BREAK)
+                branches[current_line] += 1;
         }
         else if(keyword == KEYWORD_ELSE)
         {
@@ -673,9 +677,10 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
             return;
 
+        case KEYWORD_CONTINUE:
         case KEYWORD_BREAK:
             if(line.size() != 1)
-                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1").arg(str(KEYWORD_BREAK)), current_line);
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1").arg(str(keyword)), current_line);
 
             current_line = branches[current_line];
             return;

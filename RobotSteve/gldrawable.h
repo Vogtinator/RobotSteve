@@ -26,13 +26,24 @@ class GLDrawable
 public:
     virtual ~GLDrawable() {}
 
-    virtual void setXPosition(float x) = 0;
-    virtual void setYPosition(float y) = 0;
-    virtual void setZPosition(float z) = 0;
-    virtual void setXRotation(float x) = 0;
-    virtual void setYRotation(float y) = 0;
-    virtual void setZRotation(float z) = 0;
+    void setXPosition(float x) { posX = x; }
+    float getXPosition() { return posX; }
+    void setYPosition(float y) { posY = y; }
+    float getYPosition() { return posY; }
+    void setZPosition(float z) { posZ = z; }
+    float getZPosition() { return posZ; }
+    void setXRotation(float x) { rotX = x; }
+    float getXRotation() { return rotX; }
+    void setYRotation(float y) { rotY = y; }
+    float getYRotation() { return rotY; }
+    void setZRotation(float z) { rotZ = z; }
+    float getZRotation() { return rotZ; }
+
     virtual void draw() = 0;
+
+protected:
+    float posX = 0, posY = 0, posZ = 0;
+    float rotX = 0, rotY = 0, rotZ = 0;
 };
 
 #endif // GLDRAWABLE_H

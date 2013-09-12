@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->viewFrame->addWidget(&world);
     ui->chart_view->setScene(&chart_scene);
     switchViews(false);
+    ui->statusBar->addWidget(&status);
 
     speed_slider = new QSlider(Qt::Horizontal, this);
     speed_slider->setMinimum(0);
@@ -179,9 +180,6 @@ void MainWindow::clockEvent()
     }
 
     try{
-        if(automatic)
-            clock.start(speed_ms);
-
         //Highlight the line which is being executed, but only if it's visible
         //(highlighting costs performance)
         int line = interpreter.getLine();
@@ -198,6 +196,9 @@ void MainWindow::clockEvent()
             stopExecution();
         else if(interpreter.hitBreakpoint())
             pauseExecution();
+
+        if(automatic)
+            clock.start(speed_ms);
     }
     catch (SteveInterpreterException &e)
     {
@@ -553,16 +554,7 @@ void MainWindow::loadTexture()
 
 void MainWindow::showMessage(const QString &msg)
 {
-    static QWidget* lastWidget = 0;
-
-    if(lastWidget != 0)
-    {
-        ui->statusBar->removeWidget(lastWidget);
-        delete lastWidget;
-    }
-
-    lastWidget = new QLabel(msg);
-    ui->statusBar->addWidget(lastWidget);
+    status.setText(msg);
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)

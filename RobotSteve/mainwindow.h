@@ -8,6 +8,7 @@
 #include <QGraphicsView>
 #include <QSettings>
 #include <QShortcut>
+#include <QLabel>
 
 #include "glworld.h"
 #include "steveinterpreter.h"
@@ -95,6 +96,7 @@ private:
     QSettings settings;
     SteveEdit codeEdit;
     QShortcut save_shortcut;
+    QLabel status;
 };
 
 #endif // MAINWINDOW_H
