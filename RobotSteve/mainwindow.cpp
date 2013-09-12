@@ -374,6 +374,10 @@ void MainWindow::loadFile(QString path)
     codeEdit.setPlainText(file.readAll());
 
     setCode();
+
+    save_file_name = path;
+    ui->actionSaveDirect->setDisabled(false);
+    code_saved = true;
 }
 
 void MainWindow::open()
@@ -385,9 +389,6 @@ void MainWindow::open()
     //Open dialog closed or cancelled
     if(filename.isEmpty())
         return;
-
-    save_file_name = filename;
-    ui->actionSaveDirect->setDisabled(false);
 
     QFileInfo file_info{filename};
 
