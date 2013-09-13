@@ -373,7 +373,12 @@ void MainWindow::loadFile(QString path)
 
     codeEdit.setPlainText(file.readAll());
 
-    setCode();
+    try {
+    setCode(); }
+    catch (SteveInterpreterException &e)
+    {
+        handleError(e);
+    }
 
     save_file_name = path;
     ui->actionSaveDirect->setDisabled(false);
