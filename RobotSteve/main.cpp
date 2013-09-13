@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
     if(QCoreApplication::arguments().size() == 2 && QCoreApplication::arguments()[1].compare("--version", Qt::CaseInsensitive) == 0)
     {
-        std::cout << "Robot Steve 0.9.3" << std::endl;
+        std::cout << "Robot Steve 0.9.4" << std::endl;
 
         return 0;
     }
