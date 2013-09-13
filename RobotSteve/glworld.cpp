@@ -138,7 +138,7 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
 
     connect(&tick_timer, SIGNAL(timeout()), this, SLOT(tick()));
     connect(&refresh_timer, SIGNAL(timeout()), this, SLOT(updateGL()));
-    refresh_timer.start(17);
+    refresh_timer.start(1000/30);
 
     updateAnimationTarget();
 

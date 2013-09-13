@@ -13,3 +13,4 @@ Unterschiede zu Robot Karol:
 11. Anweisung "stop" pausiert das Programm, gut zum Debuggen
 12. "abbruch"
 13. Kein "tue" bei "solange"
+14. Datei nicht von oben nach unten geparst, anweisung kann vor definition aufgerufen werden

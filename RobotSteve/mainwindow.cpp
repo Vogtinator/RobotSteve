@@ -97,6 +97,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     world.setPlayerTexture(settings.value("playerTexture", ":/textures/char.png").toString());
 
+    showMessage(trUtf8("Hallo!"));
+
     if(QCoreApplication::arguments().size() > 1)
     {
         QFileInfo file_info{QCoreApplication::arguments()[1]};
@@ -111,8 +113,6 @@ MainWindow::MainWindow(QWidget *parent) :
         else //Load program
             loadFile(file_info.absoluteFilePath());
     }
-
-    showMessage(trUtf8("Hallo!"));
 }
 
 MainWindow::~MainWindow()
