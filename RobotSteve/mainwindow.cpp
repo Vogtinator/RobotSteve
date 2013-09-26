@@ -81,6 +81,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionResetWorld, SIGNAL(triggered()), this, SLOT(resetWorld()));
     connect(ui->actionDefaultTexture, SIGNAL(triggered()), this, SLOT(loadDefaultTexture()));
     connect(ui->actionLoadTexture, SIGNAL(triggered()), this, SLOT(loadTexture()));
+    connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
+    connect(ui->actionAboutQt, SIGNAL(triggered()), this, SLOT(showAboutQt()));
 
     //Manual control
     connect(ui->buttonStep, SIGNAL(clicked()), this, SLOT(step()));
@@ -576,6 +578,20 @@ void MainWindow::closeEvent(QCloseEvent *e)
     }
 
     e->accept();
+}
+
+void MainWindow::showAbout()
+{
+    QMessageBox::about(this, "Robot Steve", "Robot Steve\n"
+                       "Autor: Fabian Vogt\n\n"
+                       "This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.\n"
+                       "To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/\n"
+                       "or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.");
+}
+
+void MainWindow::showAboutQt()
+{
+    QMessageBox::aboutQt(this);
 }
 
 //Manual control

@@ -54,6 +54,10 @@ public slots:
     void loadTexture();
     void loadDefaultTexture();
 
+    //Menu "Help"
+    void showAbout();
+    void showAboutQt();
+
     //Manual control:
     void step();
     void turnLeft();
