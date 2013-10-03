@@ -14,7 +14,7 @@ SteveEdit::SteveEdit(SteveInterpreter *interpreter, QWidget *parent) :
     QFile help_file{":/help/help.xml"};
     if(!help_file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        std::cerr << QObject::trUtf8("Hilfedatei konnte nicht geöffnet werden!").toStdString() << std::cerr;
+        std::cerr << QObject::trUtf8("Hilfedatei konnte nicht geöffnet werden!").toStdString() << std::endl;
         return;
     }
 
@@ -44,7 +44,7 @@ SteveEdit::SteveEdit(SteveInterpreter *interpreter, QWidget *parent) :
                 SteveInterpreter::KEYWORD i = static_cast<SteveInterpreter::KEYWORD>(keyword_meta.keyToValue(n.toStdString().c_str()));
                 if(i == -1)
                 {
-                    std::cerr << QObject::trUtf8("Warnung: Unbekanntes Wort '%1'!").arg(n).toStdString() << std::cerr;
+                    std::cerr << QObject::trUtf8("Warnung: Unbekanntes Wort '%1'!").arg(n).toStdString() << std::endl;
                     continue;
                 }
 
@@ -60,7 +60,7 @@ SteveEdit::SteveEdit(SteveInterpreter *interpreter, QWidget *parent) :
                 SteveInterpreter::INSTRUCTION i = static_cast<SteveInterpreter::INSTRUCTION>(instruction_meta.keyToValue(n.toStdString().c_str()));
                 if(i == -1)
                 {
-                    std::cerr << QObject::trUtf8("Warnung: Unbekanntes Wort '%1'!").arg(n).toStdString() << std::cerr;
+                    std::cerr << QObject::trUtf8("Warnung: Unbekanntes Wort '%1'!").arg(n).toStdString() << std::endl;
                     continue;
                 }
 
@@ -76,7 +76,7 @@ SteveEdit::SteveEdit(SteveInterpreter *interpreter, QWidget *parent) :
                 SteveInterpreter::CONDITION i = static_cast<SteveInterpreter::CONDITION>(condition_meta.keyToValue(n.toStdString().c_str()));
                 if(i == -1)
                 {
-                    std::cerr << QObject::trUtf8("Warnung: Unbekanntes Wort '%1'!").arg(n).toStdString() << std::cerr;
+                    std::cerr << QObject::trUtf8("Warnung: Unbekanntes Wort '%1'!").arg(n).toStdString() << std::endl;
                     continue;
                 }
 
