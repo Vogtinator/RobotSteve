@@ -31,7 +31,7 @@ make INSTALL_ROOT=%{buildroot} install
 %mime_database_postun
 
 %files
-%doc license.txt Unterschiede.txt Beispiele.txt
+%doc license.txt Unterschiede.txt
 %{_bindir}/RobotSteve
 %{_datadir}/applications/RobotSteve.desktop
 %{_datadir}/icons/RobotSteve.png
