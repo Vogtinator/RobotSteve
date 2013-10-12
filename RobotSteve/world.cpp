@@ -301,7 +301,7 @@ WorldState World::getState()
 //TODO: If canceled midway, updateFront() should be called or state not saved at all
 bool World::loadXMLStream(QXmlStreamReader &file_reader)
 {
-    bool size_set, steve_set;
+    bool size_set = false, steve_set = false;
     while(!file_reader.atEnd())
     {
         if(!file_reader.readNext() == QXmlStreamReader::Invalid)
@@ -370,7 +370,7 @@ bool World::loadXMLStream(QXmlStreamReader &file_reader)
             if(orientation == -1)
                     return false;
 
-            if(y >= size.first || x >= size.second)
+            if(x >= size.first || y >= size.second)
                 return false;
 
             steve.first = x;
@@ -395,7 +395,7 @@ bool World::loadXMLStream(QXmlStreamReader &file_reader)
             if(y_str.isEmpty() || !ok)
                     return false;
 
-            if(y >= size.first || x >= size.second)
+            if(x >= size.first || y >= size.second)
                 return false;
 
             WorldObject *obj = &(map[x][y]);

@@ -7,7 +7,7 @@ wiederhole solange nicht [bedingung]
 
 Beispiel:
 solange nicht wand
-	schritt
+        schritt
 *solange</keyword>
 <keyword name="KEYWORD_IF;KEYWORD_THEN;KEYWORD_ELSE;KEYWORD_IF_END">Syntax:
 wenn (nicht) [bedingung] dann
@@ -18,9 +18,9 @@ wenn (nicht) [bedingung] dann
 
 Beispiel:
 wenn nicht wand dann
-	schritt
+        schritt
 sonst
-	linksdrehen(2)
+        linksdrehen(2)
 *wenn</keyword>
 <keyword name="KEYWORD_REPEAT;KEYWORD_TIMES;KEYWORD_REPEAT_END">Syntax:
 wiederhole [nr] mal
@@ -30,7 +30,7 @@ wiederhole solange (nicht) [bedingung]
 
 Beispiel:
 wiederhole solange nicht wand
-	schritt
+        schritt
 *wiederhole</keyword>
 <keyword name="KEYWORD_WHILE;KEYWORD_WHILE_END">Syntax:
 wiederhole solange (nicht) [bedingung]
@@ -39,8 +39,7 @@ wiederhole solange (nicht) [bedingung]
 
 solange (nicht) [bedingung]
 [Befehle]
-*solange
-</keyword>
+*solange</keyword>
 <keyword name="KEYWORD_NEW_INSTR;KEYWORD_NEW_INSTR_END">Definiert eine neue Anweisung.
 Kann z.B. an Stelle von "schritt" verwendet werden.
 
@@ -51,11 +50,10 @@ anweisung [Name]
 
 Beispiel:
 anweisung biszurwand
-	solange nicht wand
-		schritt
-	*solange
-*anweisung
-</keyword>
+        solange nicht wand
+                schritt
+        *solange
+*anweisung</keyword>
 <keyword name="KEYWORD_NEW_COND;KEYWORD_NEW_COND_END">Definiert eine neue Bedingung.
 Kann z.B. an Stelle von "wand" verwendet werden.
 
@@ -65,33 +63,43 @@ bedingung [Name]
 *bedingung
 
 Beispiel:
-anweisung vornemarke
-	wenn wand dann
-		falsch
-	sonst
-		schritt
-		wenn marke dann
-			wahr
-		sonst
-			falsch
-		*wenn
-		linksdrehen(2)
-		schritt
-		linksdrehen(2)
-	*wenn
-*bedingung
-</keyword>
+bedingung vornemarke
+        wenn wand dann
+                falsch
+        sonst
+                schritt
+                wenn marke dann
+                        wahr
+                sonst
+                        falsch
+                *wenn
+                linksdrehen(2)
+                schritt
+                linksdrehen(2)
+        *wenn
+*bedingung</keyword>
 <keyword name="KEYWORD_BREAK">Beendet eine Schleife sofort.
 
 Beispiel:
 wiederhole immer
-	wenn wand dann
-		abbruch
-	*wenn
-	
-	schritt
-*wiederhole
-</keyword>
+        wenn wand dann
+                abbruch
+        *wenn
+
+        schritt
+*wiederhole</keyword>
+<keyword name="KEYWORD_CONTINUE">Überspringt den aktuellen Schleifendurchgang.
+
+Beispiel:
+solange nicht wand
+        schritt
+
+        wenn ziegel dann
+                weiter
+        *wenn
+
+        hinlegen
+*solange</keyword>
 
 <instruction name="INSTR_STEP">Steve macht einen Schritt nach vorne.
 Allerdings auch, wenn vor ihm ein Würfel oder eine Wand steht.
@@ -116,14 +124,14 @@ Mit aufheben(2) hebt Steve 2 Steine vor sich auf.</instruction>
 Der Rückgabewert wird auf wahr gesetzt.</instruction>
 <instruction name="INSTR_FALSE">Funktioniert nur in einer Bedingung.
 Der Rückgabewert wird auf falsch gesetzt.</instruction>
-<instruction name="INSTR_BREAKPOINT">Wenn das Programm automatisch läuft, wird es hier pausiert</instruction>
+<instruction name="INSTR_BREAKPOINT">Wenn das Programm automatisch läuft, wird es hier pausiert.</instruction>
 
 <condition name="COND_ALWAYS">Gibt immer wahr zurück. "nicht immer" gibt immer falsch zurück.</condition>
 <condition name="COND_WALL">Gibt wahr zurück, wenn Steve vor einem Würfel oder einer Wand steht</condition>
 <condition name="COND_CUBE">Gibt wahr zurück, wenn Steve vor einem Würfel steht.</condition>
 <condition name="COND_BRICK">Gibt wahr zurück, wenn Steve vor einem Stapel steht.
-Man kann auch einen Parameter übergeben: 
+Man kann auch einen Parameter übergeben:
 ziegel(1) gibt nur wahr zurück, wenn der Stapel vor Steve genau 1 Stein hoch ist.</condition>
-<condition name="COND_MARKED">Gibt wahr zurück, wenn Steve auf einer Markierung ist</condition>
+<condition name="COND_MARKED">Gibt wahr zurück, wenn Steve auf einer Markierung ist.</condition>
 <condition name="COND_NORTH;COND_EAST;COND_SOUTH;COND_WEST">Gibt wahr zurück, wenn Steve in diese Richtung schaut.</condition>
 </help>

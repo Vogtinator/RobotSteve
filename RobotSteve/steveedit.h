@@ -4,22 +4,21 @@
 #include <QPlainTextEdit>
 
 #include "steveinterpreter.h"
+#include "stevehelp.h"
 
-class SteveEdit : public QPlainTextEdit
+class SteveEdit : public QTextEdit
 {
     Q_OBJECT
 
 public:
-    explicit SteveEdit(SteveInterpreter *interpreter, QWidget *parent = 0);
+    explicit SteveEdit(SteveHelp *help, QWidget *parent = 0);
 
 protected:
     void keyPressEvent(QKeyEvent *e);
 
 private:
-    SteveInterpreter *interpreter;
-    QHash<SteveInterpreter::KEYWORD, QString> keyword_help;
-    QHash<SteveInterpreter::INSTRUCTION, QString> instruction_help;
-    QHash<SteveInterpreter::CONDITION, QString> condition_help;
+    SteveHelp *help;
+
 };
 
 #endif // STEVEEDIT_H

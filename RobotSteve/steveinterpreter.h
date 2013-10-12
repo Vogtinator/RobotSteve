@@ -72,7 +72,6 @@ class SteveInterpreter : public QObject
     Q_ENUMS(CONDITION)
 
     friend class SteveHighlighter;
-    friend class SteveEdit;
 
 public:
     SteveInterpreter(World *world);
@@ -138,7 +137,7 @@ public:
         INSTR_QUIT,
         INSTR_TRUE,
         INSTR_FALSE,
-        INSTR_BREAKPOINT,
+        INSTR_BREAKPOINT
     };
 
     enum CONDITION {
@@ -153,18 +152,19 @@ public:
         COND_WEST
     };
 
+    KEYWORD getKeyword(QString string);
+    INSTRUCTION getInstruction(QString string);
+    CONDITION getCondition(QString string);
+    const QString &str(KEYWORD keyword);
+    const QString &str(INSTRUCTION instr);
+    const QString &str(CONDITION cond);
+
 private:
     void findAndThrowMissingBegin(int line, BLOCK block, const QString &affected = "") throw (SteveInterpreterException);
     bool handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException);
     bool handleInstruction(QString instruction_str) throw (SteveInterpreterException);
     bool isComment(const QString &s);
-    KEYWORD getKeyword(QString string);
-    INSTRUCTION getInstruction(QString string);
-    CONDITION getCondition(QString string);
     template <typename TOKEN> bool match(const QString &str, const TOKEN tok);
-    const QString &str(KEYWORD keyword);
-    const QString &str(INSTRUCTION instr);
-    const QString &str(CONDITION cond);
 
     //Structure chart generation
     void drawText(int x, int y, QPainter &painter, const QString &text);

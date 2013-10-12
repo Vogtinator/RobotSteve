@@ -19,8 +19,8 @@ void TextureAtlas::bind()
 {
     glBindTexture(GL_TEXTURE_2D, parent->bindTexture(pixmap, GL_TEXTURE_2D, GL_RGBA, QGLContext::MipmapBindOption));
 
-#ifdef Q_OS_LINUX
-    //This line causes white textures on windows and mac
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    //This line causes white textures with Qt 5, maybe a bug.
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 #endif
 }

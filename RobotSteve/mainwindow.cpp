@@ -16,7 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui{new Ui::MainWindow},
     world{5, 5, 5, this},
     interpreter{&world},
-    codeEdit{&interpreter, this},
+    help{&interpreter},
+    codeEdit{&help, this},
     save_shortcut(QKeySequence("Ctrl+S"), this)
 {
     //UI
@@ -33,6 +34,10 @@ MainWindow::MainWindow(QWidget *parent) :
     speed_slider->setMaximum(2000);
     speed_slider->setValue(500);
     ui->mainToolBar->addWidget(speed_slider);
+
+    //Help
+    if(!help.loadFile(":/help/help.xml"))
+        QMessageBox::critical(this, trUtf8("Fehler beim Laden"), trUtf8("Die Hilfe konnte nicht geladen werden."));
 
     //Editor
     QFont font;
@@ -81,6 +86,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionResetWorld, SIGNAL(triggered()), this, SLOT(resetWorld()));
     connect(ui->actionDefaultTexture, SIGNAL(triggered()), this, SLOT(loadDefaultTexture()));
     connect(ui->actionLoadTexture, SIGNAL(triggered()), this, SLOT(loadTexture()));
+    connect(ui->actionHelpDialog, SIGNAL(triggered()), this, SLOT(showHelpDialog()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
     connect(ui->actionAboutQt, SIGNAL(triggered()), this, SLOT(showAboutQt()));
 
@@ -100,21 +106,6 @@ MainWindow::MainWindow(QWidget *parent) :
     world.setPlayerTexture(settings.value("playerTexture", ":/textures/char.png").toString());
 
     showMessage(trUtf8("Hallo!"));
-
-    if(QCoreApplication::arguments().size() > 1)
-    {
-        QFileInfo file_info{QCoreApplication::arguments()[1]};
-
-        //Load world
-        //TODO: Load both by arguments
-        if(file_info.completeSuffix().compare("stworld", Qt::CaseInsensitive) == 0)
-        {
-            if(!world.loadFile(file_info.absoluteFilePath()))
-                QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
-        }
-        else //Load program
-            loadFile(file_info.absoluteFilePath());
-    }
 }
 
 MainWindow::~MainWindow()
@@ -212,7 +203,14 @@ void MainWindow::clockEvent()
 void MainWindow::switchViews(bool which)
 {
     if(code_changed)
-        setCode();
+    {
+        try {
+        setCode(); }
+        catch (SteveInterpreterException &e)
+        {
+            handleError(e);
+        }
+    }
 
     //If still changed, code is invalid
     if(code_changed)
@@ -362,7 +360,15 @@ void MainWindow::refreshButtons()
     ui->actionExamples->setDisabled(false);
 }
 
-void MainWindow::loadFile(QString path)
+void MainWindow::loadWorldFile(QString path)
+{
+    QFileInfo file_info{path};
+
+    if(!world.loadFile(file_info.absoluteFilePath()))
+        QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
+}
+
+void MainWindow::loadCodeFile(QString path)
 {
     QFile file{path};
     QFileInfo file_info{file};
@@ -382,8 +388,11 @@ void MainWindow::loadFile(QString path)
         handleError(e);
     }
 
-    save_file_name = path;
-    ui->actionSaveDirect->setDisabled(false);
+    if(!path.startsWith(":"))
+    {
+        save_file_name = path;
+        ui->actionSaveDirect->setDisabled(false);
+    }
     code_saved = true;
 }
 
@@ -401,7 +410,7 @@ void MainWindow::open()
 
     settings.setValue("lastOpenDir", file_info.absolutePath());
 
-    loadFile(filename);
+    loadCodeFile(filename);
 }
 
 void MainWindow::saveDirect()
@@ -470,8 +479,7 @@ void MainWindow::openWorld()
 
     settings.setValue("lastOpenWorldDir", file_info.absolutePath());
 
-    if(!world.loadFile(filename))
-        QMessageBox::critical(this, trUtf8("Fehler beim Öffnen"), trUtf8("Die Datei '%1' konnte nicht geöffnet werden!").arg(file_info.fileName()));
+    loadWorldFile(filename);
 
     refreshButtons();
 }
@@ -513,7 +521,7 @@ void MainWindow::loadExample(QString name, QString filename)
         return;
     }
 
-    loadFile(QString(":/examples/Examples/%1.steve").arg(filename));
+    loadCodeFile(QString(":/examples/Examples/%1.steve").arg(filename));
 
     code_saved = true;
     code_changed = false;
@@ -578,6 +586,11 @@ void MainWindow::closeEvent(QCloseEvent *e)
     }
 
     e->accept();
+}
+
+void MainWindow::showHelpDialog()
+{
+    help.showHelp();
 }
 
 void MainWindow::showAbout()

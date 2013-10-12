@@ -16,7 +16,7 @@ class SteveHighlighter : public QSyntaxHighlighter
     Q_OBJECT
 
 public:
-    SteveHighlighter(QPlainTextEdit *editor, SteveInterpreter *interpreter);
+    SteveHighlighter(QTextEdit *editor, SteveInterpreter *interpreter);
 
     void highlightBlock(const QString &text) override;
     void highlight(int line, const QTextCharFormat &format, const QString &what = "");
@@ -31,7 +31,7 @@ private:
     int highlight_line;
     QString highlight_str;
     SteveInterpreter *interpreter;
-    QPlainTextEdit *parent;
+    QTextEdit *parent;
     QTextCharFormat format[TOK_INSTRUCTION + 1], highlight_format;
 
 };

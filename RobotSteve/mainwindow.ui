@@ -10,6 +10,12 @@
     <height>428</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>500</width>
+    <height>250</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Robot Steve</string>
   </property>
@@ -22,7 +28,16 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
-    <property name="margin">
+    <property name="leftMargin">
+     <number>2</number>
+    </property>
+    <property name="topMargin">
+     <number>2</number>
+    </property>
+    <property name="rightMargin">
+     <number>2</number>
+    </property>
+    <property name="bottomMargin">
      <number>2</number>
     </property>
     <item>
@@ -209,7 +224,7 @@
      <x>0</x>
      <y>0</y>
      <width>815</width>
-     <height>20</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -246,6 +261,8 @@
     <property name="title">
      <string>Hilfe</string>
     </property>
+    <addaction name="actionHelpDialog"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
     <addaction name="actionAboutQt"/>
    </widget>
@@ -364,6 +381,11 @@
   <action name="actionAboutQt">
    <property name="text">
     <string>Über Qt</string>
+   </property>
+  </action>
+  <action name="actionHelpDialog">
+   <property name="text">
+    <string>Programmiersprache</string>
    </property>
   </action>
  </widget>

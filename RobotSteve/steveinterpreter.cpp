@@ -262,10 +262,10 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                     QRegExp validName("^(\\w|\\d)+$");
 
                     if(!validName.exactMatch(name))
-                        throw SteveInterpreterException{QObject::trUtf8("Die Bezeichnung %1 enthält ungültige Zeichen.").arg(name), current_line, name};
+                        throw SteveInterpreterException{QObject::trUtf8("Die Bezeichnung %1 enthält ungültige Zeichen.").arg(line[1]), current_line, line[1]};
 
                     if(getKeyword(name) != -1 || getInstruction(name) != -1 || getCondition(name) != -1)
-                        throw SteveInterpreterException{QObject::trUtf8("Die Bezeichnung %1 ist ein reserviertes Wort.").arg(name), current_line, name};
+                        throw SteveInterpreterException{QObject::trUtf8("Die Bezeichnung %1 ist ein reserviertes Wort.").arg(line[1]), current_line, line[1]};
 
                     auto &customSymbols = i.type == BLOCK_NEW_COND ? custom_conditions : custom_instructions;
                     if(customSymbols.contains(name))
@@ -1384,5 +1384,5 @@ QPixmap SteveInterpreter::structureChartOtherBlock(const StructureBlock &sb)
 //SteveInterpreterException
 const char* SteveInterpreterException::what()
 {
-    return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line).arg(error).toUtf8().data();
+    return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line).arg(error).toStdString().c_str();
 }

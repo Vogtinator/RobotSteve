@@ -24,7 +24,9 @@ SOURCES += main.cpp\
     stevehighlighter.cpp \
     examplesdialog.cpp \
     worlddialog.cpp \
-    steveedit.cpp
+    steveedit.cpp \
+    stevehelp.cpp \
+    helpdialog.cpp
 
 HEADERS  += mainwindow.h \
     world.h \
@@ -36,11 +38,14 @@ HEADERS  += mainwindow.h \
     stevehighlighter.h \
     examplesdialog.h \
     worlddialog.h \
-    steveedit.h
+    steveedit.h \
+    stevehelp.h \
+    helpdialog.h
 
 FORMS    += mainwindow.ui \
     examplesdialog.ui \
-    worlddialog.ui
+    worlddialog.ui \
+    helpdialog.ui
 
 RESOURCES += \
     resources.qrc
@@ -48,13 +53,13 @@ RESOURCES += \
 OTHER_FILES += \
     TODO.txt \
     Unterschiede.txt \
-    Beispiele.txt \
     RobotSteve.desktop \
     RobotSteve.spec \
     environment.png \
     char.png \
     RobotSteve.png \
     license.txt \
+    help.xml \
     Examples.xml \
     Examples/laufen.steve \
     Examples/laufen.stworld \

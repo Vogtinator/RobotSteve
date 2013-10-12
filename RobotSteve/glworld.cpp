@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <QApplication>
 #include <QMouseEvent>
 
 #include "glworld.h"
@@ -235,7 +236,9 @@ void GLWorld::initializeGL()
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(0, 0, 1, 0);
+
+    //Transparency effect
+    qglClearColor(qApp->palette().color(QPalette::Window));
 }
 
 void GLWorld::resizeGL(int w, int h)
@@ -321,7 +324,7 @@ void GLWorld::tick()
     current_anim_ticks++;
     anim_progress = (static_cast<float>(current_anim_ticks)) / static_cast<float>(anim_ticks[current_animation]);
 
-    if(current_anim_ticks == anim_ticks[current_animation])
+    if(current_anim_ticks == anim_ticks[current_animation] + 1)
         setAnimation(anim_next[current_animation]);
 }
 
@@ -374,7 +377,7 @@ void GLWorld::setAnimation(ANIMATION animation)
     player_rotY_from = player_rotY_target;
 
     //If previous animation didn't complete, skip it
-    if(anim_progress != 1.0f)
+    if(anim_progress < 1.0f)
     {
         player_body->setXPosition(player_posX_from);
         player_body->setYPosition(player_posY_from);

@@ -55,6 +55,7 @@ public slots:
     void loadDefaultTexture();
 
     //Menu "Help"
+    void showHelpDialog();
     void showAbout();
     void showAboutQt();
 
@@ -72,6 +73,8 @@ public slots:
     void textChanged();
     void refreshButtons();
     void loadExample(QString name, QString filename);
+    void loadWorldFile(QString path);
+    void loadCodeFile(QString path);
 
 protected:
     void closeEvent(QCloseEvent *e);
@@ -80,7 +83,6 @@ private:
     void handleError(SteveInterpreterException &e);
     bool startExecution() throw (SteveInterpreterException);
     void setCode() throw (SteveInterpreterException);
-    void loadFile(QString path);
     void showMessage(const QString &msg);
 
     float speed_ms;
@@ -95,6 +97,7 @@ private:
     SteveInterpreter interpreter;
     QStringList code;
     SteveHighlighter *highlighter;
+    SteveHelp help;
     QTextCharFormat current_line_format, error_format;
     WorldState saved_state;
     QSettings settings;

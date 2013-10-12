@@ -23,7 +23,7 @@ void GLQuad::draw()
     glRotatef(rotX, 1, 0, 0);
     glRotatef(rotZ, 0, 0, 1);
 
-    glTranslatef(-cenX, -cenZ, -cenZ);
+    glTranslatef(-cenX, -cenY, -cenZ);
 
     glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
     glNormalPointer(GL_FLOAT, 0, normals.constData());
