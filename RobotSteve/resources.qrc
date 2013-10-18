@@ -20,6 +20,8 @@
         <file>Examples/laufen2.stworld</file>
         <file>Examples/treppe.steve</file>
         <file>Examples/treppe.stworld</file>
+        <file>Examples/fibonacci.steve</file>
+        <file>Examples/fibonacci.stworld</file>
     </qresource>
     <qresource prefix="/help">
         <file>help.xml</file>

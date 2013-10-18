@@ -699,7 +699,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
     return;
 
     //Never called, handleInstruction throws it for us.
-    throw SteveInterpreterException(QObject::trUtf8("Ich hab` keine Ahnung, was %1 bedeutet :-(").arg(code[current_line]), current_line);
+    //throw SteveInterpreterException(QObject::trUtf8("Ich hab` keine Ahnung, was %1 bedeutet :-(").arg(code[current_line]), current_line);
 }
 
 int SteveInterpreter::getLine()
@@ -869,7 +869,7 @@ bool SteveInterpreter::deposit(World *world, bool has_param, int param)
         throw SteveInterpreterException(QObject::trUtf8("Steve steht vor einer Wand und weiß nicht, was er jetzt tun soll."), current_line);
 
     if(!world->deposit(param))
-        throw SteveInterpreterException(QObject::trUtf8("Maximale Höhe erreicht. Steve kann nicht höher heben."), current_line);
+        throw SteveInterpreterException(QObject::trUtf8("Maximale Höhe erreicht. Steve kann nicht höher heben, er hat einen Bandscheibenvorfall."), current_line);
 
     return true;
 }

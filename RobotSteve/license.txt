@@ -17,6 +17,6 @@ or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain Vie
 Commercial use (complete or in parts) of any file of this project is strictly forbidden!
 Every distributor MUST also have the source of this project AS WELL AS this license attached to an UNMODIFIED version of the compiled unmodified source!
 Custom installers for this software FORBIDDEN! Only exception to this rule are linux packages: .rpm and .deb!
-Distribution of modified source without mention of the author and what the changed are FORBIDDEN!
+Distribution of modified source without mention of the author and what the changes are FORBIDDEN!
 
 Icons by Yannick Lung: https://www.iconfinder.com/iconsets/freecns-cumulus

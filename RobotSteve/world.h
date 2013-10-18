@@ -26,7 +26,7 @@ enum ORIENTATION {
 
 struct WorldState {
     WorldState() {}
-    WorldState(Coords &steve, Size &size, ORIENTATION &orientation, unsigned int max_height, std::vector<std::vector<WorldObject> > &map)
+    WorldState(const Coords &steve, const Size &size, const ORIENTATION &orientation, unsigned int max_height, const std::vector<std::vector<WorldObject> > &map)
         : steve{steve}, size{size}, orientation{orientation}, max_height{max_height}, map{map} {}
 
     Coords steve;
@@ -62,27 +62,27 @@ public:
     virtual unsigned int getStackSize();
     virtual bool isMarked();
 
-    Size getSize() { return size; }
-    ORIENTATION getOrientation() { return orientation; }
-    int getX() { return steve.first; }
-    int getY() { return steve.second; }
-    unsigned int getMaxHeight() { return max_height; }
+    Size getSize() const { return size; }
+    ORIENTATION getOrientation() const { return orientation; }
+    unsigned int getX() const { return steve.first; }
+    unsigned int getY() const { return steve.second; }
+    WorldObject getObject(const Coords &pos) const { return map[pos.first][pos.second]; }
+    unsigned int getMaxHeight() const { return max_height; }
     void setMaxHeight(unsigned int max_height);
-    void dumpWorld();
-    WorldState getState();
+    void dumpWorld() const;
+    WorldState getState() const;
     virtual bool setState(WorldState &state);
-    bool saveFile(const QString &filename);
+    bool saveFile(const QString &filename) const;
     bool loadFile(const QString &filename);
     bool loadXML(const QString &xml);
     virtual bool loadXMLStream(QXmlStreamReader &file_reader);
 
-
     static constexpr Size maximum_size = {25, 25}, minimum_size = {3, 3};
 
 protected:
-    SignedCoords getForward();
+    SignedCoords getForward() const;
     void updateFront();
-    bool inBounds(SignedCoords &coords);
+    bool inBounds(SignedCoords &coords) const;
 
     const std::map<ORIENTATION,QString> orientation_str = {
         std::make_pair(ORIENT_NORTH, "north"),

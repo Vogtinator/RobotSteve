@@ -1,0 +1,76 @@
+// Steve verschiebt den Stapel vor ihm hinter ihn
+anweisung verschiebeStapel
+	solange ziegel
+		aufheben
+		rechtsdrehen(2)
+		hinlegen
+		rechtsdrehen(2)
+	*solange
+*anweisung
+
+// Schritt nach links
+anweisung nächstesFeld
+	linksdrehen
+	schritt
+	rechtsdrehen
+*anweisung
+
+// Steve addiert den Stapel vor ihm mit dem rechts daneben
+anweisung fibonacci
+	solange ziegel
+		aufheben
+		rechtsdrehen(2)
+		hinlegen
+		rechtsdrehen
+		schritt
+		linksdrehen
+		hinlegen
+		linksdrehen
+		schritt
+		linksdrehen
+	*solange	
+
+	//Stapel kopiert
+	rechtsdrehen(2)
+	verschiebeStapel
+	rechtsdrehen(2)
+
+	rechtsdrehen
+	schritt
+	linksdrehen
+
+	solange ziegel
+		aufheben
+		rechtsdrehen(2)
+		hinlegen
+		rechtsdrehen
+		schritt(2)
+		linksdrehen
+		hinlegen
+		linksdrehen
+		schritt(2)
+		linksdrehen
+	*solange
+
+	//Stapel kopiert
+	linksdrehen(2)
+	verschiebeStapel
+	linksdrehen(2)
+
+	nächstesFeld
+	nächstesFeld
+	rechtsdrehen(2)
+	verschiebeStapel
+	rechtsdrehen(2)
+*anweisung
+
+schritt
+//Feld [0] auf 0 lassen
+nächstesFeld
+// Feld [1] auf 1 setzen
+hinlegen
+
+// Feld [12] wäre > 100
+wiederhole 10 mal
+	fibonacci
+*wiederhole

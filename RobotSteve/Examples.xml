@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <examples>
     <example name="Laufen" filename="laufen">
-        <description>Karol läuft immer an der Wand entlang.</description>
+        <description>Steve läuft immer an der Wand entlang.</description>
     </example>
     <example name="Laufen2" filename="laufen2">
-        <description>Karol läuft rum. Bis er sich an der Wand anstößt. Ganz einfach.</description>
+        <description>Steve läuft rum. Bis er sich an der Wand anstößt. Ganz einfach.</description>
     </example>
     <example name="Treppe" filename="treppe">
-        <description>Karol baut eine Treppe bis zur Wand vor ihm.</description>
+        <description>Steve baut eine Treppe bis zur Wand vor ihm.</description>
+    </example>
+    <example name="Fibonacci" filename="fibonacci">
+        <description>Steve baut die Fibonacci-Reihe in Steinen nach.</description>
     </example>
 </examples>

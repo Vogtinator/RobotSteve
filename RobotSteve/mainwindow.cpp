@@ -14,10 +14,12 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow{parent},
     ui{new Ui::MainWindow},
+    speed_slider{Qt::Horizontal, this},
     world{5, 5, 5, this},
     interpreter{&world},
     help{&interpreter},
     codeEdit{&help, this},
+    highlighter{&codeEdit, &interpreter},
     save_shortcut(QKeySequence("Ctrl+S"), this)
 {
     //UI
@@ -29,11 +31,10 @@ MainWindow::MainWindow(QWidget *parent) :
     switchViews(false);
     ui->statusBar->addWidget(&status);
 
-    speed_slider = new QSlider(Qt::Horizontal, this);
-    speed_slider->setMinimum(0);
-    speed_slider->setMaximum(2000);
-    speed_slider->setValue(500);
-    ui->mainToolBar->addWidget(speed_slider);
+    speed_slider.setMinimum(0);
+    speed_slider.setMaximum(2000);
+    speed_slider.setValue(500);
+    ui->mainToolBar->addWidget(&speed_slider);
 
     //Help
     if(!help.loadFile(":/help/help.xml"))
@@ -58,18 +59,16 @@ MainWindow::MainWindow(QWidget *parent) :
     current_line_format.setBackground(Qt::yellow);
     current_line_format.setFontWeight(QFont::Bold);
 
-    highlighter = new SteveHighlighter{&codeEdit, &interpreter};
-
     //Miscellaneous
     clock.setSingleShot(true);
-    setSpeed(speed_slider->value());
+    setSpeed(speed_slider.value());
     refreshButtons();
 
     //Signals & Slots
     connect(ui->actionStarten, SIGNAL(triggered()), this, SLOT(runCode()));
     connect(ui->actionSchritt, SIGNAL(triggered()), this, SLOT(codeStep()));
     connect(ui->actionReset, SIGNAL(triggered()), this, SLOT(reset()));
-    connect(speed_slider, SIGNAL(sliderMoved(int)), this, SLOT(setSpeed(int)));
+    connect(&speed_slider, SIGNAL(sliderMoved(int)), this, SLOT(setSpeed(int)));
     connect(&clock, SIGNAL(timeout()), this, SLOT(clockEvent()));
     connect(ui->viewSwitch, SIGNAL(toggled(bool)), this, SLOT(switchViews(bool)));
     connect(&codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
@@ -113,7 +112,6 @@ MainWindow::~MainWindow()
     //Slight hack prevents crashing on destruct
     codeEdit.blockSignals(true);
     delete ui;
-    delete highlighter;
 }
 
 void MainWindow::runCode()
@@ -150,7 +148,7 @@ void MainWindow::handleError(SteveInterpreterException &e)
     std::cerr << e.what() << std::endl;
     showMessage(e.what());
 
-    highlighter->highlight(e.getLine(), error_format, e.getAffected());
+    highlighter.highlight(e.getLine(), error_format, e.getAffected());
 }
 
 void MainWindow::setSpeed(int ms)
@@ -177,20 +175,19 @@ void MainWindow::clockEvent()
         //(highlighting costs performance)
         int line = interpreter.getLine();
         if(speed_ms > 0 || !automatic)
-            highlighter->highlight(interpreter.getLine(), current_line_format);
+            highlighter.highlight(interpreter.getLine(), current_line_format);
 
         interpreter.executeLine();
 
         //After a breakpoint current line has to be highlighted
         if(interpreter.hitBreakpoint() && speed_ms == 0 && automatic)
-            highlighter->highlight(line, current_line_format);
+            highlighter.highlight(line, current_line_format);
 
         if(interpreter.executionFinished())
             stopExecution();
         else if(interpreter.hitBreakpoint())
             pauseExecution();
-
-        if(automatic)
+        else if(automatic)
             clock.start(speed_ms);
     }
     catch (SteveInterpreterException &e)
@@ -235,7 +232,7 @@ void MainWindow::switchViews(bool which)
 void MainWindow::textChanged()
 {
     //If user changes the code, the highlighting will no longer be valid
-    highlighter->resetHighlight();
+    highlighter.resetHighlight();
     code_changed = true;
     code_saved = false;
 }
@@ -280,7 +277,7 @@ void MainWindow::pauseExecution()
 void MainWindow::stopExecution()
 {
     clock.stop();
-    highlighter->resetHighlight();
+    highlighter.resetHighlight();
 
     codeEdit.setReadOnly(false);
 

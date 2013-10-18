@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <QApplication>
 #include <QMouseEvent>
 
@@ -41,87 +42,96 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
 
     const double m_per_px = 0.0579;
 
-    player_body = std::shared_ptr<GLBox>(new GLBox(8 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_body = std::make_shared<GLBox>(8 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                             4 * m_per_px, 0 * m_per_px, 2 * m_per_px,
                             player_atlas->getArea(20, 20, 8, 12), player_atlas->getArea(32, 20, 8, 12),
                             player_atlas->getArea(20, 16, 8, 4), player_atlas->getArea(28, 16, 8, 4),
-                            player_atlas->getArea(16, 20, 4, 12), player_atlas->getArea(28, 20, 4, 12)));
+                            player_atlas->getArea(16, 20, 4, 12), player_atlas->getArea(28, 20, 4, 12));
 
     player_body->setYRotation(player_rotY_from = 180);
     player_body->setYPosition(-1);
 
     //TODO: Mirror right arm + leg
 
-    player_arm_left = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_arm_left = std::make_shared<GLBox>(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                 2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
                                 player_atlas->getArea(44, 20, 4, 12), player_atlas->getArea(52, 20, 4, 12),
                                 player_atlas->getArea(44, 16, 4, 4), player_atlas->getArea(48, 16, 4, 4),
-                                player_atlas->getArea(48, 20, 4, 12), player_atlas->getArea(40, 20, 4, 12)));
+                                player_atlas->getArea(48, 20, 4, 12), player_atlas->getArea(40, 20, 4, 12));
 
     player_arm_left->setXPosition(-6 * m_per_px);
     player_arm_left->setYPosition(10 * m_per_px);
     player_arm_left->setZRotation(-5);
     player_body->addChild(player_arm_left);
 
-    player_arm_right = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_arm_right = std::make_shared<GLBox>(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                  2 * m_per_px, 10 * m_per_px, 2 * m_per_px,
                                  player_atlas->getArea(44, 20, 4, 12), player_atlas->getArea(52, 20, 4, 12),
                                  player_atlas->getArea(44, 16, 4, 4), player_atlas->getArea(48, 16, 4, 4),
-                                 player_atlas->getArea(40, 20, 4, 12), player_atlas->getArea(48, 20, 4, 12)));
+                                 player_atlas->getArea(40, 20, 4, 12), player_atlas->getArea(48, 20, 4, 12));
 
     player_arm_right->setXPosition(6 * m_per_px);
     player_arm_right->setYPosition(10 * m_per_px);
     player_arm_right->setZRotation(5);
     player_body->addChild(player_arm_right);
 
-    player_leg_left = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_leg_left = std::make_shared<GLBox>(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                  2 * m_per_px, 12 * m_per_px, 2 * m_per_px,
                                  player_atlas->getArea(4, 20, 4, 12), player_atlas->getArea(12, 20, 4, 12),
                                  player_atlas->getArea(4, 16, 4, 4), player_atlas->getArea(8, 16, 4, 4),
-                                 player_atlas->getArea(8, 20, 4, 12), player_atlas->getArea(0, 20, 4, 12)));
+                                 player_atlas->getArea(8, 20, 4, 12), player_atlas->getArea(0, 20, 4, 12));
 
     player_leg_left->setXPosition(-2 * m_per_px);
     player_leg_left->setZRotation(-5);
     player_body->addChild(player_leg_left);
 
-    player_leg_right = std::shared_ptr<GLBox>(new GLBox(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
+    player_leg_right = std::make_shared<GLBox>(4 * m_per_px, 12 * m_per_px, 4 * m_per_px,
                                  2 * m_per_px, 12 * m_per_px, 2 * m_per_px,
                                  player_atlas->getArea(4, 20, 4, 12), player_atlas->getArea(12, 20, 4, 12),
                                  player_atlas->getArea(4, 16, 4, 4), player_atlas->getArea(8, 16, 4, 4),
-                                 player_atlas->getArea(0, 20, 4, 12), player_atlas->getArea(8, 20, 4, 12)));
+                                 player_atlas->getArea(0, 20, 4, 12), player_atlas->getArea(8, 20, 4, 12));
 
     player_leg_right->setXPosition(2 * m_per_px);
     player_leg_right->setZRotation(5);
     player_body->addChild(player_leg_right);
 
-    player_head = std::shared_ptr<GLBox>(new GLBox(8 * m_per_px, 8 * m_per_px, 8 * m_per_px,
+    player_head = std::make_shared<GLBox>(8 * m_per_px, 8 * m_per_px, 8 * m_per_px,
                             4 * m_per_px, 0, 4 * m_per_px,
                             player_atlas->getArea(8, 8, 8, 8), player_atlas->getArea(24, 8, 8, 8),
                             player_atlas->getArea(8, 0, 8, 8), player_atlas->getArea(16, 0, 8, 8),
-                            player_atlas->getArea(0, 8, 8, 8), player_atlas->getArea(16, 8, 8, 8)));
+                            player_atlas->getArea(0, 8, 8, 8), player_atlas->getArea(16, 8, 8, 8));
 
     player_head->setYPosition(12 * m_per_px);
     player_body->addChild(player_head);
 
-    player_hat = std::shared_ptr<GLBox>(new GLBox(9 * m_per_px, 9 * m_per_px, 9 * m_per_px,
+    player_hat = std::make_shared<GLBox>(9 * m_per_px, 9 * m_per_px, 9 * m_per_px,
                            4.5 * m_per_px, 0.5 * m_per_px, 4.5 * m_per_px,
                            player_atlas->getArea(40, 8, 8, 8), player_atlas->getArea(56, 8, 8, 8),
                            player_atlas->getArea(40, 0, 8, 8), player_atlas->getArea(48, 0, 8, 8),
-                           player_atlas->getArea(32, 8, 8, 8), player_atlas->getArea(48, 8, 8, 8)));
+                           player_atlas->getArea(32, 8, 8, 8), player_atlas->getArea(48, 8, 8, 8));
 
     player_head->addChild(player_hat);
 
-    brick = std::shared_ptr<GLBox>(new GLBox(0.5, 0.5, 0.5,
+    brick_top = std::make_shared<GLBox>(0.5, 0.5, 0.5,
                                              0.25, 0, 0.25,
                                              environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8),
                                              environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8),
-                                             environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8)));
+                                             environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8),
+                                             true, true, true, false, true, true);
 
-    cube = std::shared_ptr<GLBox>(new GLBox(1, 1, 1,
+    brick_mid = std::make_shared<GLBox>(0.5, 0.5, 0.5,
+                                             0.25, 0, 0.25,
+                                             environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8),
+                                             environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8),
+                                             environment_atlas->getArea(48, 0, 8, 8), environment_atlas->getArea(48, 0, 8, 8),
+                                             true, true, false, false, true, true);
+
+    cube = std::make_shared<GLBox>(1, 1, 1,
                                             0.5, 0, 0.5,
                                             environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
                                             environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
-                                            environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16)));
+                                            environment_atlas->getArea(16, 0, 16, 16), environment_atlas->getArea(16, 0, 16, 16),
+                                            true, true, true, false, true, true);
 
     cube->setYPosition(-1.5); //Ground level
 
@@ -143,6 +153,8 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
 
     updateAnimationTarget();
 
+    updateCamera();
+
     setAnimation(ANIM_GREET1);
 }
 
@@ -160,13 +172,7 @@ void GLWorld::paintGL()
     glRotatef(camera_rotX, -1, 0, 0);
     glRotatef(camera_rotY, 0, -1, 0);
 
-    float radX = camera_rotX*(M_PI/180), radY = camera_rotY*(M_PI/180), cosradX = cos(radX);
-
-    double camera_x = camera_dist*(sin(radY) * cosradX) + World::size.first/2;
-    double camera_y = camera_dist*sin(radX-M_PI);
-    double camera_z = camera_dist*(cos(radY) * cosradX) + World::size.second/2;
-
-    glTranslated(-camera_x, -camera_y, -camera_z);
+    glTranslated(-camera_calX, -camera_calY, -camera_calZ);
 
     environment_atlas->bind();
 
@@ -209,14 +215,22 @@ void GLWorld::paintGL()
                 floor->draw();
             }
 
-            brick->setXPosition(x);
-            brick->setZPosition(z);
-
-            float brick_y = 0;
-            for(unsigned int height = 0; height < World::map[x][z].stack_size; height++, brick_y += 0.5)
+            if(obj.stack_size > 0)
             {
-                brick->setYPosition(brick_y - 1.5);
-                brick->draw();
+                brick_mid->setXPosition(x);
+                brick_mid->setZPosition(z);
+
+                float brick_y = -1.5;
+                for(unsigned int height = 0; height < obj.stack_size - 1; height++, brick_y += 0.5)
+                {
+                    brick_mid->setYPosition(brick_y);
+                    brick_mid->draw();
+                }
+
+                brick_top->setXPosition(x);
+                brick_top->setZPosition(z);
+                brick_top->setYPosition(brick_y);
+                brick_top->draw();
             }
         }
 
@@ -349,6 +363,8 @@ void GLWorld::mouseMoveEvent(QMouseEvent *event)
             camera_rotY -= 360;
         while(camera_rotY < 0)
             camera_rotY += 360;
+
+        updateCamera();
     }
 
     last_pos = event->pos();
@@ -362,9 +378,11 @@ void GLWorld::wheelEvent(QWheelEvent *event)
         camera_dist = 5;
     if(camera_dist > 50)
         camera_dist = 50;
+
+    updateCamera();
 }
 
-void GLWorld::setAnimation(ANIMATION animation)
+void GLWorld::setAnimation(ANIMATION animation, bool force_set)
 {
     if(speed_ms >= 500)
         speed_ms = 500;
@@ -377,7 +395,7 @@ void GLWorld::setAnimation(ANIMATION animation)
     player_rotY_from = player_rotY_target;
 
     //If previous animation didn't complete, skip it
-    if(anim_progress < 1.0f)
+    if(anim_progress < 1.0f || force_set)
     {
         player_body->setXPosition(player_posX_from);
         player_body->setYPosition(player_posY_from);
@@ -524,7 +542,7 @@ void GLWorld::drawWallZ()
     }
 }
 
-void GLWorld::updateAnimationTarget()
+void GLWorld::updateAnimationTarget(bool force_set)
 {
     switch(orientation)
     {
@@ -553,15 +571,25 @@ void GLWorld::updateAnimationTarget()
     player_posY_target = map[steve.first][steve.second].stack_size * 0.5 - 0.8;
 
     //tick not called
-    if(speed_ms == 0)
-        setAnimation(ANIM_STANDING); //Update state
+    if(speed_ms == 0 || force_set)
+        setAnimation(ANIM_STANDING, true); //Update state
+}
+
+void GLWorld::updateCamera()
+{
+    float radX = camera_rotX*(M_PI/180), radY = camera_rotY*(M_PI/180), cosradX = cos(radX);
+
+    camera_calX = camera_dist*(sin(radY) * cosradX) + World::size.first/2;
+    camera_calY = camera_dist*sin(radX-M_PI);
+    camera_calZ = camera_dist*(cos(radY) * cosradX) + World::size.second/2;
 }
 
 void GLWorld::reset()
 {
     World::reset();
-    updateAnimationTarget();
-    setAnimation(ANIM_STANDING);
+
+    updateCamera();
+    updateAnimationTarget(true);
 }
 
 bool GLWorld::setState(WorldState &state)
@@ -569,8 +597,8 @@ bool GLWorld::setState(WorldState &state)
     if(!World::setState(state))
         return false;
 
-    updateAnimationTarget();
-    setAnimation(ANIM_STANDING);
+    updateCamera();
+    updateAnimationTarget(true);
 
     return true;
 }
@@ -580,8 +608,19 @@ bool GLWorld::loadXMLStream(QXmlStreamReader &file_reader)
     if(!World::loadXMLStream(file_reader))
         return false;
 
-    updateAnimationTarget();
-    setAnimation(ANIM_STANDING);
+    updateCamera();
+    updateAnimationTarget(true);
+
+    return true;
+}
+
+bool GLWorld::resize(unsigned int width, unsigned int length)
+{
+    if(!World::resize(width, length))
+        return false;
+
+    updateCamera();
+    updateAnimationTarget(true);
 
     return true;
 }

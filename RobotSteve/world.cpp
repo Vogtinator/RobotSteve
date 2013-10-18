@@ -37,8 +37,15 @@ bool World::resize(unsigned int width, unsigned int length)
     size.first = width;
     size.second = length;
 
-    //We don't want Steve standing in a cube
-    reset();
+    if(steve.first >= width || steve.second >= length)
+    {
+        steve.first = 0;
+        steve.second = 0;
+
+        //We don't want Steve standing in a cube
+        if(map[0][0].has_cube)
+            reset();
+    }
 
     updateFront();
 
@@ -56,7 +63,7 @@ void World::reset()
     updateFront();
 }
 
-bool World::inBounds(SignedCoords &coords)
+bool World::inBounds(SignedCoords &coords) const
 {
     return coords.first >= 0 && coords.second >= 0 && static_cast<unsigned int>(coords.first) < size.first && static_cast<unsigned int>(coords.second) < size.second;
 }
@@ -160,7 +167,7 @@ bool World::setCube(bool b)
     return true;
 }
 
-SignedCoords World::getForward()
+SignedCoords World::getForward() const
 {
     switch(orientation)
     {
@@ -173,7 +180,7 @@ SignedCoords World::getForward()
     case ORIENT_WEST:
         return {-1, 0};
     default:
-        //throw std::string("Umm, something weird happened.");
+        Q_ASSERT(false);
         return {0, 0};
     }
 }
@@ -226,7 +233,7 @@ void World::updateFront()
         front_obj = &(map[front.first][front.second]);
 }
 
-void World::dumpWorld()
+void World::dumpWorld() const
 {
     std::cout << " ";
     for(unsigned int width = 0; width < size.first; width++)
@@ -244,7 +251,7 @@ void World::dumpWorld()
                 continue;
             }
 
-            WorldObject &obj = map[x][y];
+            const WorldObject &obj = map[x][y];
             if(obj.stack_size != 0)
             {
                 std::cout << obj.stack_size;
@@ -293,9 +300,10 @@ bool World::setState(WorldState &state)
     return true;
 }
 
-WorldState World::getState()
+WorldState World::getState() const
 {
-    return {steve, size, orientation, max_height, map};
+    //return {steve, size, orientation, max_height, map};
+    return WorldState(steve, size, orientation, max_height, map);
 }
 
 //TODO: If canceled midway, updateFront() should be called or state not saved at all
@@ -448,7 +456,7 @@ bool World::loadXML(const QString &xml)
     return loadXMLStream(file_reader);
 }
 
-bool World::saveFile(const QString &filename)
+bool World::saveFile(const QString &filename) const
 {
     QFile file{filename};
     if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))

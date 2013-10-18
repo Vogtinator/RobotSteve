@@ -1,7 +1,7 @@
 #include "stevehighlighter.h"
 
 SteveHighlighter::SteveHighlighter(QTextEdit *editor, SteveInterpreter *interpreter)
-    : QSyntaxHighlighter{editor->document()}, interpreter{interpreter}, parent{editor}
+    : QSyntaxHighlighter{editor->document()}, highlight_line{-1}, interpreter{interpreter}, parent{editor}
 {
     QTextCharFormat format;
 
@@ -81,6 +81,8 @@ void SteveHighlighter::highlightBlock(const QString &text)
 
             if(c.isSpace() || c == '(' || c == ')' || pos == line_str.length() - 1)
             {
+                current_token = current_token.toLower();
+
                 if(current_token.length() > 0 && !(pos >= highlight_start && pos <= highlight_end))
                 {
                     if(interpreter->getKeyword(current_token) != -1)

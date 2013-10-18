@@ -39,12 +39,12 @@ public:
     SteveFunction() : SteveFunction(0, 0, false) {}
 
     SteveFunction(SteveInterpreter *parent, SteveFunctionPtr function, bool has_param) : parent(parent), function(function), has_param(has_param) {}
-    bool hasParam() { return has_param; }
-    bool operator() (World *world, int param)
+    bool hasParam() const { return has_param; }
+    bool operator() (World *world, int param) const
     {
         return (parent->*function)(world, true, param);
     }
-    bool operator() (World *world)
+    bool operator() (World *world) const
     {
         return (parent->*function)(world, false, 1);
     }

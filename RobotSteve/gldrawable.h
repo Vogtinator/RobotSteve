@@ -27,17 +27,17 @@ public:
     virtual ~GLDrawable() {}
 
     void setXPosition(float x) { posX = x; }
-    float getXPosition() { return posX; }
+    float getXPosition() const { return posX; }
     void setYPosition(float y) { posY = y; }
-    float getYPosition() { return posY; }
+    float getYPosition() const { return posY; }
     void setZPosition(float z) { posZ = z; }
-    float getZPosition() { return posZ; }
+    float getZPosition() const { return posZ; }
     void setXRotation(float x) { rotX = x; }
-    float getXRotation() { return rotX; }
+    float getXRotation() const { return rotX; }
     void setYRotation(float y) { rotY = y; }
-    float getYRotation() { return rotY; }
+    float getYRotation() const { return rotY; }
     void setZRotation(float z) { rotZ = z; }
-    float getZRotation() { return rotZ; }
+    float getZRotation() const { return rotZ; }
 
     virtual void draw() = 0;
 

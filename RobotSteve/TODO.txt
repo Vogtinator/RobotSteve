@@ -3,7 +3,6 @@ Aktuelle Zeile im Struktogramm
 Selbstmord (Wand suchen, hochklettern und runterspringen)
 Tabs
 Automatisch einrücken
-Menü "Hilfe"
 Vergleiche: Ziegel > 5 oder Ziegel < 5
 Vielleicht andere Syntax: "vorne = wand" oder "rechts = ziegel"
 Stack Backtrace

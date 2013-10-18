@@ -64,7 +64,9 @@ OTHER_FILES += \
     Examples/laufen.steve \
     Examples/laufen.stworld \
     Examples/laufen2.steve \
-    Examples/laufen2.stworld
+    Examples/laufen2.stworld \
+    Examples/fibonacci.steve \
+    Examples/fibonacci.stworld
 
 target.path = /usr/bin
 desktop.path = /usr/share/applications
