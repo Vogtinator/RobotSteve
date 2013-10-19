@@ -120,6 +120,9 @@ void MainWindow::runCode()
     if(!automatic)
     {
         world.setSpeed(speed_ms);
+        if(speed_ms == 0)
+            highlighter.resetHighlight();
+
         ui->actionStarten->setText(QApplication::trUtf8("Stoppen"));
         ui->actionSchritt->setDisabled(true);
 
@@ -155,6 +158,8 @@ void MainWindow::setSpeed(int ms)
 {
     speed_ms = ms;
     world.setSpeed(ms);
+    if(automatic && ms == 0)
+        highlighter.resetHighlight();
 }
 
 void MainWindow::clockEvent()
@@ -269,6 +274,8 @@ void MainWindow::pauseExecution()
     showMessage(QApplication::trUtf8("Programm pausiert"));
     ui->actionStarten->setText(QApplication::trUtf8("Starten"));
     ui->actionSchritt->setEnabled(true);
+
+    highlighter.highlight(interpreter.getLine(), current_line_format);
 
     refreshButtons();
 }
