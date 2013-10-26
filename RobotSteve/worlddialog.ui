@@ -135,6 +135,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>widthSpinBox</tabstop>
+  <tabstop>lengthSpinBox</tabstop>
+  <tabstop>maxHeightSpinBox</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

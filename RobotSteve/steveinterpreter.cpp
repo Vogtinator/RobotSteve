@@ -527,7 +527,6 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
                 if(coming_from_repeat_end)
                 {
                     loop_count.top()--;
-                    coming_from_repeat_end = false;
                     int count = loop_count.top();
                     if(count <= 0)
                     {
@@ -536,28 +535,32 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
                     }
                     else
                         current_line++;
-
-                    return;
                 }
-
-                bool is_numeric;
-                int count = line[1].toInt(&is_numeric);
-                if(!is_numeric)
-                    throw SteveInterpreterException(QObject::trUtf8("%1 ist keine Zahl.").arg(line[1]), current_line, line[1]);
-
-                if(count < 0 || count > 9999)
-                    throw SteveInterpreterException(QObject::trUtf8("Die Zahl muss >= 0 und kleiner als 10000 sein."), current_line, line[1]);
-                else if(count == 0)
+                else
                 {
-                    current_line = branches[current_line] + 1;
-                    return;
-                }
+                    bool is_numeric;
+                    int count = line[1].toInt(&is_numeric);
+                    if(!is_numeric)
+                        throw SteveInterpreterException(QObject::trUtf8("%1 ist keine Zahl.").arg(line[1]), current_line, line[1]);
 
-                loop_count.push(count);
-                current_line++;
+                    if(count < 0 || count > 9999)
+                        throw SteveInterpreterException(QObject::trUtf8("Die Zahl muss >= 0 und kleiner als 10000 sein."), current_line, line[1]);
+                    else if(count == 0)
+                    {
+                        current_line = branches[current_line] + 1;
+                        return;
+                    }
+                    else
+                    {
+                        loop_count.push(count);
+                        current_line++;
+                    }
+                }
             }
             else
             {
+                coming_from_repeat_end = false; //Slight hack
+
                 bool result;
                 if(coming_from_condition)
                 {
@@ -576,6 +579,8 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
                 else
                     current_line = branches[current_line] + 1;
             }
+
+            coming_from_repeat_end = false;
             return;
         }
         case KEYWORD_REPEAT_END:
@@ -590,7 +595,10 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
                 bool result;
                 if(coming_from_condition)
+                {
                     result = custom_condition_return_stack.pop();
+                    coming_from_condition = false;
+                }
                 else
                 {
                     //If not handled, it means current_line is set to the beginning of a custom condition
@@ -869,7 +877,7 @@ bool SteveInterpreter::deposit(World *world, bool has_param, int param)
         throw SteveInterpreterException(QObject::trUtf8("Steve steht vor einer Wand und weiß nicht, was er jetzt tun soll."), current_line);
 
     if(!world->deposit(param))
-        throw SteveInterpreterException(QObject::trUtf8("Maximale Höhe erreicht. Steve kann nicht höher heben, er hat einen Bandscheibenvorfall."), current_line);
+        throw SteveInterpreterException(QObject::trUtf8("Maximale Höhe erreicht.\nSteve kann nicht höher heben, er hat einen Bandscheibenvorfall."), current_line);
 
     return true;
 }
@@ -1382,7 +1390,7 @@ QPixmap SteveInterpreter::structureChartOtherBlock(const StructureBlock &sb)
 }
 
 //SteveInterpreterException
-const char* SteveInterpreterException::what()
+QString SteveInterpreterException::what()
 {
-    return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line).arg(error).toStdString().c_str();
+    return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line).arg(error);
 }

@@ -22,7 +22,7 @@ public:
     const QString &getAffected() { return affected; }
     int getLine() { return line; }
 
-    const char* what();
+    QString what();
 
 private:
 

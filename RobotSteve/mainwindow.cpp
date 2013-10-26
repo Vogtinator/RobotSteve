@@ -148,7 +148,7 @@ void MainWindow::codeStep()
 
 void MainWindow::handleError(SteveInterpreterException &e)
 {
-    std::cerr << e.what() << std::endl;
+    std::cerr << e.what().toStdString() << std::endl;
     showMessage(e.what());
 
     highlighter.highlight(e.getLine(), error_format, e.getAffected());
@@ -180,13 +180,13 @@ void MainWindow::clockEvent()
         //(highlighting costs performance)
         int line = interpreter.getLine();
         if(speed_ms > 0 || !automatic)
-            highlighter.highlight(interpreter.getLine(), current_line_format);
+            highlighter.highlight(line, current_line_format);
 
         interpreter.executeLine();
 
         //After a breakpoint current line has to be highlighted
         if(interpreter.hitBreakpoint() && speed_ms == 0 && automatic)
-            highlighter.highlight(line, current_line_format);
+            highlighter.highlight(interpreter.getLine(), current_line_format);
 
         if(interpreter.executionFinished())
             stopExecution();
