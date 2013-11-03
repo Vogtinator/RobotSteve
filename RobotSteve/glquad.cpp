@@ -25,6 +25,8 @@ void GLQuad::draw()
 
     glTranslatef(-cenX, -cenY, -cenZ);
 
+    glColor4f(color.redF(), color.greenF(), color.blueF(), color.alphaF());
+
     glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
     glNormalPointer(GL_FLOAT, 0, normals.constData());
     glTexCoordPointer(2, GL_FLOAT, 0, tex_coords.constData());

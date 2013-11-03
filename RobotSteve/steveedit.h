@@ -1,7 +1,8 @@
 #ifndef STEVEEDIT_H
 #define STEVEEDIT_H
 
-#include <QPlainTextEdit>
+#include <QTextEdit>
+#include <QCompleter>
 
 #include "steveinterpreter.h"
 #include "stevehelp.h"
@@ -16,8 +17,14 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *e);
 
+private slots:
+    void insertCompletion(const QString& completion);
+
 private:
+    QString currentWord();
+
     SteveHelp *help;
+    QCompleter completer;
 
 };
 

@@ -3,6 +3,9 @@
 #include <memory>
 #include <QApplication>
 #include <QMouseEvent>
+#include <QToolTip>
+#include <QMenu>
+#include <QInputDialog>
 
 #include "glworld.h"
 
@@ -17,6 +20,8 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
     camera_rotY{15},
     camera_dist{8}
 {
+    setMouseTracking(true);
+
     anim_ticks.insert(ANIM_STANDING, 1);
     anim_ticks.insert(ANIM_STEP, 100);
     anim_ticks.insert(ANIM_BUMP, 100);
@@ -149,7 +154,7 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
 
     connect(&tick_timer, SIGNAL(timeout()), this, SLOT(tick()));
     connect(&refresh_timer, SIGNAL(timeout()), this, SLOT(updateGL()));
-    refresh_timer.start(1000/30);
+    refresh_timer.start(1000/30); //30 fps
 
     updateAnimationTarget();
 
@@ -160,12 +165,29 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
 
 void GLWorld::paintGL()
 {
+    if(fbo_dirty)
+    {
+        glClearColor(1, 1, 1, 1);
+        fbo = std::unique_ptr<QGLFramebufferObject>(new QGLFramebufferObject(QGLWidget::size().width(), QGLWidget::size().height(), QGLFramebufferObject::Depth));
+        if(!fbo->hasOpenGLFramebufferObjects())
+        {
+            //Not supported
+            fbo_dirty = false;
+            return;
+        }
+        fbo->bind();
+    }
+    else
+        qglClearColor(qApp->palette().color(QPalette::Window)); //Transparency effect
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glEnable(GL_CULL_FACE);
 
     glPushMatrix();
 
@@ -174,27 +196,46 @@ void GLWorld::paintGL()
 
     glTranslated(-camera_calX, -camera_calY, -camera_calZ);
 
-    environment_atlas->bind();
+    if(fbo_dirty)
+        glDisable(GL_TEXTURE_2D);
 
-    glEnable(GL_CULL_FACE);
+    else
+    {
+        glEnable(GL_TEXTURE_2D);
+        environment_atlas->bind();
 
-    wall->setYRotation(0);
-    wall->setZPosition(0);
-    drawWallX();
-    wall->setYRotation(180);
-    wall->setZPosition(World::size.second-1);
-    drawWallX();
+        wall->setYRotation(0);
+        wall->setZPosition(0);
+        drawWallX();
+        wall->setYRotation(180);
+        wall->setZPosition(World::size.second - 1);
+        drawWallX();
 
-    wall->setYRotation(90);
-    wall->setXPosition(0);
-    drawWallZ();
-    wall->setYRotation(270);
-    wall->setXPosition(World::size.first - 1);
-    drawWallZ();
+        wall->setYRotation(90);
+        wall->setXPosition(0);
+        drawWallZ();
+        wall->setYRotation(270);
+        wall->setXPosition(World::size.first - 1);
+        drawWallZ();
+    }
 
     for(unsigned int x = 0; x < World::size.first; x++)
         for(unsigned int z = 0; z < World::size.second; z++)
         {
+            QColor floor_color = QColor(Qt::white).darker(150);
+            if(fbo_dirty)
+            {
+                floor_color.setRed(x);
+                floor_color.setGreen(z);
+                floor_color.setBlue(0);
+            }
+            else if(current_selection.type == TYPE_NOTHING || (current_selection.x == x && current_selection.y == z))
+                floor_color = Qt::white; //Highlight current selection or everything if there is no selection
+
+            marked_floor->getColor() = floor_color;
+            cube->getColor() = floor_color;
+            floor->getColor() = floor_color;
+
             WorldObject &obj = map[x][z];
             if(obj.has_mark)
             {
@@ -221,12 +262,21 @@ void GLWorld::paintGL()
                 brick_mid->setZPosition(z);
 
                 float brick_y = -1.5;
-                for(unsigned int height = 0; height < obj.stack_size - 1; height++, brick_y += 0.5)
+                unsigned int height = 0;
+                for(; height < obj.stack_size - 1; height++, brick_y += 0.5)
                 {
+                    if(fbo_dirty)
+                        floor_color.setBlue(height + 1);
+
+                    brick_mid->getColor() = floor_color;
                     brick_mid->setYPosition(brick_y);
                     brick_mid->draw();
                 }
 
+                if(fbo_dirty)
+                    floor_color.setBlue(height + 1);
+
+                brick_top->getColor() = floor_color;
                 brick_top->setXPosition(x);
                 brick_top->setZPosition(z);
                 brick_top->setYPosition(brick_y);
@@ -234,12 +284,25 @@ void GLWorld::paintGL()
             }
         }
 
-    glDisable(GL_CULL_FACE);
+    if(!fbo_dirty)
+    {
+        glDisable(GL_CULL_FACE);
 
-    player_atlas->bind();
-    player_body->draw();
+        player_atlas->bind();
+        player_body->draw();
+    }
 
     glPopMatrix();
+
+    if(fbo_dirty)
+    {
+        fbo->release();
+        click_image = fbo->toImage();
+
+        //Render to the screen next time
+        fbo_dirty = false;
+        //paintGL(); Half frame rate if fbo_dirty. Feels much faster.
+    }
 }
 
 void GLWorld::initializeGL()
@@ -250,9 +313,6 @@ void GLWorld::initializeGL()
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    //Transparency effect
-    qglClearColor(qApp->palette().color(QPalette::Window));
 }
 
 void GLWorld::resizeGL(int w, int h)
@@ -266,6 +326,7 @@ void GLWorld::resizeGL(int w, int h)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    fbo_dirty = true;
 }
 
 void GLWorld::setPlayerTexture(const QString &filename)
@@ -345,11 +406,106 @@ void GLWorld::tick()
 void GLWorld::mousePressEvent(QMouseEvent *event)
 {
     last_pos = event->pos();
+
+    if(event->buttons() & Qt::RightButton && current_selection.type != TYPE_NOTHING && editable)
+    {
+        WorldObject &here = map[current_selection.x][current_selection.y];
+        QPoint pos = mapToGlobal(event->pos());
+
+        QMenu menu;
+        QAction steve_here(trUtf8("Steve hierher teleportieren"), &menu);
+        steve_here.setDisabled(here.has_cube || (current_selection.x == steve.first && current_selection.y == steve.second));
+        menu.addAction(&steve_here);
+
+        QAction cube_here(trUtf8("Würfel"), &menu);
+        cube_here.setCheckable(true);
+        cube_here.setChecked(here.has_cube);
+        menu.addAction(&cube_here);
+
+        QAction stack_here(trUtf8("Stapel"), &menu);
+        stack_here.setCheckable(true);
+        if(here.stack_size > 0)
+        {
+            stack_here.setChecked(true);
+            stack_here.setText(trUtf8("Stapel (%1)").arg(here.stack_size));
+        }
+        menu.addAction(&stack_here);
+
+        QAction mark_here(trUtf8("Markierung"), &menu);
+        mark_here.setCheckable(true);
+        mark_here.setChecked(here.has_mark);
+        menu.addAction(&mark_here);
+
+        QAction *selected = menu.exec(pos);
+        if(selected == &steve_here)
+        {
+            steve.first = current_selection.x;
+            steve.second = current_selection.y;
+
+            setAnimation(ANIM_STEP);
+            updateAnimationTarget();
+            updateFront();
+
+            fbo_dirty = true;
+        }
+        else if(selected == &cube_here)
+        {
+            if(here.has_cube)
+                here.has_cube = false;
+            else
+            {
+                here.stack_size = 0;
+                here.has_mark = false;
+                here.has_cube = true;
+            }
+
+            fbo_dirty = true;
+
+            emit changed();
+        }
+        else if(selected == &stack_here)
+        {
+            bool ok;
+            int s = QInputDialog::getInteger(this, trUtf8("Stapelhöhe"), trUtf8("Stapelhöhe auswählen:"), here.stack_size, 0, World::max_height, 1, &ok);
+            if(ok)
+            {
+                if(s > 0)
+                    here.has_cube = false;
+
+                here.stack_size = s;
+
+                fbo_dirty = true;
+
+                emit changed();
+            }
+        }
+        else if(selected == &mark_here)
+        {
+            if(here.has_mark)
+                here.has_mark = false;
+            else
+            {
+                here.has_mark = true;
+                here.has_cube = false;
+            }
+
+            fbo_dirty = true;
+
+            emit changed();
+        }
+
+        updateSelection();
+    }
 }
 
 void GLWorld::mouseMoveEvent(QMouseEvent *event)
 {
-    if (event->buttons() & (Qt::LeftButton | Qt::RightButton))
+    updateSelection(event->pos());
+
+    if(current_selection.type == TYPE_BRICK)
+        QToolTip::showText(QCursor::pos(), trUtf8("Höhe: %1").arg(map[current_selection.x][current_selection.y].stack_size), this);
+
+    if (event->buttons() & Qt::LeftButton)
     {
         camera_rotX -= 0.1 * (event->y() - last_pos.y());
         camera_rotY -= 0.1 * (event->x() - last_pos.x());
@@ -368,6 +524,39 @@ void GLWorld::mouseMoveEvent(QMouseEvent *event)
     }
 
     last_pos = event->pos();
+}
+
+void GLWorld::updateSelection(QPoint pos)
+{
+    if(pos.x() < 0 || pos.y() < 0 || pos.x() >= click_image.width() || pos.y() >= click_image.height())
+        current_selection.type = TYPE_NOTHING;
+    else
+    {
+        QColor click_image_color = QColor(click_image.pixel(pos));
+        if(click_image_color.blue() == 255)
+            current_selection.type = TYPE_NOTHING;
+        else
+        {
+            current_selection.x = click_image_color.red();
+            current_selection.y = click_image_color.green();
+            current_selection.h = click_image_color.blue();
+            if(current_selection.h == 0)
+                current_selection.type = TYPE_FLOOR;
+            else
+            {
+                current_selection.type = TYPE_BRICK;
+                current_selection.h -= 1;
+            }
+        }
+    }
+
+    if(current_selection.type != TYPE_BRICK)
+        QToolTip::hideText(); //Slight hack to prevent display of stack height without selection
+}
+
+void GLWorld::updateSelection()
+{
+    updateSelection(mapFromGlobal(QCursor::pos()));
 }
 
 void GLWorld::wheelEvent(QWheelEvent *event)
@@ -425,6 +614,22 @@ void GLWorld::setAnimation(ANIMATION animation, bool force_set)
     anim_progress = 0;
 }
 
+void GLWorld::setVisible(bool visible)
+{
+    if(visible)
+    {
+        refresh_timer.start();
+        tick_timer.start();
+    }
+    else
+    {
+        refresh_timer.stop();
+        tick_timer.stop();
+    }
+
+    QGLWidget::setVisible(visible);
+}
+
 bool GLWorld::stepForward()
 {
     if(!World::stepForward())
@@ -439,6 +644,8 @@ bool GLWorld::stepForward()
     setAnimation(ANIM_STEP);
     updateAnimationTarget();
 
+    emit changed();
+
     return true;
 }
 
@@ -447,6 +654,8 @@ void GLWorld::turnRight(int quarters)
     World::turnRight(quarters);
     setAnimation(ANIM_TURN);
     updateAnimationTarget();
+
+    emit changed();
 }
 
 void GLWorld::turnLeft(int quarters)
@@ -454,12 +663,16 @@ void GLWorld::turnLeft(int quarters)
     World::turnLeft(quarters);
     setAnimation(ANIM_TURN);
     updateAnimationTarget();
+
+    emit changed();
 }
 
 void GLWorld::setMark(bool b)
 {
     World::setMark(b);
     setAnimation(ANIM_BEND);
+
+    emit changed();
 }
 
 bool GLWorld::setCube(bool b)
@@ -468,6 +681,8 @@ bool GLWorld::setCube(bool b)
         return false;
 
     setAnimation(ANIM_BEND);
+
+    emit changed();
 
     return true;
 }
@@ -488,6 +703,10 @@ bool GLWorld::deposit(unsigned int count)
     else
         setAnimation(ANIM_BEND);
 
+    fbo_dirty = true;
+
+    emit changed();
+
     return true;
 }
 
@@ -506,6 +725,10 @@ bool GLWorld::pickup(unsigned int count)
         setAnimation(ANIM_DEPOSIT_FLY);
     else
         setAnimation(ANIM_BEND);
+
+    fbo_dirty = true;
+
+    emit changed();
 
     return true;
 }
@@ -582,6 +805,8 @@ void GLWorld::updateCamera()
     camera_calX = camera_dist*(sin(radY) * cosradX) + World::size.first/2;
     camera_calY = camera_dist*sin(radX-M_PI);
     camera_calZ = camera_dist*(cos(radY) * cosradX) + World::size.second/2;
+
+    fbo_dirty = true;
 }
 
 void GLWorld::reset()
@@ -590,6 +815,10 @@ void GLWorld::reset()
 
     updateCamera();
     updateAnimationTarget(true);
+
+    fbo_dirty = true;
+
+    emit changed();
 }
 
 bool GLWorld::setState(WorldState &state)
@@ -599,6 +828,8 @@ bool GLWorld::setState(WorldState &state)
 
     updateCamera();
     updateAnimationTarget(true);
+
+    emit changed();
 
     return true;
 }
@@ -611,6 +842,8 @@ bool GLWorld::loadXMLStream(QXmlStreamReader &file_reader)
     updateCamera();
     updateAnimationTarget(true);
 
+    emit changed();
+
     return true;
 }
 
@@ -622,5 +855,21 @@ bool GLWorld::resize(unsigned int width, unsigned int length)
     updateCamera();
     updateAnimationTarget(true);
 
+    emit changed();
+
     return true;
+}
+
+void GLWorld::updateFront()
+{
+    World::updateFront();
+    emit changed();
+}
+
+void GLWorld::setMaxHeight(unsigned int max_height)
+{
+    World::setMaxHeight(max_height);
+
+    fbo_dirty = true;
+    emit changed();
 }

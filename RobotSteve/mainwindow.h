@@ -40,8 +40,8 @@ public slots:
 
     //Menu "File"
     void open();
-    void saveDirect();
-    void save();
+    void saveDirectly();
+    void saveChooseLocation();
     void showExamples();
 
     //Menu "World"

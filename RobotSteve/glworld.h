@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QHash>
 #include <QXmlStreamReader>
+#include <QGLFramebufferObject>
 
 #include "world.h"
 #include "glbox.h"
@@ -21,6 +22,19 @@ enum ANIMATION {
     ANIM_TURN,
     ANIM_BEND,
     ANIM_DEPOSIT_FLY
+};
+
+enum SELECTION_TYPE {
+    TYPE_NOTHING,
+    TYPE_FLOOR,
+    TYPE_BRICK
+};
+
+struct Selection {
+    SELECTION_TYPE type;
+    unsigned int x;
+    unsigned int y;
+    unsigned int h;
 };
 
 class GLWorld : public QGLWidget, public World
@@ -41,6 +55,7 @@ public:
     bool setState(WorldState &state) override;
     bool loadXMLStream(QXmlStreamReader &file_reader) override;
     void setPlayerTexture(const QString &filename);
+    bool isEditable() const { return editable; }
 
 protected:
     void paintGL();
@@ -50,10 +65,19 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void wheelEvent(QWheelEvent *event);
     void setAnimation(ANIMATION animation, bool force_set = false);
+    void updateFront();
 
 public slots:
     void tick();
     void setSpeed(float ms) { speed_ms = ms; }
+    void setVisible(bool visible) override;
+    void setEditable(bool editable) { this->editable = editable; }
+    void setMaxHeight(unsigned int max_height) override;
+    void updateSelection(QPoint pos);
+    void updateSelection();
+
+signals:
+    void changed();
     
 private:
     void drawWallX();
@@ -61,9 +85,14 @@ private:
     void updateAnimationTarget(bool force_set = false);
     void updateCamera();
 
+    std::unique_ptr<QGLFramebufferObject> fbo; //To find out what the user clicked on
+    bool fbo_dirty = true; //Whether to redraw click_image
+    QImage click_image; //Color coded version of the rendered image
+    bool editable = true; //Whether the user is allowed to edit the world using the context menu
+    Selection current_selection{TYPE_NOTHING, 0, 0, 0};
     QTimer tick_timer, refresh_timer;
     std::unique_ptr<TextureAtlas> player_atlas, environment_atlas;
-    QPoint last_pos;
+    QPoint last_pos; //Last mouse position to compute camera rotation
     float camera_rotX, camera_rotY, camera_dist, camera_calX, camera_calY, camera_calZ;
     std::shared_ptr<GLBox> player_body, player_head, player_hat, player_leg_left, player_leg_right, player_arm_left, player_arm_right, brick_top, brick_mid, cube;
     std::unique_ptr<GLQuad> wall, floor, marked_floor;

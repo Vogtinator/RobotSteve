@@ -9,7 +9,6 @@ HelpDialog::HelpDialog(QString html, SteveInterpreter *interpreter, QWidget *par
 
     ui->textEdit->setHtml(html);
     highlighter = new SteveHighlighter(ui->textEdit, interpreter);
-
 }
 
 HelpDialog::~HelpDialog()

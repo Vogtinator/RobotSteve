@@ -2,13 +2,22 @@
 #include <QFile>
 #include <QMetaEnum>
 #include <QTextDocument>
+#include <QMessageBox>
 
 #include "stevehelp.h"
 #include "helpdialog.h"
 
 SteveHelp::SteveHelp(SteveInterpreter *interpreter)
     : interpreter{interpreter}
-{}
+{
+}
+
+SteveHelp::SteveHelp(SteveInterpreter *interpreter, QString path)
+    : interpreter{interpreter}
+{
+    if(!loadFile(path))
+        QMessageBox::critical(nullptr, QObject::trUtf8("Fehler beim Laden"), QObject::trUtf8("Die Hilfe konnte nicht geladen werden."));
+}
 
 bool SteveHelp::loadFile(QString path)
 {
@@ -86,6 +95,15 @@ bool SteveHelp::loadFile(QString path)
             }
         }
     }
+
+    //Fill word_list
+    int i;
+    for(i = 0; i < keyword_meta.keyCount(); i++)
+        word_list << interpreter->str(static_cast<SteveInterpreter::KEYWORD>(keyword_meta.value(i)));
+    for(i = 0; i < instruction_meta.keyCount(); i++)
+        word_list << interpreter->str(static_cast<SteveInterpreter::INSTRUCTION>(instruction_meta.value(i)));
+    for(i = 0; i < condition_meta.keyCount(); i++)
+        word_list << interpreter->str(static_cast<SteveInterpreter::CONDITION>(condition_meta.value(i)));
 
     return true;
 }

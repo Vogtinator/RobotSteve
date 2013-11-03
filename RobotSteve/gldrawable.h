@@ -4,10 +4,10 @@
 #include <QGLWidget>
 
 struct TextureAtlasEntry {
-        float left;
-        float top;
-        float right;
-        float bottom;
+    float left;
+    float top;
+    float right;
+    float bottom;
 };
 
 class TextureAtlas {
@@ -38,12 +38,14 @@ public:
     float getYRotation() const { return rotY; }
     void setZRotation(float z) { rotZ = z; }
     float getZRotation() const { return rotZ; }
+    QColor &getColor() { return color; }
 
     virtual void draw() = 0;
 
 protected:
     float posX = 0, posY = 0, posZ = 0;
     float rotX = 0, rotY = 0, rotZ = 0;
+    QColor color{Qt::white};
 };
 
 #endif // GLDRAWABLE_H

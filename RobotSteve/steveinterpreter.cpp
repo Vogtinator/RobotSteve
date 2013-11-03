@@ -11,7 +11,6 @@
 
 #include "steveinterpreter.h"
 
-
 #define DEFAULT_BLOCK_KEYWORDS(name) { .begin = SteveInterpreter::KEYWORD_##name, \
         .end = SteveInterpreter::KEYWORD_##name##_END, \
         .type = BLOCK_##name, \
@@ -143,7 +142,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
             for(int i = 0; i < block_types.size(); i++)
             {
                 BLOCK b = block_types.at(block_types.size() - 1 - i);
-                if(b == BLOCK_REPEAT || b == BLOCK_WHILE || (b == BLOCK_NEW_INSTR && keyword == KEYWORD_BREAK))
+                if(b == BLOCK_REPEAT || b == BLOCK_WHILE || ((b == BLOCK_NEW_COND || b == BLOCK_NEW_INSTR) && keyword == KEYWORD_BREAK))
                 {
                     line = branch_entrys.at(branch_entrys.size() - 1 - i);
                     type = b;
@@ -154,15 +153,17 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
 
             //No REPEAT, WHILE or NEW_INSTR found
             if(line == -1)
-                throw SteveInterpreterException(QObject::trUtf8("%1 nur in %2, %3 und %4s-Blöcken erlaubt.").arg(str(keyword)).arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_REPEAT)).arg(str(KEYWORD_NEW_INSTR)), current_line);
+            {
+                if(keyword == KEYWORD_BREAK)
+                    throw SteveInterpreterException(QObject::trUtf8("%1 nur in %2, %3, %4 und %5-Blöcken erlaubt.").arg(str(KEYWORD_BREAK)).arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_REPEAT)).arg(str(KEYWORD_NEW_INSTR)).arg(str(KEYWORD_NEW_COND)), current_line);
+                else if(keyword == KEYWORD_CONTINUE)
+                    throw SteveInterpreterException(QObject::trUtf8("%1 nur in %2 und %3-Blöcken erlaubt.").arg(str(KEYWORD_CONTINUE)).arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_REPEAT)), current_line);
+            }
 
             if(type == BLOCK_REPEAT || type == BLOCK_WHILE)
                 branches[current_line] = line;
             else
                 branches[current_line] = line - 1;
-
-            if(keyword == KEYWORD_BREAK)
-                branches[current_line] += 1;
         }
         else if(keyword == KEYWORD_ELSE)
         {
@@ -318,7 +319,7 @@ void SteveInterpreter::reset()
     stack.clear();
     loop_count.clear();
     custom_condition_return_stack.clear();
-    coming_from_condition = coming_from_repeat_end = enter_sub = enter_else = execution_finished = hit_breakpoint = false;
+    coming_from_condition = coming_from_repeat_end = coming_from_break = enter_sub = enter_else = execution_finished = hit_breakpoint = false;
 }
 
 bool SteveInterpreter::handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException)
@@ -503,23 +504,30 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
         case KEYWORD_REPEAT:
         {
-            if(line.size() == 1)
-            {
-                current_line++;
-                return;
-            }
-
+            bool repeat_no_condition = line.size() == 1;
             bool repeat_always = line.size() == 2 && match(line[1], COND_ALWAYS);
             bool repeat_count = line.size() == 3 && match(line[2], KEYWORD_TIMES);
             bool repeat_condition = (line.size() == 3 && match(line[1], KEYWORD_WHILE)) || (line.size() == 4 && match(line[1], KEYWORD_WHILE) && match(line[2], KEYWORD_NOT));
             bool inverted = line.size() == 4;
 
             //None of the above
-            if(!(repeat_always || repeat_count || repeat_condition))
+            if(!(repeat_no_condition || repeat_always || repeat_count || repeat_condition))
                 throw SteveInterpreterException(QObject::trUtf8("Syntax: %1\n%1 [zahl] %2\n%1 %3 [%4] [bedingung]\n%1 %5").arg(str(KEYWORD_REPEAT)).arg(str(KEYWORD_TIMES))
                                                 .arg(str(KEYWORD_WHILE)).arg(str(KEYWORD_NOT)).arg(str(COND_ALWAYS)), current_line);
 
-            if(repeat_always)
+            if(coming_from_break) //Leave this block, but clean up stack first
+            {
+                coming_from_break = false;
+
+                if(repeat_count)
+                    loop_count.pop();
+
+                current_line = branches[current_line] + 1;
+
+                return;
+            }
+
+            if(repeat_always || repeat_no_condition)
                 current_line++;
 
             else if(repeat_count)
@@ -557,7 +565,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
                     }
                 }
             }
-            else
+            else //if(repeat_condition)
             {
                 coming_from_repeat_end = false; //Slight hack
 
@@ -662,11 +670,12 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
 
         case KEYWORD_NEW_INSTR:
         case KEYWORD_NEW_COND:
-            //True is default
-            custom_condition_return_stack.push(true);
-
             if(enter_sub)
             {
+                //True is default
+                if(keyword == KEYWORD_NEW_COND)
+                    custom_condition_return_stack.push(true);
+
                 enter_sub = false;
                 current_line++;
             }
@@ -686,13 +695,27 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
             return;
 
         case KEYWORD_CONTINUE:
+            if(line.size() != 1)
+                throw SteveInterpreterException(QObject::trUtf8("Syntax: %1").arg(str(keyword)), current_line);
+
+            current_line = branches[current_line]; //Jump to end of block (WHILE, REPEAT)
+            return;
         case KEYWORD_BREAK:
             if(line.size() != 1)
                 throw SteveInterpreterException(QObject::trUtf8("Syntax: %1").arg(str(keyword)), current_line);
 
             current_line = branches[current_line];
-            return;
 
+            //REPEAT uses loop_count, could lead to stack overflow
+            if(getKeyword(token[current_line][0]) == KEYWORD_REPEAT_END)
+            {
+                current_line = branches[current_line]; //Jump to beginning
+                coming_from_break = true;
+            }
+            else
+                current_line++; //Skip line
+
+            return;
         default:
             throw SteveInterpreterException(QObject::trUtf8("%1 macht hier keinen Sinn.").arg(line[0]), current_line);
         }
@@ -923,7 +946,7 @@ bool SteveInterpreter::breakpoint(World *world, bool has_param, int param)
 }
 
 //Other private functions
-SteveInterpreter::KEYWORD SteveInterpreter::getKeyword(QString string)
+SteveInterpreter::KEYWORD SteveInterpreter::getKeyword(QString string) const
 {
     for(auto i : keywords.keys())
     {
@@ -934,7 +957,7 @@ SteveInterpreter::KEYWORD SteveInterpreter::getKeyword(QString string)
     return static_cast<SteveInterpreter::KEYWORD>(-1);
 }
 
-SteveInterpreter::INSTRUCTION SteveInterpreter::getInstruction(QString string)
+SteveInterpreter::INSTRUCTION SteveInterpreter::getInstruction(QString string) const
 {
     for(auto i : instructions.keys())
     {
@@ -945,7 +968,7 @@ SteveInterpreter::INSTRUCTION SteveInterpreter::getInstruction(QString string)
     return static_cast<SteveInterpreter::INSTRUCTION>(-1);
 }
 
-SteveInterpreter::CONDITION SteveInterpreter::getCondition(QString string)
+SteveInterpreter::CONDITION SteveInterpreter::getCondition(QString string) const
 {
     for(auto i : conditions.keys())
     {
@@ -962,22 +985,22 @@ bool SteveInterpreter::isComment(const QString &s)
 }
 
 template <typename TOKEN>
-bool SteveInterpreter::match(const QString &str, const TOKEN tok)
+bool SteveInterpreter::match(const QString &str, const TOKEN tok) const
 {
     return str.compare(this->str(tok), Qt::CaseInsensitive) == 0;
 }
 
-const QString &SteveInterpreter::str(KEYWORD keyword)
+const QString SteveInterpreter::str(KEYWORD keyword) const
 {
     return keywords[keyword];
 }
 
-const QString &SteveInterpreter::str(INSTRUCTION instr)
+const QString SteveInterpreter::str(INSTRUCTION instr) const
 {
     return instructions[instr];
 }
 
-const QString &SteveInterpreter::str(CONDITION cond)
+const QString SteveInterpreter::str(CONDITION cond) const
 {
     return conditions[cond];
 }

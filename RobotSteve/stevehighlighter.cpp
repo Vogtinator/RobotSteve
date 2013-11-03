@@ -20,17 +20,12 @@ SteveHighlighter::SteveHighlighter(QTextEdit *editor, SteveInterpreter *interpre
 
 void SteveHighlighter::highlightBlock(const QString &text)
 {
-    int line, document_pos;
+    int line;
     if(previousBlockState() == -1)
-    {
         line = 0;
-        document_pos = 0;
-    }
+
     else
-    {
-        line = previousBlockState() & 0xFFFF;
-        document_pos = (previousBlockState() >> 16) & 0xFFFF;
-    }
+        line = previousBlockState();
 
     QStringList lines = text.split("\n");
     QString line_str;
@@ -48,7 +43,7 @@ void SteveHighlighter::highlightBlock(const QString &text)
                 //Don't set highlight_start and _end here, we still want it highlighted above the background color
                 QTextEdit::ExtraSelection extra_selection;
                 extra_selection.cursor = QTextCursor{parent->document()};
-                extra_selection.cursor.setPosition(line_start + document_pos);
+                extra_selection.cursor.setPosition(line_start + currentBlock().position());
                 highlight_format.setProperty(QTextFormat::FullWidthSelection, true);
                 extra_selection.format = highlight_format;
 
@@ -103,8 +98,7 @@ void SteveHighlighter::highlightBlock(const QString &text)
         }
     }
 
-    //TODO: Remove this ugly crap
-    setCurrentBlockState(((line) & 0xFFFF) | (((document_pos+text.length()+1) & 0xFFFF) << 16));
+    setCurrentBlockState(line);
 }
 
 void SteveHighlighter::setFormat(Token what, const QTextCharFormat &format)

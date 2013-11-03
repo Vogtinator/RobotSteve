@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent) :
     speed_slider{Qt::Horizontal, this},
     world{5, 5, 5, this},
     interpreter{&world},
-    help{&interpreter},
+    help{&interpreter, ":/help/help.xml"},
     codeEdit{&help, this},
     highlighter{&codeEdit, &interpreter},
     save_shortcut(QKeySequence("Ctrl+S"), this)
@@ -35,10 +35,6 @@ MainWindow::MainWindow(QWidget *parent) :
     speed_slider.setMaximum(2000);
     speed_slider.setValue(500);
     ui->mainToolBar->addWidget(&speed_slider);
-
-    //Help
-    if(!help.loadFile(":/help/help.xml"))
-        QMessageBox::critical(this, trUtf8("Fehler beim Laden"), trUtf8("Die Hilfe konnte nicht geladen werden."));
 
     //Editor
     QFont font;
@@ -73,9 +69,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->viewSwitch, SIGNAL(toggled(bool)), this, SLOT(switchViews(bool)));
     connect(&codeEdit, SIGNAL(textChanged()), this, SLOT(textChanged()));
     connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(open()));
-    connect(ui->actionSaveDirect, SIGNAL(triggered()), this, SLOT(saveDirect()));
-    connect(&save_shortcut, SIGNAL(activated()), this, SLOT(saveDirect()));
-    connect(ui->actionSaveAs, SIGNAL(triggered()), this, SLOT(save()));
+    connect(ui->actionSaveDirect, SIGNAL(triggered()), this, SLOT(saveDirectly()));
+    connect(&save_shortcut, SIGNAL(activated()), this, SLOT(saveDirectly()));
+    connect(ui->actionSaveAs, SIGNAL(triggered()), this, SLOT(saveChooseLocation()));
     connect(ui->actionSaveWorld, SIGNAL(triggered()), this, SLOT(saveWorld()));
     connect(ui->actionLoadWorld, SIGNAL(triggered()), this, SLOT(openWorld()));
     connect(ui->actionExamples, SIGNAL(triggered()), this, SLOT(showExamples()));
@@ -90,6 +86,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAboutQt, SIGNAL(triggered()), this, SLOT(showAboutQt()));
 
     //Manual control
+    connect(&world, SIGNAL(changed()), this, SLOT(refreshButtons()));
     connect(ui->buttonStep, SIGNAL(clicked()), this, SLOT(step()));
     connect(ui->buttonLayDown, SIGNAL(clicked()), this, SLOT(layDown()));
     connect(ui->buttonPickUp, SIGNAL(clicked()), this, SLOT(pickUp()));
@@ -342,6 +339,8 @@ void MainWindow::refreshButtons()
         ui->actionOpen->setDisabled(true);
         ui->actionExamples->setDisabled(true);
 
+        world.setEditable(false);
+
         return;
     }
 
@@ -362,6 +361,8 @@ void MainWindow::refreshButtons()
     ui->actionResetWorld->setDisabled(false);
     ui->actionOpen->setDisabled(false);
     ui->actionExamples->setDisabled(false);
+
+    world.setEditable(true);
 }
 
 void MainWindow::loadWorldFile(QString path)
@@ -417,10 +418,13 @@ void MainWindow::open()
     loadCodeFile(filename);
 }
 
-void MainWindow::saveDirect()
+void MainWindow::saveDirectly()
 {
     if(save_file_name.isEmpty())
+    {
+        saveChooseLocation();
         return;
+    }
 
     QFile file{save_file_name};
     QFileInfo file_info{file};
@@ -439,7 +443,7 @@ void MainWindow::saveDirect()
     showMessage(trUtf8("Gespeichert als '%1'!").arg(file_info.fileName()));
 }
 
-void MainWindow::save()
+void MainWindow::saveChooseLocation()
 {
     QString filename = QFileDialog::getSaveFileName(this, trUtf8("Programm speichern"),
                                                     settings.value("lastOpenDir", QDir::homePath()).toString(),
@@ -455,18 +459,7 @@ void MainWindow::save()
     save_file_name = filename;
     ui->actionSaveDirect->setDisabled(false);
 
-    if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
-    {
-        QMessageBox::critical(this, trUtf8("Fehler beim Speichern"), trUtf8("Die Datei '%1' konnte nicht gespeichert werden!").arg(file_info.fileName()));
-        return;
-    }
-
-    QTextStream file_stream{&file};
-    file_stream << codeEdit.toPlainText();
-
-    code_saved = true;
-
-    showMessage(trUtf8("Gespeichert als '%1'!").arg(file_info.fileName()));
+    saveDirectly(); //Saves to save_file_name
 }
 
 void MainWindow::openWorld()

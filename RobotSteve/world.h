@@ -68,7 +68,7 @@ public:
     unsigned int getY() const { return steve.second; }
     WorldObject getObject(const Coords &pos) const { return map[pos.first][pos.second]; }
     unsigned int getMaxHeight() const { return max_height; }
-    void setMaxHeight(unsigned int max_height);
+    virtual void setMaxHeight(unsigned int max_height);
     void dumpWorld() const;
     WorldState getState() const;
     virtual bool setState(WorldState &state);
@@ -81,7 +81,7 @@ public:
 
 protected:
     SignedCoords getForward() const;
-    void updateFront();
+    virtual void updateFront();
     bool inBounds(SignedCoords &coords) const;
 
     const std::map<ORIENTATION,QString> orientation_str = {

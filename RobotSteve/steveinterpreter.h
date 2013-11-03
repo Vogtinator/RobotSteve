@@ -152,19 +152,19 @@ public:
         COND_WEST
     };
 
-    KEYWORD getKeyword(QString string);
-    INSTRUCTION getInstruction(QString string);
-    CONDITION getCondition(QString string);
-    const QString &str(KEYWORD keyword);
-    const QString &str(INSTRUCTION instr);
-    const QString &str(CONDITION cond);
+    KEYWORD getKeyword(const QString string) const;
+    INSTRUCTION getInstruction(const QString string) const;
+    CONDITION getCondition(const QString string) const;
+    const QString str(KEYWORD keyword) const;
+    const QString str(INSTRUCTION instr) const;
+    const QString str(CONDITION cond) const;
 
 private:
     void findAndThrowMissingBegin(int line, BLOCK block, const QString &affected = "") throw (SteveInterpreterException);
     bool handleCondition(QString condition_str, bool &result) throw (SteveInterpreterException);
     bool handleInstruction(QString instruction_str) throw (SteveInterpreterException);
     bool isComment(const QString &s);
-    template <typename TOKEN> bool match(const QString &str, const TOKEN tok);
+    template <typename TOKEN> bool match(const QString &str, const TOKEN tok) const;
 
     //Structure chart generation
     void drawText(int x, int y, QPainter &painter, const QString &text);
@@ -186,7 +186,7 @@ private:
 
     //Execution state
     int current_line; // Starts at 0!
-    bool coming_from_condition, coming_from_repeat_end, enter_sub, enter_else, execution_finished, hit_breakpoint;
+    bool coming_from_condition, coming_from_repeat_end, coming_from_break, enter_sub, enter_else, execution_finished, hit_breakpoint;
     QStack<int> stack;
     QStack<int> loop_count;
     QStack<bool> custom_condition_return_stack;
@@ -197,7 +197,7 @@ private:
     bool code_valid;
     QMap<int, QStringList> token;
     QMap<int, int> branches;
-    /* 1: WENN NICHTISTWAND TUE (3)
+    /* 1: WENN NICHT WAND DANN (3)
      * 2: SCHRITT
      * 3: SONST (5)
      * 4: RECHTSDREHEN
