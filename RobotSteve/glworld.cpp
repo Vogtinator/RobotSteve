@@ -442,6 +442,9 @@ void GLWorld::mousePressEvent(QMouseEvent *event)
             steve.first = current_selection.x;
             steve.second = current_selection.y;
 
+            //The user can't be really fast, so animations always on
+            setSpeed(2000);
+
             setAnimation(ANIM_STEP);
             updateAnimationTarget();
             updateFront();
