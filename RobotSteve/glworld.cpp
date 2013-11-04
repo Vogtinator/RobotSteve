@@ -301,7 +301,7 @@ void GLWorld::paintGL()
 
         //Render to the screen next time
         fbo_dirty = false;
-        //paintGL(); Half frame rate if fbo_dirty. Feels much faster.
+        paintGL(); //Less fps if the world is being changed or rotated
     }
 }
 
@@ -420,6 +420,7 @@ void GLWorld::mousePressEvent(QMouseEvent *event)
         QAction cube_here(trUtf8("Würfel"), &menu);
         cube_here.setCheckable(true);
         cube_here.setChecked(here.has_cube);
+        cube_here.setDisabled(steve.first == current_selection.x && steve.second == current_selection.y); //No cube into steve
         menu.addAction(&cube_here);
 
         QAction stack_here(trUtf8("Stapel"), &menu);
@@ -476,6 +477,9 @@ void GLWorld::mousePressEvent(QMouseEvent *event)
                     here.has_cube = false;
 
                 here.stack_size = s;
+
+                setAnimation(ANIM_STEP);
+                updateAnimationTarget();
 
                 fbo_dirty = true;
 
