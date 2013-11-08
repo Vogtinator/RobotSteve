@@ -13,6 +13,8 @@
 #define M_PI		3.14159265358979323846
 #endif
 
+#define ANIM_TICKS 250.0
+
 GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_height, QWidget *parent) :
     QGLWidget{parent},
     World{width, length, max_height},
@@ -21,16 +23,6 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
     camera_dist{8}
 {
     setMouseTracking(true);
-
-    anim_ticks.insert(ANIM_STANDING, 1);
-    anim_ticks.insert(ANIM_STEP, 100);
-    anim_ticks.insert(ANIM_BUMP, 100);
-    anim_ticks.insert(ANIM_TURN, 100);
-    anim_ticks.insert(ANIM_BEND, 100);
-    anim_ticks.insert(ANIM_DEPOSIT_FLY, 248);
-    anim_ticks.insert(ANIM_GREET1, 31);
-    anim_ticks.insert(ANIM_GREET2, 200);
-    anim_ticks.insert(ANIM_GREET3, 31);
 
     anim_next.insert(ANIM_STANDING, ANIM_STANDING);
     anim_next.insert(ANIM_STEP, ANIM_STANDING);
@@ -229,7 +221,7 @@ void GLWorld::paintGL()
                 floor_color.setGreen(z);
                 floor_color.setBlue(0);
             }
-            else if(current_selection.type == TYPE_NOTHING || (current_selection.x == x && current_selection.y == z))
+            else if(current_selection.type == TYPE_NOTHING || (current_selection.coords.first == x && current_selection.coords.second == z))
                 floor_color = Qt::white; //Highlight current selection or everything if there is no selection
 
             marked_floor->getColor() = floor_color;
@@ -397,9 +389,9 @@ void GLWorld::tick()
     }
 
     current_anim_ticks++;
-    anim_progress = (static_cast<float>(current_anim_ticks)) / static_cast<float>(anim_ticks[current_animation]);
+    anim_progress = (static_cast<float>(current_anim_ticks)) / ANIM_TICKS;
 
-    if(current_anim_ticks == anim_ticks[current_animation] + 1)
+    if(current_anim_ticks == ANIM_TICKS+1)
         setAnimation(anim_next[current_animation]);
 }
 
@@ -409,18 +401,19 @@ void GLWorld::mousePressEvent(QMouseEvent *event)
 
     if(event->buttons() & Qt::RightButton && current_selection.type != TYPE_NOTHING && editable)
     {
-        WorldObject &here = map[current_selection.x][current_selection.y];
+        WorldObject &here = getObject(current_selection.coords);
+        bool steve_is_here = current_selection.coords == steve;
         QPoint pos = mapToGlobal(event->pos());
 
         QMenu menu;
         QAction steve_here(trUtf8("Steve hierher teleportieren"), &menu);
-        steve_here.setDisabled(here.has_cube || (current_selection.x == steve.first && current_selection.y == steve.second));
+        steve_here.setDisabled(here.has_cube || steve_is_here);
         menu.addAction(&steve_here);
 
         QAction cube_here(trUtf8("Würfel"), &menu);
         cube_here.setCheckable(true);
         cube_here.setChecked(here.has_cube);
-        cube_here.setDisabled(steve.first == current_selection.x && steve.second == current_selection.y); //No cube into steve
+        cube_here.setDisabled(steve_is_here); //No cube into steve
         menu.addAction(&cube_here);
 
         QAction stack_here(trUtf8("Stapel"), &menu);
@@ -440,8 +433,7 @@ void GLWorld::mousePressEvent(QMouseEvent *event)
         QAction *selected = menu.exec(pos);
         if(selected == &steve_here)
         {
-            steve.first = current_selection.x;
-            steve.second = current_selection.y;
+            steve = current_selection.coords;
 
             //The user can't be really fast, so animations always on
             setSpeed(2000);
@@ -470,7 +462,7 @@ void GLWorld::mousePressEvent(QMouseEvent *event)
         else if(selected == &stack_here)
         {
             bool ok;
-            int s = QInputDialog::getInteger(this, trUtf8("Stapelhöhe"), trUtf8("Stapelhöhe auswählen:"), here.stack_size, 0, World::max_height, 1, &ok);
+            int s = QInputDialog::getInt(this, trUtf8("Stapelhöhe"), trUtf8("Stapelhöhe auswählen:"), here.stack_size, 0, World::max_height, 1, &ok);
             if(ok)
             {
                 if(s > 0)
@@ -478,8 +470,11 @@ void GLWorld::mousePressEvent(QMouseEvent *event)
 
                 here.stack_size = s;
 
-                setAnimation(ANIM_STEP);
-                updateAnimationTarget();
+                if(steve == current_selection.coords)
+                {
+                    setAnimation(ANIM_STEP);
+                    updateAnimationTarget();
+                }
 
                 fbo_dirty = true;
 
@@ -510,7 +505,7 @@ void GLWorld::mouseMoveEvent(QMouseEvent *event)
     updateSelection(event->pos());
 
     if(current_selection.type == TYPE_BRICK)
-        QToolTip::showText(QCursor::pos(), trUtf8("Höhe: %1").arg(map[current_selection.x][current_selection.y].stack_size), this);
+        QToolTip::showText(QCursor::pos(), trUtf8("Höhe: %1").arg(getObject(current_selection.coords).stack_size), this);
 
     if (event->buttons() & Qt::LeftButton)
     {
@@ -544,8 +539,8 @@ void GLWorld::updateSelection(QPoint pos)
             current_selection.type = TYPE_NOTHING;
         else
         {
-            current_selection.x = click_image_color.red();
-            current_selection.y = click_image_color.green();
+            current_selection.coords.first = click_image_color.red();
+            current_selection.coords.second = click_image_color.green();
             current_selection.h = click_image_color.blue();
             if(current_selection.h == 0)
                 current_selection.type = TYPE_FLOOR;
@@ -569,11 +564,6 @@ void GLWorld::updateSelection()
 void GLWorld::wheelEvent(QWheelEvent *event)
 {
     camera_dist -= event->delta() * 0.005;
-
-    if(camera_dist < 5)
-        camera_dist = 5;
-    if(camera_dist > 50)
-        camera_dist = 50;
 
     updateCamera();
 }
@@ -615,8 +605,8 @@ void GLWorld::setAnimation(ANIMATION animation, bool force_set)
     current_animation = animation;
 
     //If no time for animation, don't do it at all
-    if(speed_ms > 0)
-        tick_timer.start(speed_ms / anim_ticks[current_animation]);
+    if(speed_ms > 0 && animation != ANIM_STANDING)
+        tick_timer.start(speed_ms / ANIM_TICKS);
 
     anim_progress = 0;
 }
@@ -808,6 +798,14 @@ void GLWorld::updateAnimationTarget(bool force_set)
 void GLWorld::updateCamera()
 {
     float radX = camera_rotX*(M_PI/180), radY = camera_rotY*(M_PI/180), cosradX = cos(radX);
+    float half_width = float(World::size.first)/2.0;
+    float half_length = float(World::size.second)/2.0;
+    float min_dist = sqrt(half_width*half_width + half_length*half_length) + 1.5;
+
+    if(camera_dist < min_dist)
+        camera_dist = min_dist;
+    if(camera_dist > 70)
+        camera_dist = 70;
 
     camera_calX = camera_dist*(sin(radY) * cosradX) + World::size.first/2;
     camera_calY = camera_dist*sin(radX-M_PI);

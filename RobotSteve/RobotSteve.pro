@@ -4,14 +4,23 @@
 #
 #-------------------------------------------------
 
-QT       += core gui opengl
+QT += core gui opengl
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4) {
+    QT += widgets
+    CONFIG += c++11
+}
+
+lessThan(QT_MAJOR_VERSION, 5) {
+    QMAKE_CXXFLAGS += -std=c++11
+}
+
+macx {
+    QMAKE_CXXFLAGS += -mmacoxs-version-min=10.7 -std=c++11 -stdlib=libc++
+}
 
 TARGET = RobotSteve
 TEMPLATE = app
-
-QMAKE_CXXFLAGS += -std=c++11
 
 SOURCES += main.cpp\
         mainwindow.cpp \

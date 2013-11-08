@@ -16,12 +16,12 @@ WorldDialog::WorldDialog(World *world, QWidget *parent) :
 
     const Size current_size = world->getSize();
 
-    ui->widthSpinBox->setMinimum(World::minimum_size.first);
-    ui->widthSpinBox->setMaximum(World::maximum_size.first);
+    ui->widthSpinBox->setMinimum(world->minimum_size.first);
+    ui->widthSpinBox->setMaximum(world->maximum_size.first);
     ui->widthSpinBox->setValue(current_size.first);
 
-    ui->lengthSpinBox->setMinimum(World::minimum_size.second);
-    ui->lengthSpinBox->setMaximum(World::maximum_size.second);
+    ui->lengthSpinBox->setMinimum(world->minimum_size.second);
+    ui->lengthSpinBox->setMaximum(world->maximum_size.second);
     ui->lengthSpinBox->setValue(current_size.second);
 }
 

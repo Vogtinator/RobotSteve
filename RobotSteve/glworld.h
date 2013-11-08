@@ -32,8 +32,7 @@ enum SELECTION_TYPE {
 
 struct Selection {
     SELECTION_TYPE type;
-    unsigned int x;
-    unsigned int y;
+    Coords coords;
     unsigned int h;
 };
 
@@ -89,7 +88,7 @@ private:
     bool fbo_dirty = true; //Whether to redraw click_image
     QImage click_image; //Color coded version of the rendered image
     bool editable = true; //Whether the user is allowed to edit the world using the context menu
-    Selection current_selection{TYPE_NOTHING, 0, 0, 0};
+    Selection current_selection{TYPE_NOTHING, {0, 0}, 0};
     QTimer tick_timer, refresh_timer;
     std::unique_ptr<TextureAtlas> player_atlas, environment_atlas;
     QPoint last_pos; //Last mouse position to compute camera rotation
@@ -97,7 +96,6 @@ private:
     std::shared_ptr<GLBox> player_body, player_head, player_hat, player_leg_left, player_leg_right, player_arm_left, player_arm_right, brick_top, brick_mid, cube;
     std::unique_ptr<GLQuad> wall, floor, marked_floor;
     ANIMATION current_animation = ANIM_STANDING;
-    QHash<ANIMATION,int> anim_ticks;
     QHash<ANIMATION,ANIMATION> anim_next;
     int current_anim_ticks;
     float speed_ms = 500; //How much time an animation takes

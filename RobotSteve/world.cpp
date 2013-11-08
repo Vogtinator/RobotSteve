@@ -5,9 +5,6 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
-constexpr Size World::maximum_size;
-constexpr Size World::minimum_size;
-
 SignedCoords operator+(const Coords& left, const SignedCoords& right)
 {
     return {static_cast<int>(left.first + right.first), static_cast<int>(left.second + right.second)};
@@ -88,8 +85,7 @@ bool World::stepForward()
     if(frontBlocked())
         return false; //Oh no! Stepped into a wall :-(
 
-    steve.first = front.first;
-    steve.second = front.second;
+    steve = front;
 
     updateFront();
 
@@ -148,9 +144,9 @@ void World::turnLeft(int quarters)
 
 void World::setMark(bool b)
 {
-    WorldObject &obj = map[steve.first][steve.second];
+    WorldObject &obj = getObject(steve);
     if(!obj.has_cube)
-        map[steve.first][steve.second].has_mark = b;
+        obj.has_mark = b;
 }
 
 bool World::setCube(bool b)
@@ -190,7 +186,7 @@ unsigned int World::getStackSize()
     if(frontBlocked())
         return 0; //No bricks in walls or cubes.
 
-    return map[front.first][front.second].stack_size;
+    return getObject(front).stack_size;
 }
 
 bool World::deposit(unsigned int count)
@@ -221,16 +217,15 @@ bool World::pickup(unsigned int count)
 
 bool World::isMarked()
 {
-    return map[steve.first][steve.second].has_mark;
+    return getObject(steve).has_mark;
 }
 
 void World::updateFront()
 {
     front = steve + getForward();
 
-    //Check whether in array bounds
     if(inBounds(front))
-        front_obj = &(map[front.first][front.second]);
+        front_obj = &getObject(front);
 }
 
 void World::dumpWorld() const

@@ -66,7 +66,7 @@ public:
     ORIENTATION getOrientation() const { return orientation; }
     unsigned int getX() const { return steve.first; }
     unsigned int getY() const { return steve.second; }
-    WorldObject getObject(const Coords &pos) const { return map[pos.first][pos.second]; }
+    WorldObject &getObject(const Coords &pos) { return map[pos.first][pos.second]; }
     unsigned int getMaxHeight() const { return max_height; }
     virtual void setMaxHeight(unsigned int max_height);
     void dumpWorld() const;
@@ -77,7 +77,7 @@ public:
     bool loadXML(const QString &xml);
     virtual bool loadXMLStream(QXmlStreamReader &file_reader);
 
-    static constexpr Size maximum_size = {25, 25}, minimum_size = {3, 3};
+    const Size maximum_size = {25, 25}, minimum_size = {3, 3};
 
 protected:
     SignedCoords getForward() const;
