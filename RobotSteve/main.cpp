@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
             }
             else if(argument.compare("--version", Qt::CaseInsensitive) == 0)
             {
-                std::cout << "Robot Steve 0.10.4" << std::endl;
+                std::cout << "Robot Steve 0.10.5" << std::endl;
 
                 return 0;
             }

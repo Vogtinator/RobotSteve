@@ -145,8 +145,8 @@ void MainWindow::codeStep()
 
 void MainWindow::handleError(SteveInterpreterException &e)
 {
-    std::cerr << e.what().toStdString() << std::endl;
-    showMessage(e.what());
+    std::cerr << e.message().toStdString() << std::endl;
+    showMessage(e.message());
 
     highlighter.highlight(e.getLine(), error_format, e.getAffected());
 }

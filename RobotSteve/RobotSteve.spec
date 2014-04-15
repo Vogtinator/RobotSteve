@@ -2,7 +2,7 @@ Name: RobotSteve
 Summary: Programmieren lernen
 License: GPL-2.0
 Group: Amusements/Teaching/Other
-Version: 0.10.4
+Version: 0.10.5
 Release: 1
 Source0: %{name}-%{version}.tar.gz
 Packager: Fabian Vogt <fabian@ritter-vogt.de>

@@ -77,7 +77,8 @@ void SteveEdit::keyPressEvent(QKeyEvent *e)
 
     if(e->key() == Qt::Key_F1)
     {
-        QString current_word = currentWord();
+        //If the condition or instruction takes a parameter, ignore it
+        QString current_word = currentWord().split("(")[0];
         QPoint global = mapToGlobal({this->cursorRect().x(), this->cursorRect().y() + this->cursorRect().height()});
 
         QToolTip::showText(global, QString("<b>%1</b>%2").arg(current_word).arg(Qt::convertFromPlainText(help->getHelp(current_word))), this);

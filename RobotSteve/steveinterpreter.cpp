@@ -1413,7 +1413,7 @@ QPixmap SteveInterpreter::structureChartOtherBlock(const StructureBlock &sb)
 }
 
 //SteveInterpreterException
-QString SteveInterpreterException::what()
+QString SteveInterpreterException::message()
 {
     return QObject::trUtf8("Fehler in Zeile %1:\n%2").arg(line).arg(error);
 }
