@@ -23,7 +23,6 @@ void SteveHighlighter::highlightBlock(const QString &text)
     int line;
     if(previousBlockState() == -1)
         line = 0;
-
     else
         line = previousBlockState();
 

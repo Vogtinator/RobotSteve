@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <help>
-<keyword name="KEYWORD_NOT">Syntax:
+<keyword name="KEYWORD_NOT">Invertiert die Bedingung.
+Syntax:
 wenn nicht [bedingung] dann
 solange nicht [bedingung]
 wiederhole solange nicht [bedingung]
 
 Beispiel:
+Steve geht einen Schritt nach vorne, solange keine Wand vor ihm ist.
 solange nicht wand
         schritt
 *solange</keyword>

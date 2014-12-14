@@ -108,6 +108,8 @@ public:
     bool breakpoint(World *world, bool has_param, int param);
 
     enum KEYWORD {
+        KEYWORD_INVALID = -1,
+
         KEYWORD_IF,
         KEYWORD_NOT,
         KEYWORD_THEN,
@@ -127,6 +129,8 @@ public:
     };
 
     enum INSTRUCTION {
+        INSTR_INVALID = -1,
+
         INSTR_STEP,
         INSTR_TURNLEFT,
         INSTR_TURNRIGHT,
@@ -141,6 +145,8 @@ public:
     };
 
     enum CONDITION {
+        COND_INVALID = -1,
+
         COND_ALWAYS,
         COND_WALL,
         COND_CUBE,
@@ -202,6 +208,8 @@ private:
      * 3: SONST (5)
      * 4: RECHTSDREHEN
      * 5: *WENN (1)
+     * branches[1] = 3;
+     * branches[3] = 5;
      * branches[5] = 1; */
 };
 

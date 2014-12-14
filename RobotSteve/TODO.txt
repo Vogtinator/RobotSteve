@@ -1,6 +1,5 @@
 Importieren von .kdw und .kdp (KEIN Export)
 Aktuelle Zeile im Struktogramm
-Selbstmord (Wand suchen, hochklettern und runterspringen)
 Tabs
 Automatisch einrücken
 Vergleiche: Ziegel > 5 oder Ziegel < 5

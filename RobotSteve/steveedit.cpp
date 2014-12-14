@@ -77,7 +77,7 @@ void SteveEdit::keyPressEvent(QKeyEvent *e)
 
     if(e->key() == Qt::Key_F1)
     {
-        //If the condition or instruction takes a parameter, ignore it
+        //If the condition or instruction takes a parameter, ignore the parameter
         QString current_word = currentWord().split("(")[0];
         QPoint global = mapToGlobal({this->cursorRect().x(), this->cursorRect().y() + this->cursorRect().height()});
 

@@ -37,6 +37,7 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
     player_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(":/textures/char.png")));
     environment_atlas = std::unique_ptr<TextureAtlas>(new TextureAtlas(*this, QPixmap(":/textures/environment.png")));
 
+    //Scale of texture -> GL units
     const double m_per_px = 0.0579;
 
     player_body = std::make_shared<GLBox>(8 * m_per_px, 12 * m_per_px, 4 * m_per_px,
@@ -157,6 +158,7 @@ GLWorld::GLWorld(unsigned int width, unsigned int length, unsigned int max_heigh
 
 void GLWorld::paintGL()
 {
+    //Render to the FBO for color picking
     if(fbo_dirty)
     {
         glClearColor(1, 1, 1, 1);
@@ -188,6 +190,7 @@ void GLWorld::paintGL()
 
     glTranslated(-camera_calX, -camera_calY, -camera_calZ);
 
+    //Using the color picking technique, every clickable object has its own unique color
     if(fbo_dirty)
         glDisable(GL_TEXTURE_2D);
 
@@ -215,13 +218,15 @@ void GLWorld::paintGL()
         for(unsigned int z = 0; z < World::size.second; z++)
         {
             QColor floor_color = QColor(Qt::white).darker(150);
+            //Encode coordinates as color value for use in the mouse click handler
             if(fbo_dirty)
             {
                 floor_color.setRed(x);
                 floor_color.setGreen(z);
                 floor_color.setBlue(0);
             }
-            else if(current_selection.type == TYPE_NOTHING || (current_selection.coords.first == x && current_selection.coords.second == z))
+            else if(current_selection.type == TYPE_NOTHING
+                    || (current_selection.coords.first == x && current_selection.coords.second == z))
                 floor_color = Qt::white; //Highlight current selection or everything if there is no selection
 
             marked_floor->getColor() = floor_color;
@@ -253,9 +258,9 @@ void GLWorld::paintGL()
                 brick_mid->setXPosition(x);
                 brick_mid->setZPosition(z);
 
-                float brick_y = -1.5;
+                float brick_y = -1.5f;
                 unsigned int height = 0;
-                for(; height < obj.stack_size - 1; height++, brick_y += 0.5)
+                for(; height < obj.stack_size - 1; height++, brick_y += 0.5f)
                 {
                     if(fbo_dirty)
                         floor_color.setBlue(height + 1);
@@ -293,7 +298,7 @@ void GLWorld::paintGL()
 
         //Render to the screen next time
         fbo_dirty = false;
-        paintGL(); //Less fps if the world is being changed or rotated
+        paintGL(); //Less fps if the world is being changed or rotated, as the fbo has to be refreshed every time
     }
 }
 
@@ -399,105 +404,95 @@ void GLWorld::mousePressEvent(QMouseEvent *event)
 {
     last_pos = event->pos();
 
-    if(event->buttons() & Qt::RightButton && current_selection.type != TYPE_NOTHING && editable)
+    if(!(event->buttons() & Qt::RightButton && current_selection.type != TYPE_NOTHING && editable))
+        return;
+
+    WorldObject &here = getObject(current_selection.coords);
+    bool steve_is_here = current_selection.coords == steve;
+    QPoint pos = mapToGlobal(event->pos());
+
+    QMenu menu;
+    QAction steve_here(trUtf8("Steve hierher teleportieren"), &menu);
+    steve_here.setDisabled(here.has_cube || steve_is_here);
+    menu.addAction(&steve_here);
+
+    QAction cube_here(trUtf8("Würfel"), &menu);
+    cube_here.setCheckable(true);
+    cube_here.setChecked(here.has_cube);
+    cube_here.setDisabled(steve_is_here); //No cube into steve
+    menu.addAction(&cube_here);
+
+    QAction stack_here(trUtf8("Stapel"), &menu);
+    stack_here.setCheckable(true);
+    if(here.stack_size > 0)
     {
-        WorldObject &here = getObject(current_selection.coords);
-        bool steve_is_here = current_selection.coords == steve;
-        QPoint pos = mapToGlobal(event->pos());
-
-        QMenu menu;
-        QAction steve_here(trUtf8("Steve hierher teleportieren"), &menu);
-        steve_here.setDisabled(here.has_cube || steve_is_here);
-        menu.addAction(&steve_here);
-
-        QAction cube_here(trUtf8("Würfel"), &menu);
-        cube_here.setCheckable(true);
-        cube_here.setChecked(here.has_cube);
-        cube_here.setDisabled(steve_is_here); //No cube into steve
-        menu.addAction(&cube_here);
-
-        QAction stack_here(trUtf8("Stapel"), &menu);
-        stack_here.setCheckable(true);
-        if(here.stack_size > 0)
-        {
-            stack_here.setChecked(true);
-            stack_here.setText(trUtf8("Stapel (%1)").arg(here.stack_size));
-        }
-        menu.addAction(&stack_here);
-
-        QAction mark_here(trUtf8("Markierung"), &menu);
-        mark_here.setCheckable(true);
-        mark_here.setChecked(here.has_mark);
-        menu.addAction(&mark_here);
-
-        QAction *selected = menu.exec(pos);
-        if(selected == &steve_here)
-        {
-            steve = current_selection.coords;
-
-            //The user can't be really fast, so animations always on
-            setSpeed(2000);
-
-            setAnimation(ANIM_STEP);
-            updateAnimationTarget();
-            updateFront();
-
-            fbo_dirty = true;
-        }
-        else if(selected == &cube_here)
-        {
-            if(here.has_cube)
-                here.has_cube = false;
-            else
-            {
-                here.stack_size = 0;
-                here.has_mark = false;
-                here.has_cube = true;
-            }
-
-            fbo_dirty = true;
-
-            emit changed();
-        }
-        else if(selected == &stack_here)
-        {
-            bool ok;
-            int s = QInputDialog::getInt(this, trUtf8("Stapelhöhe"), trUtf8("Stapelhöhe auswählen:"), here.stack_size, 0, World::max_height, 1, &ok);
-            if(ok)
-            {
-                if(s > 0)
-                    here.has_cube = false;
-
-                here.stack_size = s;
-
-                if(steve == current_selection.coords)
-                {
-                    setAnimation(ANIM_STEP);
-                    updateAnimationTarget();
-                }
-
-                fbo_dirty = true;
-
-                emit changed();
-            }
-        }
-        else if(selected == &mark_here)
-        {
-            if(here.has_mark)
-                here.has_mark = false;
-            else
-            {
-                here.has_mark = true;
-                here.has_cube = false;
-            }
-
-            fbo_dirty = true;
-
-            emit changed();
-        }
-
-        updateSelection();
+        stack_here.setChecked(true);
+        stack_here.setText(trUtf8("Stapel (%1)").arg(here.stack_size));
     }
+    menu.addAction(&stack_here);
+
+    QAction mark_here(trUtf8("Markierung"), &menu);
+    mark_here.setCheckable(true);
+    mark_here.setChecked(here.has_mark);
+    menu.addAction(&mark_here);
+
+    QAction *selected = menu.exec(pos);
+    if(selected == &steve_here)
+    {
+        steve = current_selection.coords;
+
+        //The user can't be really fast, so animations always on
+        setSpeed(2000);
+
+        setAnimation(ANIM_STEP);
+        updateAnimationTarget();
+        updateFront();
+
+        fbo_dirty = true;
+    }
+    else if(selected == &cube_here)
+    {
+        here.has_cube = !here.has_cube;
+        here.stack_size = 0;
+        here.has_mark = false;
+
+        fbo_dirty = true;
+
+        emit changed();
+    }
+    else if(selected == &stack_here)
+    {
+        bool ok;
+        int s = QInputDialog::getInt(this, trUtf8("Stapelhöhe"), trUtf8("Stapelhöhe auswählen:"), here.stack_size, 0, World::max_height, 1, &ok);
+        if(ok)
+        {
+            if(s > 0)
+                here.has_cube = false;
+
+            here.stack_size = s;
+
+            if(steve == current_selection.coords)
+            {
+                setAnimation(ANIM_STEP);
+                updateAnimationTarget();
+            }
+
+            fbo_dirty = true;
+
+            emit changed();
+        }
+    }
+    else if(selected == &mark_here)
+    {
+        here.has_mark = !here.has_mark;
+        here.has_cube = false;
+
+        fbo_dirty = true;
+
+        emit changed();
+    }
+
+    updateSelection();
 }
 
 void GLWorld::mouseMoveEvent(QMouseEvent *event)
@@ -580,13 +575,13 @@ void GLWorld::setAnimation(ANIMATION animation, bool force_set)
     player_posZ_from = player_posZ_target;
     player_rotY_from = player_rotY_target;
 
-    //If previous animation didn't complete, skip it
+    //If the previous animation didn't complete, skip it
     if(anim_progress < 1.0f || force_set)
     {
-        player_body->setXPosition(player_posX_from);
-        player_body->setYPosition(player_posY_from);
-        player_body->setZPosition(player_posZ_from);
-        player_body->setYRotation(player_rotY_from);
+        player_body->setXPosition(player_posX_target);
+        player_body->setYPosition(player_posY_target);
+        player_body->setZPosition(player_posZ_target);
+        player_body->setYRotation(player_rotY_target);
 
         //For ANIM_GREET
         player_arm_right->setXRotation(0);
@@ -604,7 +599,7 @@ void GLWorld::setAnimation(ANIMATION animation, bool force_set)
     current_anim_ticks = 0;
     current_animation = animation;
 
-    //If no time for animation, don't do it at all
+    //Only animate if there's enough time
     if(speed_ms > 0 && animation != ANIM_STANDING)
         tick_timer.start(speed_ms / ANIM_TICKS);
 
@@ -629,6 +624,7 @@ void GLWorld::setVisible(bool visible)
 
 bool GLWorld::stepForward()
 {
+    //Play bump animation if stepForward() fails
     if(!World::stepForward())
     {
         SignedCoords wall = getForward();
@@ -692,9 +688,9 @@ bool GLWorld::deposit(unsigned int count)
     unsigned int here = map[steve.first][steve.second].stack_size;
     bend_pos_y = static_cast<float>(getStackSize()) * 0.5 - 2.0;
 
-    int diff = getStackSize();
-    diff -= here;
+    int diff = getStackSize() - here;
 
+    //Play flying animation if the height difference is > 3 bricks
     if(diff > 3)
         setAnimation(ANIM_DEPOSIT_FLY);
     else
@@ -715,9 +711,9 @@ bool GLWorld::pickup(unsigned int count)
     unsigned int here = map[steve.first][steve.second].stack_size;
     bend_pos_y = static_cast<float>(getStackSize()) * 0.5 - 2.0;
 
-    int diff = getStackSize();
-    diff -= here;
+    int diff = getStackSize() - here;
 
+    //Play flying animation if the height difference is > 3 bricks
     if(diff > 3)
         setAnimation(ANIM_DEPOSIT_FLY);
     else
@@ -777,6 +773,7 @@ void GLWorld::updateAnimationTarget(bool force_set)
         break;
     case ORIENT_EAST:
         player_rotY_target = 270;
+    default:
         break;
     }
 
@@ -790,7 +787,7 @@ void GLWorld::updateAnimationTarget(bool force_set)
     player_posZ_target = steve.second;
     player_posY_target = map[steve.first][steve.second].stack_size * 0.5 - 0.8;
 
-    //tick not called
+    //setAnimation applies those values, but it's not called at maximum speed
     if(speed_ms == 0 || force_set)
         setAnimation(ANIM_STANDING, true); //Update state
 }
@@ -875,6 +872,7 @@ void GLWorld::setMaxHeight(unsigned int max_height)
 {
     World::setMaxHeight(max_height);
 
+    //If max_height got smaller, some high brick towers were cut at max_height
     fbo_dirty = true;
     emit changed();
 }

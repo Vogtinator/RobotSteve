@@ -22,6 +22,7 @@ ExamplesDialog::ExamplesDialog(QWidget *parent) :
     QXmlStreamReader file_reader{&file_xml};
     bool error = false;
     Example example;
+    //To understand the format of the XML file, it's easiest to look at it directly.
     while(!file_reader.atEnd())
     {
         if(file_reader.readNext() == QXmlStreamReader::Invalid)
@@ -30,9 +31,11 @@ ExamplesDialog::ExamplesDialog(QWidget *parent) :
             break;
         }
 
+        //End of main element -> exit loop
         if(file_reader.isEndElement() && file_reader.name().compare("examples", Qt::CaseInsensitive) == 0)
             break;
 
+        //End of example -> add to list
         if(file_reader.isEndElement() && file_reader.name().compare("example", Qt::CaseInsensitive) == 0)
         {
             examples.push_back(example);

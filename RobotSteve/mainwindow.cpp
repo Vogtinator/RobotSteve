@@ -233,7 +233,7 @@ void MainWindow::switchViews(bool which)
 
 void MainWindow::textChanged()
 {
-    //If user changes the code, the highlighting will no longer be valid
+    //If user changes the code, the highlighting is no longer valid
     highlighter.resetHighlight();
     code_changed = true;
     code_saved = false;

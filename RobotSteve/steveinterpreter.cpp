@@ -221,6 +221,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
         }
     }
 
+    //Check whether all blocks are completed
     if(branch_entrys.size())
     {
         findAndThrowMissingBegin(0, block_types.pop());
@@ -231,11 +232,12 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
     for(current_line = 0; current_line < code.size(); current_line++)
     {
         QStringList &line = token[current_line];
+        //Skip comments or empty lines
         if(line.size() == 0 || isComment(line[0]))
             continue;
 
         KEYWORD keyword = getKeyword(line[0]);
-        if(keyword == -1)
+        if(keyword == KEYWORD_INVALID)
             continue; //Not a keyword, ignore for now
 
         for(auto i : blocks)
@@ -265,7 +267,7 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
                     if(!validName.exactMatch(name))
                         throw SteveInterpreterException{QObject::trUtf8("Die Bezeichnung %1 enthält ungültige Zeichen.").arg(line[1]), current_line, line[1]};
 
-                    if(getKeyword(name) != -1 || getInstruction(name) != -1 || getCondition(name) != -1)
+                    if(getKeyword(name) != KEYWORD_INVALID || getInstruction(name) != INSTR_INVALID || getCondition(name) != COND_INVALID)
                         throw SteveInterpreterException{QObject::trUtf8("Die Bezeichnung %1 ist ein reserviertes Wort.").arg(line[1]), current_line, line[1]};
 
                     auto &customSymbols = i.type == BLOCK_NEW_COND ? custom_conditions : custom_instructions;
@@ -280,7 +282,6 @@ void SteveInterpreter::setCode(QStringList code) throw (SteveInterpreterExceptio
             }
             else if(keyword == i.end)
             {
-
                 if(branch_entrys.size())
                 {
                     BLOCK last_block = block_types.pop();
@@ -329,7 +330,7 @@ bool SteveInterpreter::handleCondition(QString condition_str, bool &result) thro
         throw SteveInterpreterException(QObject::trUtf8("Ungültige Bedingung."), current_line, condition_str);
 
     CONDITION condition = getCondition(condition_regexp.cap(1));
-    if(condition != -1)
+    if(condition != COND_INVALID)
     {
         if(!condition_functions.contains(condition))
             throw SteveInterpreterException{QObject::trUtf8("WTF #7"), current_line};
@@ -366,7 +367,7 @@ bool SteveInterpreter::handleInstruction(QString instruction_str) throw (SteveIn
         throw SteveInterpreterException{QObject::trUtf8("Ungültige Anweisung."), current_line, instruction_str};
 
     INSTRUCTION instruction = getInstruction(instruction_regexp.cap(1));
-    if(instruction != -1)
+    if(instruction != INSTR_INVALID)
     {
         if(instruction == INSTR_TRUE)
         {
@@ -433,7 +434,7 @@ void SteveInterpreter::executeLine() throw (SteveInterpreterException)
     }
 
     //TODO: Backtrace?
-#define MAX_STACK_SIZE 500000
+    const int MAX_STACK_SIZE = 500000;
     if(loop_count.size() > MAX_STACK_SIZE ||
             stack.size() > MAX_STACK_SIZE)
         throw SteveInterpreterException(QObject::trUtf8("Der Stack wird langsam ein bisschen zu groß.."), current_line);

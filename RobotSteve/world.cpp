@@ -24,7 +24,8 @@ World::World(unsigned int width, unsigned int length, unsigned int max_height)
 
 bool World::resize(unsigned int width, unsigned int length)
 {
-    if(width > maximum_size.first || length > maximum_size.second || width < 3 || length < 3)
+    if(width > maximum_size.first || length > maximum_size.second
+            || width < minimum_size.first || length < minimum_size.second)
         return false;
 
     map.resize(width);
@@ -34,12 +35,13 @@ bool World::resize(unsigned int width, unsigned int length)
     size.first = width;
     size.second = length;
 
+    //If steve isn't on the resized map, place him on (0,0),
+    //but reset the world if there is a cube.
     if(steve.first >= width || steve.second >= length)
     {
         steve.first = 0;
         steve.second = 0;
 
-        //We don't want Steve standing in a cube
         if(map[0][0].has_cube)
             reset();
     }
@@ -111,6 +113,7 @@ void World::turnRight(int quarters)
         break;
     case ORIENT_WEST:
         orientation = ORIENT_NORTH;
+    default:
         break;
     }
 
@@ -136,6 +139,7 @@ void World::turnLeft(int quarters)
         break;
     case ORIENT_WEST:
         orientation = ORIENT_SOUTH;
+    default:
         break;
     }
 
@@ -151,14 +155,14 @@ void World::setMark(bool b)
 
 bool World::setCube(bool b)
 {
-    if(isWall())
-        return false; //Nope, no cubes in walls please.
-
-    if((front_obj->has_cube && b) || (!front_obj->has_cube && !b) || front_obj->stack_size != 0 || front_obj->has_mark)
-        return false; //Mine non-existent, place into existing cube, place into stack or onto a mark
+    if(isWall() //Trying to place a cube into a wall or remove a cube from a wall
+        || (front_obj->has_cube && b) //Tying to place a cube when there is already one present
+        || (!front_obj->has_cube && !b)  //Trying to remove a non-existant cube
+        || front_obj->stack_size != 0 //Trying to place a cube into a stack
+        || front_obj->has_mark) //Trying to place a cube onto a mark
+        return false;
 
     front_obj->has_cube = b;
-    front_obj->has_mark = false;
 
     return true;
 }
@@ -297,7 +301,6 @@ bool World::setState(WorldState &state)
 
 WorldState World::getState() const
 {
-    //return {steve, size, orientation, max_height, map};
     return WorldState(steve, size, orientation, max_height, map);
 }
 
@@ -307,7 +310,7 @@ bool World::loadXMLStream(QXmlStreamReader &file_reader)
     bool size_set = false, steve_set = false;
     while(!file_reader.atEnd())
     {
-        if(!file_reader.readNext() == QXmlStreamReader::Invalid)
+        if(file_reader.readNext() == QXmlStreamReader::Invalid)
             break;
 
         if(file_reader.isEndElement() && file_reader.name() == "world")
@@ -361,7 +364,7 @@ bool World::loadXMLStream(QXmlStreamReader &file_reader)
                     return false;
 
             QString orientation_str = attributes.value("orientation").toString();
-            ORIENTATION orientation = static_cast<ORIENTATION>(-1);
+            ORIENTATION orientation = ORIENT_INVALID;
             for(auto&& t : this->orientation_str)
             {
                 if(std::get<1>(t).compare(orientation_str, Qt::CaseInsensitive) == 0)
@@ -370,7 +373,7 @@ bool World::loadXMLStream(QXmlStreamReader &file_reader)
                     break;
                 }
             }
-            if(orientation == -1)
+            if(orientation == ORIENT_INVALID)
                     return false;
 
             if(x >= size.first || y >= size.second)
@@ -512,7 +515,7 @@ bool World::saveFile(const QString &filename) const
 
 void World::setMaxHeight(unsigned int max_height)
 {
-    //NEVER!
+    //Don't accept ridiculously high worlds...
     if(max_height > 100)
         return;
 
